@@ -26,6 +26,9 @@ Kirigami.ApplicationWindow {
     // Current selected service ID (empty string means no service selected)
     property string currentServiceId: ""
     
+    // Set of disabled service IDs
+    property var disabledServices: new Set()
+    
     // Function to generate random UUID
     function generateUUID() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -281,6 +284,15 @@ Kirigami.ApplicationWindow {
         // Add actions to the page header
         actions: [
             Kirigami.Action {
+                text: i18n("Add Service")
+                icon.name: "list-add"
+                onTriggered: {
+                    // Reset dialog to add mode
+                    addServiceDialog.isEditMode = false
+                    addServiceDialog.open()
+                }
+            },
+            Kirigami.Action {
                 text: i18n("Edit Service")
                 icon.name: "document-edit"
                 enabled: root.currentServiceId !== ""
@@ -295,12 +307,15 @@ Kirigami.ApplicationWindow {
                 }
             },
             Kirigami.Action {
-                text: i18n("Add Service")
-                icon.name: "list-add"
-                onTriggered: {
-                    // Reset dialog to add mode
-                    addServiceDialog.isEditMode = false
-                    addServiceDialog.open()
+                text: root.isServiceDisabled(root.currentServiceId) ? i18n("Enable Service") : i18n("Disable Service")
+                icon.name: root.isServiceDisabled(root.currentServiceId) ? "media-playback-start" : "media-playback-pause"
+                enabled: root.currentServiceId !== ""
+                checkable: true
+                checked: root.isServiceDisabled(root.currentServiceId)
+                onCheckedChanged: {
+                    if (root.currentServiceId !== "") {
+                        root.setServiceEnabled(root.currentServiceId, !checked)
+                    }
                 }
             }
         ]
@@ -417,5 +432,31 @@ Kirigami.ApplicationWindow {
     // Initialize with the first workspace on startup
     Component.onCompleted: {
         switchToWorkspace(workspaces[0]); // Start with "Personal"
+    }
+
+    // Function to disable/enable a service
+    function setServiceEnabled(serviceId, enabled) {
+        var serviceIndex = findServiceIndexById(serviceId);
+        if (serviceIndex >= 0) {
+            var webView = webViewStack.children[serviceIndex];
+            if (enabled) {
+                // Re-enable service
+                disabledServices.delete(serviceId);
+                var service = findServiceById(serviceId);
+                if (service) {
+                    webView.url = service.url;
+                }
+            } else {
+                // Disable service
+                disabledServices.add(serviceId);
+                webView.stop();
+                webView.url = "about:blank";
+            }
+        }
+    }
+    
+    // Function to check if a service is disabled
+    function isServiceDisabled(serviceId) {
+        return disabledServices.has(serviceId);
     }
 }
