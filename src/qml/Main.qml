@@ -61,24 +61,39 @@ Kirigami.ApplicationWindow {
         
         // Find first service in the new workspace
         var firstService = null;
+        var firstServiceIndex = -1;
         for (var i = 0; i < services.length; i++) {
             if (services[i].workspace === workspaceName) {
                 firstService = services[i];
+                firstServiceIndex = i;
                 break;
             }
         }
         
-        // If we found a service, select it and load its URL
+        // If we found a service, select it and switch to its WebView
         if (firstService) {
             currentServiceName = firstService.title;
             currentServiceId = firstService.id;
-            webView.url = firstService.url;
+            webViewStack.currentIndex = firstServiceIndex;
         } else {
             // No services in this workspace
             currentServiceName = i18n("Unify - Web app aggregator");
             currentServiceId = "";
-            webView.url = "about:blank";
+            // Keep current WebView visible or show first one
         }
+    }
+    
+    // Function to switch to a specific service by ID
+    function switchToService(serviceId) {
+        var serviceIndex = findServiceIndexById(serviceId);
+        if (serviceIndex >= 0) {
+            var service = services[serviceIndex];
+            currentServiceName = service.title;
+            currentServiceId = service.id;
+            webViewStack.currentIndex = serviceIndex;
+            return true;
+        }
+        return false;
     }
     
     // Workspaces configuration array
@@ -330,9 +345,7 @@ Kirigami.ApplicationWindow {
                                 }
                                 
                                 onClicked: {
-                                    root.currentServiceName = modelData.title
-                                    root.currentServiceId = modelData.id
-                                    webView.url = modelData.url
+                                    root.switchToService(modelData.id)
                                     console.log(modelData.title + " clicked - loading " + modelData.url)
                                 }
                             }
@@ -361,23 +374,39 @@ Kirigami.ApplicationWindow {
                 Layout.fillHeight: true
                 color: Kirigami.Theme.backgroundColor
 
-                // Main content area - WebView
-                WebEngineView {
-                    id: webView
+                // Main content area - Multiple WebViews in StackLayout
+                StackLayout {
+                    id: webViewStack
                     anchors.fill: parent
+                    currentIndex: 0  // Start with first service
                     
-                    // URL will be set by switchToWorkspace function
-                    
-                    // Basic profile for web browsing
-                    profile: WebEngineProfile {
-                        id: webProfile
-                        storageName: "UnifyProfile"
-                    }
-                    
-                    // Handle link hovering for better UX
-                    onLinkHovered: function(hoveredUrl) {
-                        if (hoveredUrl.toString() !== "") {
-                            // Could show status in the future
+                    // Create a WebEngineView for each service
+                    Repeater {
+                        model: root.services
+                        
+                        WebEngineView {
+                            // Load the service URL immediately when created
+                            url: modelData.url
+                            
+                            // Basic profile for web browsing with unique storage per service
+                            profile: WebEngineProfile {
+                                storageName: "UnifyProfile_" + modelData.id
+                                persistentCookiesPolicy: WebEngineProfile.AllowPersistentCookies
+                            }
+                            
+                            // Handle link hovering for better UX
+                            onLinkHovered: function(hoveredUrl) {
+                                if (hoveredUrl.toString() !== "") {
+                                    // Could show status in the future
+                                }
+                            }
+                            
+                            // Log when page loads for debugging
+                            onLoadingChanged: function(loadRequest) {
+                                if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
+                                    console.log("Service loaded: " + modelData.title + " - " + modelData.url)
+                                }
+                            }
                         }
                     }
                 }
