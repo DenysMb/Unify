@@ -23,30 +23,66 @@ Kirigami.ApplicationWindow {
     // Current active workspace
     property string currentWorkspace: "Personal"
     
+    // Current selected service ID (empty string means no service selected)
+    property string currentServiceId: ""
+    
+    // Function to generate random UUID
+    function generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0;
+            var v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+    
+    // Function to find service by ID
+    function findServiceById(id) {
+        for (var i = 0; i < services.length; i++) {
+            if (services[i].id === id) {
+                return services[i];
+            }
+        }
+        return null;
+    }
+    
+    // Function to find service index by ID
+    function findServiceIndexById(id) {
+        for (var i = 0; i < services.length; i++) {
+            if (services[i].id === id) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
     // Workspaces configuration array
     property var workspaces: ["Personal", "Work", "Cloud"]
     
     // Services configuration array
     property var services: [
         { 
+            id: 'kde-001',
             title: 'KDE', 
             url: 'https://kde.org',
             image: 'https://kde.org/stuff/clipart/logo/kde-logo-blue-transparent-source.svg',
             workspace: 'Personal'
         },
         { 
+            id: 'gnome-001',
             title: 'GNOME', 
             url: 'https://gnome.org',
             image: 'https://upload.wikimedia.org/wikipedia/commons/6/68/Gnomelogo.svg',
             workspace: 'Personal'
         },
         { 
+            id: 'opensuse-001',
             title: 'openSUSE', 
             url: 'https://opensuse.org',
             image: 'https://upload.wikimedia.org/wikipedia/commons/d/d1/OpenSUSE_Button.svg',
             workspace: 'Personal'
         },
         { 
+            id: 'fedora-001',
             title: 'Fedora', 
             url: 'https://fedoraproject.org',
             image: 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Fedora_logo.svg',
@@ -113,31 +149,56 @@ Kirigami.ApplicationWindow {
     // Add Service Dialog
     Kirigami.Dialog {
         id: addServiceDialog
-        title: i18n("Add Service")
+        
+        property bool isEditMode: false
+        
+        title: isEditMode ? i18n("Edit Service") : i18n("Add Service")
         
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
         padding: Kirigami.Units.largeSpacing
         preferredWidth: Kirigami.Units.gridUnit * 20
         
+        function populateFields(service) {
+            serviceNameField.text = service.title
+            iconUrlField.text = service.image
+            serviceUrlField.text = service.url
+            workspaceComboBox.currentIndex = root.workspaces.indexOf(service.workspace)
+        }
+        
+        function clearFields() {
+            serviceNameField.text = ""
+            iconUrlField.text = ""
+            serviceUrlField.text = ""
+            workspaceComboBox.currentIndex = 0
+        }
+        
         onAccepted: {
-            // Add the new service to the services array
-            var newService = {
+            var serviceData = {
                 title: serviceNameField.text,
                 url: serviceUrlField.text,
                 image: iconUrlField.text,
                 workspace: root.workspaces[workspaceComboBox.currentIndex]
             }
             
-            // Create a new array with the added service
-            var updatedServices = root.services.slice()
-            updatedServices.push(newService)
-            root.services = updatedServices
+            if (isEditMode) {
+                // Update existing service
+                var serviceIndex = root.findServiceIndexById(root.currentServiceId)
+                if (serviceIndex >= 0) {
+                    serviceData.id = root.currentServiceId  // Keep the same ID
+                    var updatedServices = root.services.slice()
+                    updatedServices[serviceIndex] = serviceData
+                    root.services = updatedServices
+                }
+            } else {
+                // Add new service with generated UUID
+                serviceData.id = root.generateUUID()
+                var updatedServices = root.services.slice()
+                updatedServices.push(serviceData)
+                root.services = updatedServices
+            }
             
             // Clear the form
-            serviceNameField.text = ""
-            serviceUrlField.text = ""
-            iconUrlField.text = ""
-            workspaceComboBox.currentIndex = 0
+            clearFields()
         }
         
         Kirigami.FormLayout {
@@ -179,9 +240,25 @@ Kirigami.ApplicationWindow {
         // Add actions to the page header
         actions: [
             Kirigami.Action {
+                text: i18n("Edit Service")
+                icon.name: "document-edit"
+                enabled: root.currentServiceId !== ""
+                onTriggered: {
+                    // Set dialog to edit mode and populate with current service data
+                    addServiceDialog.isEditMode = true
+                    var currentService = root.findServiceById(root.currentServiceId)
+                    if (currentService) {
+                        addServiceDialog.populateFields(currentService)
+                    }
+                    addServiceDialog.open()
+                }
+            },
+            Kirigami.Action {
                 text: i18n("Add Service")
                 icon.name: "list-add"
                 onTriggered: {
+                    // Reset dialog to add mode
+                    addServiceDialog.isEditMode = false
                     addServiceDialog.open()
                 }
             }
@@ -228,6 +305,7 @@ Kirigami.ApplicationWindow {
                                 
                                 onClicked: {
                                     root.currentServiceName = modelData.title
+                                    root.currentServiceId = modelData.id
                                     webView.url = modelData.url
                                     console.log(modelData.title + " clicked - loading " + modelData.url)
                                 }
