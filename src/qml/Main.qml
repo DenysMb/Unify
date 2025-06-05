@@ -13,8 +13,9 @@ Kirigami.ApplicationWindow {
     width: 1200
     height: 800
 
-    property int iconSize: 64
-    property int sidebarWidth: iconSize + Kirigami.Units.smallSpacing * 2
+    property int buttonSize: 64
+    property int iconSize: 64 - Kirigami.Units.smallSpacing * 4
+    property int sidebarWidth: buttonSize + Kirigami.Units.smallSpacing * 2
 
     // Current selected service name for the header
     property string currentServiceName: i18n("Unify - Web app aggregator")
@@ -24,22 +25,22 @@ Kirigami.ApplicationWindow {
         { 
             title: 'KDE', 
             url: 'https://kde.org',
-            image: 'https://www.vhv.rs/dpng/d/477-4779583_kde-logo-hd-png-download.png'
+            image: 'https://kde.org/stuff/clipart/logo/kde-logo-blue-transparent-source.svg'
         },
         { 
             title: 'GNOME', 
             url: 'https://gnome.org',
-            image: 'https://w7.pngwing.com/pngs/883/344/png-transparent-gnome-shell-computer-icons-gtk-desktop-environment-gnome-text-cartoon-linux.png'
+            image: 'https://upload.wikimedia.org/wikipedia/commons/6/68/Gnomelogo.svg'
         },
         { 
             title: 'openSUSE', 
             url: 'https://opensuse.org',
-            image: 'https://en.opensuse.org/images/c/cd/Button-colour.png'
+            image: 'https://upload.wikimedia.org/wikipedia/commons/d/d1/OpenSUSE_Button.svg'
         },
         { 
             title: 'Fedora', 
             url: 'https://fedoraproject.org',
-            image: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Fedora_icon_%282021%29.svg'
+            image: 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Fedora_logo.svg'
         }
     ]
 
@@ -134,11 +135,22 @@ Kirigami.ApplicationWindow {
                             
                             Controls.Button {
                                 text: i18n(modelData.title)
-                                icon.source: modelData.image
                                 display: Controls.AbstractButton.IconOnly
-                                Layout.preferredWidth: root.iconSize
-                                Layout.preferredHeight: root.iconSize
+                                Layout.preferredWidth: root.buttonSize
+                                Layout.preferredHeight: root.buttonSize
                                 Layout.alignment: Qt.AlignHCenter
+                                
+                                contentItem: Item {
+                                    Image {
+                                        anchors.centerIn: parent
+                                        width: root.iconSize
+                                        height: root.iconSize
+                                        source: modelData.image
+                                        fillMode: Image.PreserveAspectFit
+                                        smooth: true
+                                    }
+                                }
+                                
                                 onClicked: {
                                     root.currentServiceName = modelData.title
                                     webView.url = modelData.url
