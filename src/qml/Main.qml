@@ -55,6 +55,32 @@ Kirigami.ApplicationWindow {
         return -1;
     }
     
+    // Function to switch workspace and select first service
+    function switchToWorkspace(workspaceName) {
+        currentWorkspace = workspaceName;
+        
+        // Find first service in the new workspace
+        var firstService = null;
+        for (var i = 0; i < services.length; i++) {
+            if (services[i].workspace === workspaceName) {
+                firstService = services[i];
+                break;
+            }
+        }
+        
+        // If we found a service, select it and load its URL
+        if (firstService) {
+            currentServiceName = firstService.title;
+            currentServiceId = firstService.id;
+            webView.url = firstService.url;
+        } else {
+            // No services in this workspace
+            currentServiceName = i18n("Unify - Web app aggregator");
+            currentServiceId = "";
+            webView.url = "about:blank";
+        }
+    }
+    
     // Workspaces configuration array
     property var workspaces: ["Personal", "Work", "Cloud"]
     
@@ -113,7 +139,7 @@ Kirigami.ApplicationWindow {
                 text: i18n(root.workspaces[0]) // "Personal"
                 icon.name: "folder"
                 onTriggered: {
-                    root.currentWorkspace = root.workspaces[0]
+                    root.switchToWorkspace(root.workspaces[0])
                     console.log(root.workspaces[0] + " workspace clicked")
                 }
             },
@@ -121,7 +147,7 @@ Kirigami.ApplicationWindow {
                 text: i18n(root.workspaces[1]) // "Work"
                 icon.name: "folder"
                 onTriggered: {
-                    root.currentWorkspace = root.workspaces[1]
+                    root.switchToWorkspace(root.workspaces[1])
                     console.log(root.workspaces[1] + " workspace clicked")
                 }
             },
@@ -129,7 +155,7 @@ Kirigami.ApplicationWindow {
                 text: i18n(root.workspaces[2]) // "Cloud"
                 icon.name: "folder"
                 onTriggered: {
-                    root.currentWorkspace = root.workspaces[2]
+                    root.switchToWorkspace(root.workspaces[2])
                     console.log(root.workspaces[2] + " workspace clicked")
                 }
             },
@@ -340,8 +366,7 @@ Kirigami.ApplicationWindow {
                     id: webView
                     anchors.fill: parent
                     
-                    // Default URL
-                    url: "https://kde.org"
+                    // URL will be set by switchToWorkspace function
                     
                     // Basic profile for web browsing
                     profile: WebEngineProfile {
@@ -358,5 +383,10 @@ Kirigami.ApplicationWindow {
                 }
             }
         }
+    }
+
+    // Initialize with the first workspace on startup
+    Component.onCompleted: {
+        switchToWorkspace(workspaces[0]); // Start with "Personal"
     }
 }
