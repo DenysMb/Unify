@@ -21,10 +21,26 @@ Kirigami.ApplicationWindow {
     
     // Services configuration array
     property var services: [
-        { title: 'KDE', url: 'https://kde.org' },
-        { title: 'GNOME', url: 'https://gnome.org' },
-        { title: 'openSUSE', url: 'https://opensuse.org' },
-        { title: 'Fedora', url: 'https://fedoraproject.org' }
+        { 
+            title: 'KDE', 
+            url: 'https://kde.org',
+            image: 'https://www.vhv.rs/dpng/d/477-4779583_kde-logo-hd-png-download.png'
+        },
+        { 
+            title: 'GNOME', 
+            url: 'https://gnome.org',
+            image: 'https://w7.pngwing.com/pngs/883/344/png-transparent-gnome-shell-computer-icons-gtk-desktop-environment-gnome-text-cartoon-linux.png'
+        },
+        { 
+            title: 'openSUSE', 
+            url: 'https://opensuse.org',
+            image: 'https://en.opensuse.org/images/c/cd/Button-colour.png'
+        },
+        { 
+            title: 'Fedora', 
+            url: 'https://fedoraproject.org',
+            image: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Fedora_icon_%282021%29.svg'
+        }
     ]
 
     // Reusable border color that matches Kirigami's internal separators
@@ -118,9 +134,11 @@ Kirigami.ApplicationWindow {
                             
                             Controls.Button {
                                 text: i18n(modelData.title)
-                                icon.name: "internet-web-browser-symbolic"
+                                icon.source: modelData.image
                                 display: Controls.AbstractButton.IconOnly
-                                Layout.fillWidth: true
+                                Layout.preferredWidth: root.iconSize
+                                Layout.preferredHeight: root.iconSize
+                                Layout.alignment: Qt.AlignHCenter
                                 onClicked: {
                                     root.currentServiceName = modelData.title
                                     webView.url = modelData.url
