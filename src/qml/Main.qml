@@ -20,6 +20,9 @@ Kirigami.ApplicationWindow {
     // Current selected service name for the header
     property string currentServiceName: i18n("Unify - Web app aggregator")
     
+    // Workspaces configuration array
+    property var workspaces: ["Personal", "Work", "Cloud"]
+    
     // Services configuration array
     property var services: [
         { 
@@ -59,24 +62,24 @@ Kirigami.ApplicationWindow {
     globalDrawer: Kirigami.GlobalDrawer {
         actions: [
             Kirigami.Action {
-                text: i18n("Workspace 1")
+                text: i18n(root.workspaces[0]) // "Personal"
                 icon.name: "folder"
                 onTriggered: {
-                    console.log("Workspace 1 clicked")
+                    console.log(root.workspaces[0] + " workspace clicked")
                 }
             },
             Kirigami.Action {
-                text: i18n("Workspace 2")
+                text: i18n(root.workspaces[1]) // "Work"
                 icon.name: "folder"
                 onTriggered: {
-                    console.log("Workspace 2 clicked")
+                    console.log(root.workspaces[1] + " workspace clicked")
                 }
             },
             Kirigami.Action {
-                text: i18n("Workspace 3")
+                text: i18n(root.workspaces[2]) // "Cloud"
                 icon.name: "folder"
                 onTriggered: {
-                    console.log("Workspace 3 clicked")
+                    console.log(root.workspaces[2] + " workspace clicked")
                 }
             },
             Kirigami.Action {
@@ -90,6 +93,62 @@ Kirigami.ApplicationWindow {
                 }
             }
         ]
+    }
+
+    // Add Service Dialog
+    Kirigami.Dialog {
+        id: addServiceDialog
+        title: i18n("Add Service")
+        
+        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+        padding: Kirigami.Units.largeSpacing
+        preferredWidth: Kirigami.Units.gridUnit * 20
+        
+        onAccepted: {
+            // Add the new service to the services array
+            var newService = {
+                title: serviceNameField.text,
+                url: serviceUrlField.text,
+                image: iconUrlField.text
+            }
+            
+            // Create a new array with the added service
+            var updatedServices = root.services.slice()
+            updatedServices.push(newService)
+            root.services = updatedServices
+            
+            // Clear the form
+            serviceNameField.text = ""
+            serviceUrlField.text = ""
+            iconUrlField.text = ""
+            workspaceComboBox.currentIndex = 0
+        }
+        
+        Kirigami.FormLayout {
+            Controls.TextField {
+                id: serviceNameField
+                Kirigami.FormData.label: i18n("Service Name:")
+                placeholderText: i18n("Enter service name")
+            }
+            
+            Controls.TextField {
+                id: iconUrlField
+                Kirigami.FormData.label: i18n("Icon URL:")
+                placeholderText: i18n("Enter icon URL")
+            }
+            
+            Controls.TextField {
+                id: serviceUrlField
+                Kirigami.FormData.label: i18n("Service URL:")
+                placeholderText: i18n("Enter service URL")
+            }
+            
+            Controls.ComboBox {
+                id: workspaceComboBox
+                Kirigami.FormData.label: i18n("Workspace:")
+                model: root.workspaces
+            }
+        }
     }
 
     // Set the first page that will be loaded when the app opens
@@ -107,7 +166,7 @@ Kirigami.ApplicationWindow {
                 text: i18n("Add Service")
                 icon.name: "list-add"
                 onTriggered: {
-                    console.log("Add Service button clicked")
+                    addServiceDialog.open()
                 }
             }
         ]
