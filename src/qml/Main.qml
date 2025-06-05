@@ -26,8 +26,8 @@ Kirigami.ApplicationWindow {
     // Current selected service ID (empty string means no service selected)
     property string currentServiceId: ""
     
-    // Set of disabled service IDs
-    property var disabledServices: new Set()
+    // Object to track disabled service IDs (using object instead of Set for QML compatibility)
+    property var disabledServices: ({})
     
     // Function to generate random UUID
     function generateUUID() {
@@ -356,6 +356,7 @@ Kirigami.ApplicationWindow {
                                         source: modelData.image
                                         fillMode: Image.PreserveAspectFit
                                         smooth: true
+                                        opacity: root.isServiceDisabled(modelData.id) ? 0.3 : 1.0
                                     }
                                 }
                                 
@@ -441,22 +442,24 @@ Kirigami.ApplicationWindow {
             var webView = webViewStack.children[serviceIndex];
             if (enabled) {
                 // Re-enable service
-                disabledServices.delete(serviceId);
+                delete disabledServices[serviceId];
                 var service = findServiceById(serviceId);
                 if (service) {
                     webView.url = service.url;
                 }
             } else {
                 // Disable service
-                disabledServices.add(serviceId);
+                disabledServices[serviceId] = true;
                 webView.stop();
                 webView.url = "about:blank";
             }
+            // Emit property change signal so QML knows to update bindings
+            disabledServicesChanged();
         }
     }
     
     // Function to check if a service is disabled
     function isServiceDisabled(serviceId) {
-        return disabledServices.has(serviceId);
+        return disabledServices.hasOwnProperty(serviceId);
     }
 }
