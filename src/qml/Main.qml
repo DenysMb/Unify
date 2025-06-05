@@ -2,6 +2,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
+import QtWebEngine
 import org.kde.kirigami as Kirigami
 
 // Provides basic features needed for all kirigami applications
@@ -9,14 +10,22 @@ Kirigami.ApplicationWindow {
     // Unique identifier to reference this object
     id: root
 
-    width: 800
-    height: 600
+    width: 1200
+    height: 800
 
     property int iconSize: 64
     property int sidebarWidth: iconSize + Kirigami.Units.smallSpacing * 2
 
     // Current selected service name for the header
     property string currentServiceName: i18n("Unify - Web app aggregator")
+    
+    // Services configuration array
+    property var services: [
+        { title: 'KDE', url: 'https://kde.org' },
+        { title: 'GNOME', url: 'https://gnome.org' },
+        { title: 'openSUSE', url: 'https://opensuse.org' },
+        { title: 'Fedora', url: 'https://fedoraproject.org' }
+    ]
 
     // Reusable border color that matches Kirigami's internal separators
     property color borderColor: {
@@ -104,36 +113,19 @@ Kirigami.ApplicationWindow {
                         width: parent.width
                         spacing: Kirigami.Units.smallSpacing
 
-                        Controls.Button {
-                            text: i18n("Service 1")
-                            icon.name: "internet-web-browser-symbolic"
-                            display: Controls.AbstractButton.IconOnly
-                            Layout.fillWidth: true
-                            onClicked: {
-                                root.currentServiceName = text
-                                console.log("Service 1 clicked")
-                            }
-                        }
-
-                        Controls.Button {
-                            text: i18n("Service 2")
-                            icon.name: "internet-web-browser-symbolic"
-                            display: Controls.AbstractButton.IconOnly
-                            Layout.fillWidth: true
-                            onClicked: {
-                                root.currentServiceName = text
-                                console.log("Service 2 clicked")
-                            }
-                        }
-
-                        Controls.Button {
-                            text: i18n("Service 3")
-                            icon.name: "internet-web-browser-symbolic"
-                            display: Controls.AbstractButton.IconOnly
-                            Layout.fillWidth: true
-                            onClicked: {
-                                root.currentServiceName = text
-                                console.log("Service 3 clicked")
+                        Repeater {
+                            model: root.services
+                            
+                            Controls.Button {
+                                text: i18n(modelData.title)
+                                icon.name: "internet-web-browser-symbolic"
+                                display: Controls.AbstractButton.IconOnly
+                                Layout.fillWidth: true
+                                onClicked: {
+                                    root.currentServiceName = modelData.title
+                                    webView.url = modelData.url
+                                    console.log(modelData.title + " clicked - loading " + modelData.url)
+                                }
                             }
                         }
 
@@ -160,10 +152,26 @@ Kirigami.ApplicationWindow {
                 Layout.fillHeight: true
                 color: Kirigami.Theme.backgroundColor
 
-                Controls.Label {
-                    // Center label horizontally and vertically within parent object
-                    anchors.centerIn: parent
-                    text: i18n("Select a service from the sidebar")
+                // Main content area - WebView
+                WebEngineView {
+                    id: webView
+                    anchors.fill: parent
+                    
+                    // Default URL
+                    url: "https://kde.org"
+                    
+                    // Basic profile for web browsing
+                    profile: WebEngineProfile {
+                        id: webProfile
+                        storageName: "UnifyProfile"
+                    }
+                    
+                    // Handle link hovering for better UX
+                    onLinkHovered: function(hoveredUrl) {
+                        if (hoveredUrl.toString() !== "") {
+                            // Could show status in the future
+                        }
+                    }
                 }
             }
         }
