@@ -20,6 +20,9 @@ Kirigami.ApplicationWindow {
     // Current selected service name for the header
     property string currentServiceName: i18n("Unify - Web app aggregator")
     
+    // Current active workspace
+    property string currentWorkspace: "Personal"
+    
     // Workspaces configuration array
     property var workspaces: ["Personal", "Work", "Cloud"]
     
@@ -28,24 +31,33 @@ Kirigami.ApplicationWindow {
         { 
             title: 'KDE', 
             url: 'https://kde.org',
-            image: 'https://kde.org/stuff/clipart/logo/kde-logo-blue-transparent-source.svg'
+            image: 'https://kde.org/stuff/clipart/logo/kde-logo-blue-transparent-source.svg',
+            workspace: 'Personal'
         },
         { 
             title: 'GNOME', 
             url: 'https://gnome.org',
-            image: 'https://upload.wikimedia.org/wikipedia/commons/6/68/Gnomelogo.svg'
+            image: 'https://upload.wikimedia.org/wikipedia/commons/6/68/Gnomelogo.svg',
+            workspace: 'Personal'
         },
         { 
             title: 'openSUSE', 
             url: 'https://opensuse.org',
-            image: 'https://upload.wikimedia.org/wikipedia/commons/d/d1/OpenSUSE_Button.svg'
+            image: 'https://upload.wikimedia.org/wikipedia/commons/d/d1/OpenSUSE_Button.svg',
+            workspace: 'Personal'
         },
         { 
             title: 'Fedora', 
             url: 'https://fedoraproject.org',
-            image: 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Fedora_logo.svg'
+            image: 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Fedora_logo.svg',
+            workspace: 'Work'
         }
     ]
+    
+    // Filtered services based on current workspace
+    property var filteredServices: services.filter(function(service) {
+        return service.workspace === currentWorkspace;
+    })
 
     // Reusable border color that matches Kirigami's internal separators
     property color borderColor: {
@@ -65,6 +77,7 @@ Kirigami.ApplicationWindow {
                 text: i18n(root.workspaces[0]) // "Personal"
                 icon.name: "folder"
                 onTriggered: {
+                    root.currentWorkspace = root.workspaces[0]
                     console.log(root.workspaces[0] + " workspace clicked")
                 }
             },
@@ -72,6 +85,7 @@ Kirigami.ApplicationWindow {
                 text: i18n(root.workspaces[1]) // "Work"
                 icon.name: "folder"
                 onTriggered: {
+                    root.currentWorkspace = root.workspaces[1]
                     console.log(root.workspaces[1] + " workspace clicked")
                 }
             },
@@ -79,6 +93,7 @@ Kirigami.ApplicationWindow {
                 text: i18n(root.workspaces[2]) // "Cloud"
                 icon.name: "folder"
                 onTriggered: {
+                    root.currentWorkspace = root.workspaces[2]
                     console.log(root.workspaces[2] + " workspace clicked")
                 }
             },
@@ -109,7 +124,8 @@ Kirigami.ApplicationWindow {
             var newService = {
                 title: serviceNameField.text,
                 url: serviceUrlField.text,
-                image: iconUrlField.text
+                image: iconUrlField.text,
+                workspace: root.workspaces[workspaceComboBox.currentIndex]
             }
             
             // Create a new array with the added service
@@ -190,7 +206,7 @@ Kirigami.ApplicationWindow {
                         spacing: Kirigami.Units.smallSpacing
 
                         Repeater {
-                            model: root.services
+                            model: root.filteredServices
                             
                             Controls.Button {
                                 text: i18n(modelData.title)
