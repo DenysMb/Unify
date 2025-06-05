@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Unify
+Comment=Web app aggregator
+Version=1.0
+Exec=Unify
+Icon=io.github.denysmb.unify
+Type=Application
+Terminal=false
+Categories=Qt;KDE;
