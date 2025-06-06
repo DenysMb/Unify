@@ -79,17 +79,6 @@ public:
             qDebug() << "❌ System tray not available";
         }
         
-        // Final fallback: use notify-send command
-        QProcess *process = new QProcess(this);
-        process->start(QStringLiteral("notify-send"), QStringList() << title << message);
-        process->waitForFinished(1000);
-        if (process->exitCode() == 0) {
-            qDebug() << "📢 notify-send command succeeded";
-        } else {
-            qDebug() << "❌ notify-send failed:" << process->errorString();
-        }
-        process->deleteLater();
-        
         // Keep the notification object alive for a reasonable time
         QTimer::singleShot(5000, knotification, &KNotification::deleteLater);
         
