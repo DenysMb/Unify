@@ -1,0 +1,9 @@
+[Global]
+IconName=dialog-information
+Comment=Unify Web App Aggregator
+Name=Unify
+
+[Event/notification]
+Name=Web Notification
+Comment=Notification from a web service
+Action=Popup 

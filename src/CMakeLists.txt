@@ -25,9 +25,12 @@ target_link_libraries(unify
     Qt6::Gui
     Qt6::QuickControls2
     Qt6::Widgets
+    Qt6::WebEngineQuick
+    Qt6::DBus
     KF6::I18n
     KF6::CoreAddons
     KF6::IconThemes
+    KF6::Notifications
 )
 
 install(TARGETS unify ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})

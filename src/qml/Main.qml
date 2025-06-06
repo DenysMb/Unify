@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Controls as Controls
 import QtWebEngine
 import org.kde.kirigami as Kirigami
+import org.kde.notification
 
 // Provides basic features needed for all kirigami applications
 Kirigami.ApplicationWindow {
@@ -279,6 +280,23 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Web Notification System
+    Notification {
+        id: webNotification
+        componentName: "unify"
+        eventId: "web-notification"
+        defaultAction: i18n("Open")
+        iconName: "dialog-information"
+    }
+    
+    // Function to show web notifications as system notifications
+    function showWebNotification(title, message, serviceName, origin) {
+        webNotification.title = title || i18n("Web Notification")
+        webNotification.text = message || i18n("Notification from ") + serviceName
+        webNotification.sendEvent()
+        console.log("📢 Web notification displayed: " + title + " from " + serviceName + " (" + origin + ")")
+    }
+
     // Permission Request Dialog
     Kirigami.Dialog {
         id: permissionDialog
@@ -482,11 +500,8 @@ Kirigami.ApplicationWindow {
                             // Load the service URL immediately when created
                             url: modelData.url
                             
-                            // Basic profile for web browsing with unique storage per service
-                            profile: WebEngineProfile {
-                                storageName: "UnifyProfile_" + modelData.id
-                                persistentCookiesPolicy: WebEngineProfile.AllowPersistentCookies
-                            }
+                            // Use default profile with notification presenter support
+                            // Note: All services will share the same profile, but each has unique storage via different URLs
                             
                             // Enable settings required for screen sharing and media capture
                             settings.screenCaptureEnabled: true
@@ -512,9 +527,11 @@ Kirigami.ApplicationWindow {
                                 if (requiredPermissions.indexOf(permission.permissionType) >= 0) {
                                     // Automatically grant required permissions
                                     permission.grant()
+                                    console.log("✅ Permission granted:", permission.permissionType, "for", modelData.title)
                                 } else {
                                     // For other permissions, deny by default but log them
                                     permission.deny()
+                                    console.log("❌ Permission denied:", permission.permissionType, "for", modelData.title)
                                 }
                             }
                             

@@ -39,6 +39,7 @@ find_package(Qt6 ${QT6_MIN_VERSION} REQUIRED COMPONENTS
     Qml
     QuickControls2
     Widgets
+    WebEngineQuick
 )
 
 find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS
@@ -47,6 +48,7 @@ find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS
     CoreAddons
     QQC2DesktopStyle
     IconThemes
+    Notifications
 )
 find_package(KF6 REQUIRED COMPONENTS KirigamiAddons)
 
@@ -71,6 +73,9 @@ ki18n_install(po)
 
 # Install desktop file
 install_i18n_desktop_file(${CMAKE_SOURCE_DIR}/io.github.denysmb.unify.desktop ${KDE_INSTALL_APPDIR})
+
+# Install notification configuration
+install(FILES unify.notifyrc DESTINATION ${KDE_INSTALL_KNOTIFYRCDIR})
 
 file(GLOB_RECURSE ALL_CLANG_FORMAT_SOURCE_FILES src/*.cpp src/*.h)
 kde_clang_format(${ALL_CLANG_FORMAT_SOURCE_FILES})
