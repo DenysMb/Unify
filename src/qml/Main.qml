@@ -106,23 +106,23 @@ Kirigami.ApplicationWindow {
     property var services: [
         { 
             id: 'kde-001',
-            title: 'KDE', 
-            url: 'https://kde.org',
-            image: 'https://kde.org/stuff/clipart/logo/kde-logo-blue-transparent-source.svg',
+            title: 'Notification Test', 
+            url: 'https://www.bennish.net/web-notifications.html',
+            image: 'https://www.svgrepo.com/show/24723/chat.svg',
             workspace: 'Personal'
         },
         { 
             id: 'gnome-001',
-            title: 'GNOME', 
-            url: 'https://gnome.org',
-            image: 'https://upload.wikimedia.org/wikipedia/commons/6/68/Gnomelogo.svg',
+            title: 'Webcam Test', 
+            url: 'https://pt.webcamtests.com/',
+            image: 'https://www.svgrepo.com/show/122752/webcam.svg',
             workspace: 'Personal'
         },
         { 
             id: 'opensuse-001',
-            title: 'openSUSE', 
-            url: 'https://opensuse.org',
-            image: 'https://upload.wikimedia.org/wikipedia/commons/d/d1/OpenSUSE_Button.svg',
+            title: 'Microphone Test', 
+            url: 'https://mictests.com/',
+            image: 'https://www.svgrepo.com/show/144970/microphone.svg',
             workspace: 'Personal'
         },
         { 
@@ -272,6 +272,77 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Permission Request Dialog
+    Kirigami.Dialog {
+        id: permissionDialog
+        
+        property var pendingPermission: null
+        property string serviceName: ""
+        
+        title: i18n("Permission Request")
+        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+        padding: Kirigami.Units.largeSpacing
+        preferredWidth: Kirigami.Units.gridUnit * 25
+        
+        onAccepted: {
+            if (pendingPermission) {
+                pendingPermission.grant()
+                console.log("Permission granted for " + serviceName)
+            }
+        }
+        
+        onRejected: {
+            if (pendingPermission) {
+                pendingPermission.deny()
+                console.log("Permission denied for " + serviceName)
+            }
+        }
+        
+        function showPermissionRequest(permission, serviceTitle) {
+            pendingPermission = permission
+            serviceName = serviceTitle
+            permissionText.text = questionForPermissionType(permission, serviceTitle)
+            open()
+        }
+        
+        function questionForPermissionType(permission, serviceTitle) {
+            var question = i18n("Allow %1 to ", serviceTitle)
+            
+            switch (permission.permissionType) {
+            case WebEnginePermission.PermissionType.Geolocation:
+                question += i18n("access your location information?")
+                break
+            case WebEnginePermission.PermissionType.MediaAudioCapture:
+                question += i18n("access your microphone?")
+                break
+            case WebEnginePermission.PermissionType.MediaVideoCapture:
+                question += i18n("access your webcam?")
+                break
+            case WebEnginePermission.PermissionType.MediaAudioVideoCapture:
+                question += i18n("access your microphone and webcam?")
+                break
+            case WebEnginePermission.PermissionType.Notifications:
+                question += i18n("show notifications on your desktop?")
+                break
+            case WebEnginePermission.PermissionType.DesktopAudioVideoCapture:
+                question += i18n("capture audio and video of your desktop?")
+                break
+            default:
+                question += i18n("access unknown or unsupported permission type [%1]?", permission.permissionType)
+                break
+            }
+            
+            return question
+        }
+        
+        Controls.Label {
+            id: permissionText
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignLeft
+        }
+    }
+
     // Set the first page that will be loaded when the app opens
     // This can also be set to an id of a Kirigami.Page
     pageStack.initialPage: Kirigami.Page {
@@ -408,6 +479,29 @@ Kirigami.ApplicationWindow {
                             profile: WebEngineProfile {
                                 storageName: "UnifyProfile_" + modelData.id
                                 persistentCookiesPolicy: WebEngineProfile.AllowPersistentCookies
+                            }
+                            
+                            // Handle permission requests
+                            onPermissionRequested: function(permission) {
+                                // Auto-grant required permissions for the app to work properly
+                                var requiredPermissions = [
+                                    WebEnginePermission.PermissionType.Geolocation,
+                                    WebEnginePermission.PermissionType.MediaAudioCapture,
+                                    WebEnginePermission.PermissionType.MediaVideoCapture,
+                                    WebEnginePermission.PermissionType.MediaAudioVideoCapture,
+                                    WebEnginePermission.PermissionType.Notifications,
+                                    WebEnginePermission.PermissionType.DesktopAudioVideoCapture
+                                ]
+                                
+                                if (requiredPermissions.indexOf(permission.permissionType) >= 0) {
+                                    // Automatically grant required permissions
+                                    permission.grant()
+                                    console.log("Auto-granted permission for " + modelData.title + ": " + permission.permissionType)
+                                } else {
+                                    // For other permissions, deny by default
+                                    permission.deny()
+                                    console.log("Unsupported permission type denied: " + permission.permissionType + " for " + modelData.title)
+                                }
                             }
                             
                             // Handle link hovering for better UX
