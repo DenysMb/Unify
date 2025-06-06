@@ -158,51 +158,99 @@ Kirigami.ApplicationWindow {
     // and provides additional context for the translators
     title: i18nc("@title:window", "Unify")
 
-    // Global drawer (hamburger menu)
-    globalDrawer: Kirigami.GlobalDrawer {
-        actions: [
+    // Function to build drawer actions dynamically
+    function buildDrawerActions() {
+        var actions = []
+        
+        // Add workspace actions dynamically
+        for (var i = 0; i < root.workspaces.length; i++) {
+            var workspaceName = root.workspaces[i]
+            actions.push(createWorkspaceAction(workspaceName))
+        }
+        
+        // Add separator
+        actions.push(createSeparatorAction())
+        
+        // Add Edit Workspace action
+        actions.push(createEditWorkspaceAction())
+        
+        // Add Add Workspace action
+        actions.push(createAddWorkspaceAction())
+        
+        return actions
+    }
+    
+    // Helper function to create workspace action
+    function createWorkspaceAction(workspaceName) {
+        return Qt.createQmlObject('
+            import org.kde.kirigami as Kirigami
             Kirigami.Action {
-                text: i18n(root.workspaces[0]) // "Personal"
+                text: i18n("' + workspaceName + '")
                 icon.name: "folder"
                 onTriggered: {
-                    root.switchToWorkspace(root.workspaces[0])
-                    console.log(root.workspaces[0] + " workspace clicked")
+                    root.switchToWorkspace("' + workspaceName + '")
+                    console.log("' + workspaceName + ' workspace clicked")
                 }
-            },
-            Kirigami.Action {
-                text: i18n(root.workspaces[1]) // "Work"
-                icon.name: "folder"
-                onTriggered: {
-                    root.switchToWorkspace(root.workspaces[1])
-                    console.log(root.workspaces[1] + " workspace clicked")
-                }
-            },
+            }
+        ', root)
+    }
+    
+    // Helper function to create separator action
+    function createSeparatorAction() {
+        return Qt.createQmlObject('
+            import org.kde.kirigami as Kirigami
             Kirigami.Action {
                 separator: true
-            },
+            }
+        ', root)
+    }
+    
+    // Helper function to create edit workspace action
+    function createEditWorkspaceAction() {
+        return Qt.createQmlObject('
+            import org.kde.kirigami as Kirigami
             Kirigami.Action {
                 text: i18n("Edit Workspace")
                 icon.name: "document-edit"
                 enabled: root.currentWorkspace !== ""
                 onTriggered: {
-                    // Set dialog to edit mode and populate with current workspace
                     addWorkspaceDialog.isEditMode = true
                     addWorkspaceDialog.editingIndex = root.workspaces.indexOf(root.currentWorkspace)
                     addWorkspaceDialog.populateFields(root.currentWorkspace)
                     addWorkspaceDialog.open()
                 }
-            },
+            }
+        ', root)
+    }
+    
+    // Helper function to create add workspace action
+    function createAddWorkspaceAction() {
+        return Qt.createQmlObject('
+            import org.kde.kirigami as Kirigami
             Kirigami.Action {
                 text: i18n("Add Workspace")
                 icon.name: "folder-new"
                 onTriggered: {
-                    // Reset dialog to add mode
                     addWorkspaceDialog.isEditMode = false
                     addWorkspaceDialog.clearFields()
                     addWorkspaceDialog.open()
                 }
             }
-        ]
+        ', root)
+    }
+
+    // Global drawer (hamburger menu)
+    globalDrawer: Kirigami.GlobalDrawer {
+        id: drawer
+        actions: root.buildDrawerActions()
+        
+        // Watch for changes in workspaces and rebuild actions
+        Connections {
+            target: root
+            function onWorkspacesChanged() {
+                drawer.actions = root.buildDrawerActions()
+            }
+        }
     }
 
     // Add Service Dialog
