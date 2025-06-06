@@ -127,9 +127,16 @@ Kirigami.ApplicationWindow {
         },
         { 
             id: 'fedora-001',
-            title: 'Fedora', 
-            url: 'https://fedoraproject.org',
-            image: 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Fedora_logo.svg',
+            title: 'Screen Share Test', 
+            url: 'https://onlinescreenshare.com/',
+            image: 'https://www.svgrepo.com/show/149608/television.svg',
+            workspace: 'Work'
+        },
+        { 
+            id: 'discord-001',
+            title: 'Discord', 
+            url: 'https://discord.com/channels/@me',
+            image: 'https://www.svgrepo.com/show/149608/television.svg',
             workspace: 'Work'
         }
     ]
@@ -481,6 +488,12 @@ Kirigami.ApplicationWindow {
                                 persistentCookiesPolicy: WebEngineProfile.AllowPersistentCookies
                             }
                             
+                            // Enable settings required for screen sharing and media capture
+                            settings.screenCaptureEnabled: true
+                            settings.webRTCPublicInterfacesOnly: false
+                            settings.javascriptCanAccessClipboard: true
+                            settings.allowWindowActivationFromJavaScript: true
+                            
                             // Handle permission requests
                             onPermissionRequested: function(permission) {
                                 // Auto-grant required permissions for the app to work properly
@@ -490,17 +503,18 @@ Kirigami.ApplicationWindow {
                                     WebEnginePermission.PermissionType.MediaVideoCapture,
                                     WebEnginePermission.PermissionType.MediaAudioVideoCapture,
                                     WebEnginePermission.PermissionType.Notifications,
-                                    WebEnginePermission.PermissionType.DesktopAudioVideoCapture
+                                    WebEnginePermission.PermissionType.DesktopVideoCapture,
+                                    WebEnginePermission.PermissionType.DesktopAudioVideoCapture,
+                                    WebEnginePermission.PermissionType.MouseLock,
+                                    WebEnginePermission.PermissionType.ClipboardReadWrite
                                 ]
                                 
                                 if (requiredPermissions.indexOf(permission.permissionType) >= 0) {
                                     // Automatically grant required permissions
                                     permission.grant()
-                                    console.log("Auto-granted permission for " + modelData.title + ": " + permission.permissionType)
                                 } else {
-                                    // For other permissions, deny by default
+                                    // For other permissions, deny by default but log them
                                     permission.deny()
-                                    console.log("Unsupported permission type denied: " + permission.permissionType + " for " + modelData.title)
                                 }
                             }
                             
