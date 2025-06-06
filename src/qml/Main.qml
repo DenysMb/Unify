@@ -101,7 +101,7 @@ Kirigami.ApplicationWindow {
     }
     
     // Workspaces configuration array
-    property var workspaces: ["Personal", "Work", "Cloud"]
+    property var workspaces: ["Personal", "Work"]
     
     // Services configuration array
     property var services: [
@@ -178,21 +178,28 @@ Kirigami.ApplicationWindow {
                 }
             },
             Kirigami.Action {
-                text: i18n(root.workspaces[2]) // "Cloud"
-                icon.name: "folder"
-                onTriggered: {
-                    root.switchToWorkspace(root.workspaces[2])
-                    console.log(root.workspaces[2] + " workspace clicked")
-                }
+                separator: true
             },
             Kirigami.Action {
-                separator: true
+                text: i18n("Edit Workspace")
+                icon.name: "document-edit"
+                enabled: root.currentWorkspace !== ""
+                onTriggered: {
+                    // Set dialog to edit mode and populate with current workspace
+                    addWorkspaceDialog.isEditMode = true
+                    addWorkspaceDialog.editingIndex = root.workspaces.indexOf(root.currentWorkspace)
+                    addWorkspaceDialog.populateFields(root.currentWorkspace)
+                    addWorkspaceDialog.open()
+                }
             },
             Kirigami.Action {
                 text: i18n("Add Workspace")
                 icon.name: "folder-new"
                 onTriggered: {
-                    console.log("Add Workspace button clicked")
+                    // Reset dialog to add mode
+                    addWorkspaceDialog.isEditMode = false
+                    addWorkspaceDialog.clearFields()
+                    addWorkspaceDialog.open()
                 }
             }
         ]
@@ -276,6 +283,81 @@ Kirigami.ApplicationWindow {
                 id: workspaceComboBox
                 Kirigami.FormData.label: i18n("Workspace:")
                 model: root.workspaces
+            }
+        }
+    }
+
+    // Add Workspace Dialog
+    Kirigami.Dialog {
+        id: addWorkspaceDialog
+        
+        property bool isEditMode: false
+        property int editingIndex: -1
+        
+        title: isEditMode ? i18n("Edit Workspace") : i18n("Add Workspace")
+        
+        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+        padding: Kirigami.Units.largeSpacing
+        preferredWidth: Kirigami.Units.gridUnit * 20
+        
+        function populateFields(workspaceName) {
+            workspaceNameField.text = workspaceName
+        }
+        
+        function clearFields() {
+            workspaceNameField.text = ""
+        }
+        
+        onAccepted: {
+            var workspaceName = workspaceNameField.text.trim()
+            
+            if (workspaceName === "") {
+                console.log("Workspace name cannot be empty")
+                return
+            }
+            
+            if (isEditMode) {
+                // Update existing workspace
+                if (editingIndex >= 0 && editingIndex < root.workspaces.length) {
+                    var updatedWorkspaces = root.workspaces.slice()
+                    var oldWorkspaceName = updatedWorkspaces[editingIndex]
+                    updatedWorkspaces[editingIndex] = workspaceName
+                    root.workspaces = updatedWorkspaces
+                    
+                    // Update all services that use the old workspace name
+                    var updatedServices = root.services.slice()
+                    for (var i = 0; i < updatedServices.length; i++) {
+                        if (updatedServices[i].workspace === oldWorkspaceName) {
+                            updatedServices[i].workspace = workspaceName
+                        }
+                    }
+                    root.services = updatedServices
+                    
+                    // Update current workspace if it was the one being edited
+                    if (root.currentWorkspace === oldWorkspaceName) {
+                        root.currentWorkspace = workspaceName
+                    }
+                }
+            } else {
+                // Add new workspace
+                if (root.workspaces.indexOf(workspaceName) === -1) {
+                    var updatedWorkspaces = root.workspaces.slice()
+                    updatedWorkspaces.push(workspaceName)
+                    root.workspaces = updatedWorkspaces
+                } else {
+                    console.log("Workspace with name '" + workspaceName + "' already exists")
+                }
+            }
+            
+            // Clear the form
+            clearFields()
+        }
+        
+        Kirigami.FormLayout {
+            Controls.TextField {
+                id: workspaceNameField
+                Kirigami.FormData.label: i18n("Workspace Name:")
+                placeholderText: i18n("Enter workspace name")
             }
         }
     }
