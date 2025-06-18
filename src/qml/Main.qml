@@ -103,6 +103,9 @@ Kirigami.ApplicationWindow {
     // Workspaces configuration array
     property var workspaces: ["Personal", "Work"]
     
+    // Chrome-like user agent string to ensure compatibility with modern web apps
+    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    
     // Services configuration array
     property var services: [
         { 
@@ -139,6 +142,13 @@ Kirigami.ApplicationWindow {
             url: 'https://discord.com/channels/@me',
             image: 'https://www.svgrepo.com/show/149608/television.svg',
             workspace: 'Work'
+        },
+        { 
+            id: 'whatsapp-001',
+            title: 'WhatsApp', 
+            url: 'https://web.whatsapp.com/',
+            image: 'https://www.svgrepo.com/show/452133/whatsapp.svg',
+            workspace: 'Personal'
         }
     ]
     
@@ -630,8 +640,12 @@ Kirigami.ApplicationWindow {
                             // Load the service URL immediately when created
                             url: modelData.url
                             
-                            // Use default profile with notification presenter support
-                            // Note: All services will share the same profile, but each has unique storage via different URLs
+                            // Set Chrome user agent to ensure compatibility with modern web apps like WhatsApp
+                            profile: WebEngineProfile {
+                                httpUserAgent: root.chromeUserAgent
+                                persistentCookiesPolicy: WebEngineProfile.AllowPersistentCookies
+                                httpCacheType: WebEngineProfile.DiskHttpCache
+                            }
                             
                             // Enable settings required for screen sharing and media capture
                             settings.screenCaptureEnabled: true
