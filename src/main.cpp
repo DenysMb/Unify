@@ -25,13 +25,20 @@ public:
     
     void present(std::unique_ptr<QWebEngineNotification> notification)
     {
-        if (!notification) return;
+        if (!notification) {
+            qDebug() << "❌ Notification presenter called with null notification";
+            return;
+        }
         
         QString title = notification->title().isEmpty() ? QStringLiteral("Web Notification") : notification->title();
         QString message = notification->message();
         QString origin = notification->origin().host();
         
-        qDebug() << "📢 Attempting to display notification:" << title << "from" << origin;
+        qDebug() << "📢 Notification presenter called:";
+        qDebug() << "   Title:" << title;
+        qDebug() << "   Message:" << message;
+        qDebug() << "   Origin:" << origin;
+        qDebug() << "   URL:" << notification->origin().toString();
         
         // Try KNotification first
         KNotification *knotification = new KNotification(QStringLiteral("notification"));
@@ -127,7 +134,13 @@ int main(int argc, char *argv[])
 
     // Set up notification presenter for default profile
     QWebEngineProfile::defaultProfile()->setNotificationPresenter(globalNotificationPresenter);
+    
+    // Set Chrome user agent for compatibility
+    QString chromeUserAgent = QStringLiteral("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+    QWebEngineProfile::defaultProfile()->setHttpUserAgent(chromeUserAgent);
+    
     qDebug() << "✅ Notification presenter set up for default profile";
+    qDebug() << "✅ Chrome user agent set for default profile";
 
     return app.exec();
 }

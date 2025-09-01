@@ -420,22 +420,6 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    // Web Notification System
-    Notification {
-        id: webNotification
-        componentName: "unify"
-        eventId: "web-notification"
-        defaultAction: i18n("Open")
-        iconName: "dialog-information"
-    }
-    
-    // Function to show web notifications as system notifications
-    function showWebNotification(title, message, serviceName, origin) {
-        webNotification.title = title || i18n("Web Notification")
-        webNotification.text = message || i18n("Notification from ") + serviceName
-        webNotification.sendEvent()
-        console.log("📢 Web notification displayed: " + title + " from " + serviceName + " (" + origin + ")")
-    }
 
     // Permission Request Dialog
     Kirigami.Dialog {
@@ -640,18 +624,14 @@ Kirigami.ApplicationWindow {
                             // Load the service URL immediately when created
                             url: modelData.url
                             
-                            // Set Chrome user agent to ensure compatibility with modern web apps like WhatsApp
-                            profile: WebEngineProfile {
-                                httpUserAgent: root.chromeUserAgent
-                                persistentCookiesPolicy: WebEngineProfile.AllowPersistentCookies
-                                httpCacheType: WebEngineProfile.DiskHttpCache
-                            }
+                            // Don't override profile - use default which already has notification presenter configured
                             
-                            // Enable settings required for screen sharing and media capture
+                            // Enable settings required for screen sharing, media capture and notifications
                             settings.screenCaptureEnabled: true
                             settings.webRTCPublicInterfacesOnly: false
                             settings.javascriptCanAccessClipboard: true
                             settings.allowWindowActivationFromJavaScript: true
+                            settings.showScrollBars: false
                             
                             // Handle permission requests
                             onPermissionRequested: function(permission) {
