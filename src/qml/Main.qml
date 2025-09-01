@@ -527,6 +527,19 @@ Kirigami.ApplicationWindow {
                 }
             },
             Kirigami.Action {
+                text: i18n("Refresh Service")
+                icon.name: "view-refresh"
+                enabled: root.currentServiceId !== "" && !root.isServiceDisabled(root.currentServiceId)
+                onTriggered: {
+                    var currentIndex = webViewStack.currentIndex;
+                    if (currentIndex >= 0 && currentIndex < webViewStack.children.length) {
+                        var webView = webViewStack.children[currentIndex];
+                        webView.reload();
+                        console.log("Refreshing service: " + root.currentServiceName);
+                    }
+                }
+            },
+            Kirigami.Action {
                 text: root.isServiceDisabled(root.currentServiceId) ? i18n("Enable Service") : i18n("Disable Service")
                 icon.name: root.isServiceDisabled(root.currentServiceId) ? "media-playback-start" : "media-playback-pause"
                 enabled: root.currentServiceId !== ""
