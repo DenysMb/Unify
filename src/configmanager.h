@@ -1,0 +1,54 @@
+#ifndef CONFIGMANAGER_H
+#define CONFIGMANAGER_H
+
+#include <QObject>
+#include <QSettings>
+#include <QVariantList>
+#include <QVariantMap>
+#include <QStringList>
+#include <QString>
+
+class ConfigManager : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QVariantList services READ services WRITE setServices NOTIFY servicesChanged)
+    Q_PROPERTY(QStringList workspaces READ workspaces NOTIFY workspacesChanged)
+    Q_PROPERTY(QString currentWorkspace READ currentWorkspace WRITE setCurrentWorkspace NOTIFY currentWorkspaceChanged)
+
+public:
+    explicit ConfigManager(QObject *parent = nullptr);
+
+    QVariantList services() const;
+    void setServices(const QVariantList &services);
+
+    QStringList workspaces() const;
+    
+    QString currentWorkspace() const;
+    void setCurrentWorkspace(const QString &workspace);
+
+    Q_INVOKABLE void addService(const QVariantMap &service);
+    Q_INVOKABLE void updateService(const QString &serviceId, const QVariantMap &service);
+    Q_INVOKABLE void removeService(const QString &serviceId);
+    
+    Q_INVOKABLE void addWorkspace(const QString &workspaceName);
+    Q_INVOKABLE void removeWorkspace(const QString &workspaceName);
+    Q_INVOKABLE void renameWorkspace(const QString &oldName, const QString &newName);
+
+    Q_INVOKABLE void saveSettings();
+    Q_INVOKABLE void loadSettings();
+
+Q_SIGNALS:
+    void servicesChanged();
+    void workspacesChanged();
+    void currentWorkspaceChanged();
+
+private:
+    void updateWorkspacesList();
+    
+    QSettings m_settings;
+    QVariantList m_services;
+    QStringList m_workspaces;
+    QString m_currentWorkspace;
+};
+
+#endif // CONFIGMANAGER_H

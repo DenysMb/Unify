@@ -11,6 +11,8 @@ ecm_add_qml_module(unify
 target_sources(unify
     PRIVATE
     main.cpp
+    configmanager.cpp
+    configmanager.h
 )
 
 ecm_target_qml_sources(unify

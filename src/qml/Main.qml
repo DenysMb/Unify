@@ -21,11 +21,18 @@ Kirigami.ApplicationWindow {
     // Current selected service name for the header
     property string currentServiceName: i18n("Unify - Web app aggregator")
     
-    // Current active workspace
-    property string currentWorkspace: "Personal"
+    // Current active workspace - bound to configManager
+    property string currentWorkspace: configManager ? configManager.currentWorkspace : "Personal"
     
-    // Current selected service ID (empty string means no service selected)
+    // Current selected service ID (empty string means no service selected)  
     property string currentServiceId: ""
+    
+    // Update configManager when currentWorkspace changes
+    onCurrentWorkspaceChanged: {
+        if (configManager && configManager.currentWorkspace !== currentWorkspace) {
+            configManager.currentWorkspace = currentWorkspace;
+        }
+    }
     
     // Object to track disabled service IDs (using object instead of Set for QML compatibility)
     property var disabledServices: ({})
@@ -41,6 +48,8 @@ Kirigami.ApplicationWindow {
     
     // Function to find service by ID
     function findServiceById(id) {
+        if (!configManager || !configManager.services) return null;
+        var services = configManager.services;
         for (var i = 0; i < services.length; i++) {
             if (services[i].id === id) {
                 return services[i];
@@ -51,6 +60,8 @@ Kirigami.ApplicationWindow {
     
     // Function to find service index by ID
     function findServiceIndexById(id) {
+        if (!configManager || !configManager.services) return -1;
+        var services = configManager.services;
         for (var i = 0; i < services.length; i++) {
             if (services[i].id === id) {
                 return i;
@@ -63,7 +74,14 @@ Kirigami.ApplicationWindow {
     function switchToWorkspace(workspaceName) {
         currentWorkspace = workspaceName;
         
+        if (!configManager || !configManager.services) {
+            currentServiceName = i18n("Unify - Web app aggregator");
+            currentServiceId = "";
+            return;
+        }
+        
         // Find first service in the new workspace
+        var services = configManager.services;
         var firstService = null;
         var firstServiceIndex = -1;
         for (var i = 0; i < services.length; i++) {
@@ -78,79 +96,55 @@ Kirigami.ApplicationWindow {
         if (firstService) {
             currentServiceName = firstService.title;
             currentServiceId = firstService.id;
-            webViewStack.currentIndex = firstServiceIndex;
+            // Find index in filtered services (which is what the repeater uses)
+            var filteredIndex = -1;
+            for (var j = 0; j < filteredServices.length; j++) {
+                if (filteredServices[j].id === firstService.id) {
+                    filteredIndex = j;
+                    break;
+                }
+            }
+            webViewStack.currentIndex = filteredIndex >= 0 ? filteredIndex + 1 : 0; // +1 because empty state is index 0
         } else {
             // No services in this workspace
             currentServiceName = i18n("Unify - Web app aggregator");
             currentServiceId = "";
-            // Keep current WebView visible or show first one
+            webViewStack.currentIndex = 0; // Show empty state
         }
     }
     
     // Function to switch to a specific service by ID
     function switchToService(serviceId) {
-        var serviceIndex = findServiceIndexById(serviceId);
-        if (serviceIndex >= 0) {
-            var service = services[serviceIndex];
+        var service = findServiceById(serviceId);
+        if (service && service.workspace === currentWorkspace) {
             currentServiceName = service.title;
             currentServiceId = service.id;
-            webViewStack.currentIndex = serviceIndex;
+            
+            // Find index in filtered services
+            var filteredIndex = -1;
+            for (var i = 0; i < filteredServices.length; i++) {
+                if (filteredServices[i].id === serviceId) {
+                    filteredIndex = i;
+                    break;
+                }
+            }
+            
+            webViewStack.currentIndex = filteredIndex >= 0 ? filteredIndex + 1 : 0; // +1 because empty state is index 0
             return true;
         }
         return false;
     }
     
     // Workspaces configuration array
-    property var workspaces: ["Personal", "Work"]
+    // Workspaces are now managed by configManager  
+    property var workspaces: configManager ? configManager.workspaces : ["Personal"]
     
     // Chrome-like user agent string to ensure compatibility with modern web apps
     property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     
     // Services configuration array
-    property var services: [
-        { 
-            id: 'kde-001',
-            title: 'Notification Test', 
-            url: 'https://www.bennish.net/web-notifications.html',
-            image: 'https://www.svgrepo.com/show/24723/chat.svg',
-            workspace: 'Personal'
-        },
-        { 
-            id: 'gnome-001',
-            title: 'Webcam Test', 
-            url: 'https://pt.webcamtests.com/',
-            image: 'https://www.svgrepo.com/show/122752/webcam.svg',
-            workspace: 'Personal'
-        },
-        { 
-            id: 'opensuse-001',
-            title: 'Microphone Test', 
-            url: 'https://mictests.com/',
-            image: 'https://www.svgrepo.com/show/144970/microphone.svg',
-            workspace: 'Personal'
-        },
-        { 
-            id: 'fedora-001',
-            title: 'Screen Share Test', 
-            url: 'https://onlinescreenshare.com/',
-            image: 'https://www.svgrepo.com/show/149608/television.svg',
-            workspace: 'Work'
-        },
-        { 
-            id: 'discord-001',
-            title: 'Discord', 
-            url: 'https://discord.com/channels/@me',
-            image: 'https://www.svgrepo.com/show/149608/television.svg',
-            workspace: 'Work'
-        },
-        { 
-            id: 'whatsapp-001',
-            title: 'WhatsApp', 
-            url: 'https://web.whatsapp.com/',
-            image: 'https://www.svgrepo.com/show/452133/whatsapp.svg',
-            workspace: 'Personal'
-        }
-    ]
+    // Services are now managed by configManager
+    property var services: configManager ? configManager.services : []
     
     // Filtered services based on current workspace
     property var filteredServices: services.filter(function(service) {
@@ -299,19 +293,14 @@ Kirigami.ApplicationWindow {
             
             if (isEditMode) {
                 // Update existing service
-                var serviceIndex = root.findServiceIndexById(root.currentServiceId)
-                if (serviceIndex >= 0) {
-                    serviceData.id = root.currentServiceId  // Keep the same ID
-                    var updatedServices = root.services.slice()
-                    updatedServices[serviceIndex] = serviceData
-                    root.services = updatedServices
+                if (configManager) {
+                    configManager.updateService(root.currentServiceId, serviceData)
                 }
             } else {
-                // Add new service with generated UUID
-                serviceData.id = root.generateUUID()
-                var updatedServices = root.services.slice()
-                updatedServices.push(serviceData)
-                root.services = updatedServices
+                // Add new service
+                if (configManager) {
+                    configManager.addService(serviceData)
+                }
             }
             
             // Clear the form
@@ -376,34 +365,16 @@ Kirigami.ApplicationWindow {
             
             if (isEditMode) {
                 // Update existing workspace
-                if (editingIndex >= 0 && editingIndex < root.workspaces.length) {
-                    var updatedWorkspaces = root.workspaces.slice()
-                    var oldWorkspaceName = updatedWorkspaces[editingIndex]
-                    updatedWorkspaces[editingIndex] = workspaceName
-                    root.workspaces = updatedWorkspaces
-                    
-                    // Update all services that use the old workspace name
-                    var updatedServices = root.services.slice()
-                    for (var i = 0; i < updatedServices.length; i++) {
-                        if (updatedServices[i].workspace === oldWorkspaceName) {
-                            updatedServices[i].workspace = workspaceName
-                        }
-                    }
-                    root.services = updatedServices
-                    
-                    // Update current workspace if it was the one being edited
-                    if (root.currentWorkspace === oldWorkspaceName) {
-                        root.currentWorkspace = workspaceName
-                    }
+                if (editingIndex >= 0 && editingIndex < root.workspaces.length && configManager) {
+                    var oldWorkspaceName = root.workspaces[editingIndex]
+                    configManager.renameWorkspace(oldWorkspaceName, workspaceName)
                 }
             } else {
                 // Add new workspace
-                if (root.workspaces.indexOf(workspaceName) === -1) {
-                    var updatedWorkspaces = root.workspaces.slice()
-                    updatedWorkspaces.push(workspaceName)
-                    root.workspaces = updatedWorkspaces
+                if (configManager) {
+                    configManager.addWorkspace(workspaceName)
                 } else {
-                    console.log("Workspace with name '" + workspaceName + "' already exists")
+                    console.log("ConfigManager not available")
                 }
             }
             
@@ -532,7 +503,8 @@ Kirigami.ApplicationWindow {
                 enabled: root.currentServiceId !== "" && !root.isServiceDisabled(root.currentServiceId)
                 onTriggered: {
                     var currentIndex = webViewStack.currentIndex;
-                    if (currentIndex >= 0 && currentIndex < webViewStack.children.length) {
+                    // currentIndex > 0 because 0 is the empty state
+                    if (currentIndex > 0 && currentIndex < webViewStack.children.length) {
                         var webView = webViewStack.children[currentIndex];
                         webView.reload();
                         console.log("Refreshing service: " + root.currentServiceName);
@@ -627,11 +599,24 @@ Kirigami.ApplicationWindow {
                 StackLayout {
                     id: webViewStack
                     anchors.fill: parent
-                    currentIndex: 0  // Start with first service
+                    currentIndex: root.filteredServices.length > 0 ? 1 : 0 // 0 = empty state, 1+ = services
                     
-                    // Create a WebEngineView for each service
+                    // Empty state when no services in current workspace
+                    Item {
+                        visible: root.filteredServices.length === 0
+                        
+                        Kirigami.PlaceholderMessage {
+                            anchors.centerIn: parent
+                            width: parent.width - Kirigami.Units.gridUnit * 4
+                            
+                            text: i18n("No services in workspace")
+                            explanation: i18n("Add your first web service to get started with %1 workspace", root.currentWorkspace)
+                        }
+                    }
+                    
+                    // Create a WebEngineView for each service in current workspace
                     Repeater {
-                        model: root.services
+                        model: root.filteredServices
                         
                         WebEngineView {
                             // Load the service URL immediately when created
@@ -699,24 +684,32 @@ Kirigami.ApplicationWindow {
 
     // Function to disable/enable a service
     function setServiceEnabled(serviceId, enabled) {
-        var serviceIndex = findServiceIndexById(serviceId);
-        if (serviceIndex >= 0) {
-            var webView = webViewStack.children[serviceIndex];
-            if (enabled) {
-                // Re-enable service
-                delete disabledServices[serviceId];
-                var service = findServiceById(serviceId);
-                if (service) {
-                    webView.url = service.url;
+        var service = findServiceById(serviceId);
+        if (service && service.workspace === currentWorkspace) {
+            // Find index in filtered services
+            var filteredIndex = -1;
+            for (var i = 0; i < filteredServices.length; i++) {
+                if (filteredServices[i].id === serviceId) {
+                    filteredIndex = i;
+                    break;
                 }
-            } else {
-                // Disable service
-                disabledServices[serviceId] = true;
-                webView.stop();
-                webView.url = "about:blank";
             }
-            // Emit property change signal so QML knows to update bindings
-            disabledServicesChanged();
+            
+            if (filteredIndex >= 0) {
+                var webView = webViewStack.children[filteredIndex + 1]; // +1 because empty state is index 0
+                if (enabled) {
+                    // Re-enable service
+                    delete disabledServices[serviceId];
+                    webView.url = service.url;
+                } else {
+                    // Disable service
+                    disabledServices[serviceId] = true;
+                    webView.stop();
+                    webView.url = "about:blank";
+                }
+                // Emit property change signal so QML knows to update bindings
+                disabledServicesChanged();
+            }
         }
     }
     

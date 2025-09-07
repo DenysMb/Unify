@@ -16,6 +16,7 @@
 #include <QProcess>
 #include <QDBusInterface>
 #include <QDBusReply>
+#include "configmanager.h"
 
 class NotificationPresenter : public QObject
 {
@@ -115,6 +116,9 @@ int main(int argc, char *argv[])
     // Create notification presenter instance
     NotificationPresenter *notificationPresenter = new NotificationPresenter(&app);
     
+    // Create config manager instance
+    ConfigManager *configManager = new ConfigManager(&app);
+    
     // Set up a global notification presenter function that can be used by all profiles
     auto globalNotificationPresenter = [notificationPresenter](std::unique_ptr<QWebEngineNotification> notification) {
         notificationPresenter->present(std::move(notification));
@@ -122,8 +126,9 @@ int main(int argc, char *argv[])
     
     QQmlApplicationEngine engine;
 
-    // Register the notification presenter with QML context so it can be accessed
+    // Register the notification presenter and config manager with QML context
     engine.rootContext()->setContextProperty(QStringLiteral("notificationPresenter"), notificationPresenter);
+    engine.rootContext()->setContextProperty(QStringLiteral("configManager"), configManager);
     
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
     engine.loadFromModule("io.github.denysmb.unify", "Main");
