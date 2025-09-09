@@ -54,6 +54,7 @@ find_package(KF6 REQUIRED COMPONENTS KirigamiAddons)
 
 ecm_find_qmlmodule(org.kde.kirigami REQUIRED)
 ecm_find_qmlmodule(org.kde.kirigamiaddons.formcard 1.0)
+ecm_find_qmlmodule(QtQuick.Effects)
 
 qt_policy(SET QTP0001 NEW)
 set(QT_QML_GENERATE_QMLLS_INI ON)

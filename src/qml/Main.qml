@@ -1,6 +1,7 @@
 // Includes relevant modules used by the QML
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Effects
 import QtQuick.Controls as Controls
 import QtWebEngine
 import org.kde.kirigami as Kirigami
@@ -554,7 +555,17 @@ Kirigami.ApplicationWindow {
                                 Layout.alignment: Qt.AlignHCenter
                                 
                                 contentItem: Item {
+                                    id: buttonItem
+
+                                    MultiEffect {
+                                        source: image
+                                        anchors.fill: image
+                                        maskEnabled: true
+                                        maskSource: mask
+                                    }
+
                                     Image {
+                                        id: image
                                         anchors.centerIn: parent
                                         width: root.iconSize
                                         height: root.iconSize
@@ -562,6 +573,18 @@ Kirigami.ApplicationWindow {
                                         fillMode: Image.PreserveAspectFit
                                         smooth: true
                                         opacity: root.isServiceDisabled(modelData.id) ? 0.3 : 1.0
+                                        visible: false
+                                    }
+
+                                    Item {
+                                        id: mask
+                                        anchors.fill: image
+                                        layer.enabled: true
+                                        visible: false
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            radius: 8
+                                        }
                                     }
                                 }
                                 
