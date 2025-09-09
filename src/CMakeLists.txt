@@ -22,6 +22,7 @@ ecm_target_qml_sources(unify
     qml/components/ServicesSidebar.qml
     qml/components/EmptyState.qml
     qml/components/ServiceWebView.qml
+    qml/components/PopupWindow.qml
     qml/components/WebViewStack.qml
     qml/dialogs/ServiceDialog.qml
     qml/dialogs/PermissionDialog.qml
