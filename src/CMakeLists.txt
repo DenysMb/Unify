@@ -18,6 +18,16 @@ target_sources(unify
 ecm_target_qml_sources(unify
     SOURCES
     qml/Main.qml
+    qml/components/ServiceIconButton.qml
+    qml/components/ServicesSidebar.qml
+    qml/components/EmptyState.qml
+    qml/components/ServiceWebView.qml
+    qml/components/WebViewStack.qml
+    qml/dialogs/ServiceDialog.qml
+    qml/dialogs/PermissionDialog.qml
+    qml/dialogs/WorkspaceDialog.qml
+    qml/drawers/WorkspaceDrawer.qml
+    qml/utils/Services.js
 )
 
 target_link_libraries(unify

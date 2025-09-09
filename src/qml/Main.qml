@@ -1,11 +1,11 @@
 // Includes relevant modules used by the QML
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Effects
-import QtQuick.Controls as Controls
-import QtWebEngine
+// Controls and WebEngine are used in components; not needed here
 import org.kde.kirigami as Kirigami
-import org.kde.notification
+// Note: QML files are flattened into module root by CMake.
+// Use types directly and import JS by its root alias.
+import "Services.js" as Services
 
 // Provides basic features needed for all kirigami applications
 Kirigami.ApplicationWindow {
@@ -39,37 +39,13 @@ Kirigami.ApplicationWindow {
     property var disabledServices: ({})
     
     // Function to generate random UUID
-    function generateUUID() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0;
-            var v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
+    function generateUUID() { return Services.generateUUID() }
     
     // Function to find service by ID
-    function findServiceById(id) {
-        if (!configManager || !configManager.services) return null;
-        var services = configManager.services;
-        for (var i = 0; i < services.length; i++) {
-            if (services[i].id === id) {
-                return services[i];
-            }
-        }
-        return null;
-    }
+    function findServiceById(id) { return Services.findById(services, id) }
     
     // Function to find service index by ID
-    function findServiceIndexById(id) {
-        if (!configManager || !configManager.services) return -1;
-        var services = configManager.services;
-        for (var i = 0; i < services.length; i++) {
-            if (services[i].id === id) {
-                return i;
-            }
-        }
-        return -1;
-    }
+    function findServiceIndexById(id) { return Services.indexById(services, id) }
     
     // Function to switch workspace and select first service
     function switchToWorkspace(workspaceName) {
@@ -122,15 +98,7 @@ Kirigami.ApplicationWindow {
             currentServiceId = service.id;
             
             // Find index in filtered services
-            var filteredIndex = -1;
-            for (var i = 0; i < filteredServices.length; i++) {
-                if (filteredServices[i].id === serviceId) {
-                    filteredIndex = i;
-                    break;
-                }
-            }
-            
-            webViewStack.currentIndex = filteredIndex >= 0 ? filteredIndex + 1 : 0; // +1 because empty state is index 0
+            webViewStack.setCurrentByServiceId(serviceId);
             return true;
         }
         return false;
@@ -148,9 +116,7 @@ Kirigami.ApplicationWindow {
     property var services: configManager ? configManager.services : []
     
     // Filtered services based on current workspace
-    property var filteredServices: services.filter(function(service) {
-        return service.workspace === currentWorkspace;
-    })
+    property var filteredServices: Services.filterByWorkspace(services, currentWorkspace)
 
     // Reusable border color that matches Kirigami's internal separators
     property color borderColor: {
@@ -163,306 +129,62 @@ Kirigami.ApplicationWindow {
     // and provides additional context for the translators
     title: i18nc("@title:window", "Unify")
 
-    // Function to build drawer actions dynamically
-    function buildDrawerActions() {
-        var actions = []
-        
-        // Add workspace actions dynamically
-        for (var i = 0; i < root.workspaces.length; i++) {
-            var workspaceName = root.workspaces[i]
-            actions.push(createWorkspaceAction(workspaceName))
-        }
-        
-        // Add separator
-        actions.push(createSeparatorAction())
-        
-        // Add Edit Workspace action
-        actions.push(createEditWorkspaceAction())
-        
-        // Add Add Workspace action
-        actions.push(createAddWorkspaceAction())
-        
-        return actions
-    }
-    
-    // Helper function to create workspace action
-    function createWorkspaceAction(workspaceName) {
-        return Qt.createQmlObject('
-            import org.kde.kirigami as Kirigami
-            Kirigami.Action {
-                text: i18n("' + workspaceName + '")
-                icon.name: "folder"
-                onTriggered: {
-                    root.switchToWorkspace("' + workspaceName + '")
-                    console.log("' + workspaceName + ' workspace clicked")
-                }
-            }
-        ', root)
-    }
-    
-    // Helper function to create separator action
-    function createSeparatorAction() {
-        return Qt.createQmlObject('
-            import org.kde.kirigami as Kirigami
-            Kirigami.Action {
-                separator: true
-            }
-        ', root)
-    }
-    
-    // Helper function to create edit workspace action
-    function createEditWorkspaceAction() {
-        return Qt.createQmlObject('
-            import org.kde.kirigami as Kirigami
-            Kirigami.Action {
-                text: i18n("Edit Workspace")
-                icon.name: "document-edit"
-                enabled: root.currentWorkspace !== ""
-                onTriggered: {
-                    addWorkspaceDialog.isEditMode = true
-                    addWorkspaceDialog.editingIndex = root.workspaces.indexOf(root.currentWorkspace)
-                    addWorkspaceDialog.populateFields(root.currentWorkspace)
-                    addWorkspaceDialog.open()
-                }
-            }
-        ', root)
-    }
-    
-    // Helper function to create add workspace action
-    function createAddWorkspaceAction() {
-        return Qt.createQmlObject('
-            import org.kde.kirigami as Kirigami
-            Kirigami.Action {
-                text: i18n("Add Workspace")
-                icon.name: "folder-new"
-                onTriggered: {
-                    addWorkspaceDialog.isEditMode = false
-                    addWorkspaceDialog.clearFields()
-                    addWorkspaceDialog.open()
-                }
-            }
-        ', root)
-    }
 
     // Global drawer (hamburger menu)
-    globalDrawer: Kirigami.GlobalDrawer {
+    globalDrawer: WorkspaceDrawer {
         id: drawer
-        actions: root.buildDrawerActions()
-        
-        // Watch for changes in workspaces and rebuild actions
-        Connections {
-            target: root
-            function onWorkspacesChanged() {
-                drawer.actions = root.buildDrawerActions()
+        workspaces: root.workspaces
+        currentWorkspace: root.currentWorkspace
+        onSwitchToWorkspace: function(name) { root.switchToWorkspace(name) }
+        onAddWorkspaceRequested: {
+            addWorkspaceDialog.isEditMode = false
+            addWorkspaceDialog.clearFields()
+            addWorkspaceDialog.open()
+        }
+        onEditWorkspaceRequested: function(index) {
+            if (index >= 0 && index < root.workspaces.length) {
+                addWorkspaceDialog.isEditMode = true
+                addWorkspaceDialog.editingIndex = index
+                addWorkspaceDialog.populateFields(root.workspaces[index])
+                addWorkspaceDialog.open()
             }
         }
     }
 
-    // Add Service Dialog
-    Kirigami.Dialog {
+    // Add/Edit Service Dialog
+    ServiceDialog {
         id: addServiceDialog
-        
         property bool isEditMode: false
-        
-        title: isEditMode ? i18n("Edit Service") : i18n("Add Service")
-        
-        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
-        padding: Kirigami.Units.largeSpacing
-        preferredWidth: Kirigami.Units.gridUnit * 20
-        
-        function populateFields(service) {
-            serviceNameField.text = service.title
-            iconUrlField.text = service.image
-            serviceUrlField.text = service.url
-            workspaceComboBox.currentIndex = root.workspaces.indexOf(service.workspace)
-        }
-        
-        function clearFields() {
-            serviceNameField.text = ""
-            iconUrlField.text = ""
-            serviceUrlField.text = ""
-            workspaceComboBox.currentIndex = 0
-        }
-        
-        onAccepted: {
-            var serviceData = {
-                title: serviceNameField.text,
-                url: serviceUrlField.text,
-                image: iconUrlField.text,
-                workspace: root.workspaces[workspaceComboBox.currentIndex]
-            }
-            
+        workspaces: root.workspaces
+        onAcceptedData: function(serviceData) {
             if (isEditMode) {
-                // Update existing service
-                if (configManager) {
-                    configManager.updateService(root.currentServiceId, serviceData)
-                }
+                if (configManager) configManager.updateService(root.currentServiceId, serviceData)
             } else {
-                // Add new service
-                if (configManager) {
-                    configManager.addService(serviceData)
-                }
-            }
-            
-            // Clear the form
-            clearFields()
-        }
-        
-        Kirigami.FormLayout {
-            Controls.TextField {
-                id: serviceNameField
-                Kirigami.FormData.label: i18n("Service Name:")
-                placeholderText: i18n("Enter service name")
-            }
-            
-            Controls.TextField {
-                id: iconUrlField
-                Kirigami.FormData.label: i18n("Icon URL:")
-                placeholderText: i18n("Enter icon URL")
-            }
-            
-            Controls.TextField {
-                id: serviceUrlField
-                Kirigami.FormData.label: i18n("Service URL:")
-                placeholderText: i18n("Enter service URL")
-            }
-            
-            Controls.ComboBox {
-                id: workspaceComboBox
-                Kirigami.FormData.label: i18n("Workspace:")
-                model: root.workspaces
+                if (configManager) configManager.addService(serviceData)
             }
         }
     }
 
-    // Add Workspace Dialog
-    Kirigami.Dialog {
+    // Add/Edit Workspace Dialog
+    WorkspaceDialog {
         id: addWorkspaceDialog
-        
         property bool isEditMode: false
         property int editingIndex: -1
-        
-        title: isEditMode ? i18n("Edit Workspace") : i18n("Add Workspace")
-        
-        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
-        padding: Kirigami.Units.largeSpacing
-        preferredWidth: Kirigami.Units.gridUnit * 20
-        
-        function populateFields(workspaceName) {
-            workspaceNameField.text = workspaceName
-        }
-        
-        function clearFields() {
-            workspaceNameField.text = ""
-        }
-        
-        onAccepted: {
-            var workspaceName = workspaceNameField.text.trim()
-            
-            if (workspaceName === "") {
-                console.log("Workspace name cannot be empty")
-                return
-            }
-            
+        onAcceptedName: function(workspaceName) {
             if (isEditMode) {
-                // Update existing workspace
                 if (editingIndex >= 0 && editingIndex < root.workspaces.length && configManager) {
                     var oldWorkspaceName = root.workspaces[editingIndex]
                     configManager.renameWorkspace(oldWorkspaceName, workspaceName)
                 }
             } else {
-                // Add new workspace
-                if (configManager) {
-                    configManager.addWorkspace(workspaceName)
-                } else {
-                    console.log("ConfigManager not available")
-                }
-            }
-            
-            // Clear the form
-            clearFields()
-        }
-        
-        Kirigami.FormLayout {
-            Controls.TextField {
-                id: workspaceNameField
-                Kirigami.FormData.label: i18n("Workspace Name:")
-                placeholderText: i18n("Enter workspace name")
+                if (configManager) configManager.addWorkspace(workspaceName)
             }
         }
     }
 
 
-    // Permission Request Dialog
-    Kirigami.Dialog {
-        id: permissionDialog
-        
-        property var pendingPermission: null
-        property string serviceName: ""
-        
-        title: i18n("Permission Request")
-        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
-        padding: Kirigami.Units.largeSpacing
-        preferredWidth: Kirigami.Units.gridUnit * 25
-        
-        onAccepted: {
-            if (pendingPermission) {
-                pendingPermission.grant()
-                console.log("Permission granted for " + serviceName)
-            }
-        }
-        
-        onRejected: {
-            if (pendingPermission) {
-                pendingPermission.deny()
-                console.log("Permission denied for " + serviceName)
-            }
-        }
-        
-        function showPermissionRequest(permission, serviceTitle) {
-            pendingPermission = permission
-            serviceName = serviceTitle
-            permissionText.text = questionForPermissionType(permission, serviceTitle)
-            open()
-        }
-        
-        function questionForPermissionType(permission, serviceTitle) {
-            var question = i18n("Allow %1 to ", serviceTitle)
-            
-            switch (permission.permissionType) {
-            case WebEnginePermission.PermissionType.Geolocation:
-                question += i18n("access your location information?")
-                break
-            case WebEnginePermission.PermissionType.MediaAudioCapture:
-                question += i18n("access your microphone?")
-                break
-            case WebEnginePermission.PermissionType.MediaVideoCapture:
-                question += i18n("access your webcam?")
-                break
-            case WebEnginePermission.PermissionType.MediaAudioVideoCapture:
-                question += i18n("access your microphone and webcam?")
-                break
-            case WebEnginePermission.PermissionType.Notifications:
-                question += i18n("show notifications on your desktop?")
-                break
-            case WebEnginePermission.PermissionType.DesktopAudioVideoCapture:
-                question += i18n("capture audio and video of your desktop?")
-                break
-            default:
-                question += i18n("access unknown or unsupported permission type [%1]?", permission.permissionType)
-                break
-            }
-            
-            return question
-        }
-        
-        Controls.Label {
-            id: permissionText
-            Layout.fillWidth: true
-            wrapMode: Text.WordWrap
-            horizontalAlignment: Text.AlignLeft
-        }
-    }
+    // Permission Request Dialog (componente)
+    PermissionDialog { id: permissionDialog }
 
     // Set the first page that will be loaded when the app opens
     // This can also be set to an id of a Kirigami.Page
@@ -503,13 +225,8 @@ Kirigami.ApplicationWindow {
                 icon.name: "view-refresh"
                 enabled: root.currentServiceId !== "" && !root.isServiceDisabled(root.currentServiceId)
                 onTriggered: {
-                    var currentIndex = webViewStack.currentIndex;
-                    // currentIndex > 0 because 0 is the empty state
-                    if (currentIndex > 0 && currentIndex < webViewStack.children.length) {
-                        var webView = webViewStack.children[currentIndex];
-                        webView.reload();
-                        console.log("Refreshing service: " + root.currentServiceName);
-                    }
+                    webViewStack.refreshCurrent();
+                    console.log("Refreshing service: " + root.currentServiceName);
                 }
             },
             Kirigami.Action {
@@ -531,84 +248,16 @@ Kirigami.ApplicationWindow {
             spacing: 0
 
             // Left sidebar
-            Rectangle {
-                Layout.preferredWidth: root.sidebarWidth
-                Layout.fillHeight: true
-                color: Kirigami.Theme.backgroundColor
-
-                Kirigami.ScrollablePage {
-                    anchors.fill: parent
-                    padding: Kirigami.Units.smallSpacing
-
-                    ColumnLayout {
-                        width: parent.width
-                        spacing: Kirigami.Units.smallSpacing
-
-                        Repeater {
-                            model: root.filteredServices
-                            
-                            Controls.Button {
-                                text: i18n(modelData.title)
-                                display: Controls.AbstractButton.IconOnly
-                                Layout.preferredWidth: root.buttonSize
-                                Layout.preferredHeight: root.buttonSize
-                                Layout.alignment: Qt.AlignHCenter
-                                
-                                contentItem: Item {
-                                    id: buttonItem
-
-                                    MultiEffect {
-                                        source: image
-                                        anchors.fill: image
-                                        maskEnabled: true
-                                        maskSource: mask
-                                    }
-
-                                    Image {
-                                        id: image
-                                        anchors.centerIn: parent
-                                        width: root.iconSize
-                                        height: root.iconSize
-                                        source: modelData.image
-                                        fillMode: Image.PreserveAspectFit
-                                        smooth: true
-                                        opacity: root.isServiceDisabled(modelData.id) ? 0.3 : 1.0
-                                        visible: false
-                                    }
-
-                                    Item {
-                                        id: mask
-                                        anchors.fill: image
-                                        layer.enabled: true
-                                        visible: false
-                                        Rectangle {
-                                            anchors.fill: parent
-                                            radius: 8
-                                        }
-                                    }
-                                }
-                                
-                                onClicked: {
-                                    root.switchToService(modelData.id)
-                                    console.log(modelData.title + " clicked - loading " + modelData.url)
-                                }
-                            }
-                        }
-
-                        // Spacer to push content to top
-                        Item {
-                            Layout.fillHeight: true
-                        }
-                    }
-                }
-
-                // Right border only
-                Rectangle {
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    width: 1
-                    color: root.borderColor
+            ServicesSidebar {
+                services: root.filteredServices
+                disabledServices: root.disabledServices
+                sidebarWidth: root.sidebarWidth
+                buttonSize: root.buttonSize
+                iconSize: root.iconSize
+                onServiceSelected: function(id) {
+                    root.switchToService(id)
+                    var svc = root.findServiceById(id)
+                    if (svc) console.log(svc.title + " clicked - loading " + svc.url)
                 }
             }
 
@@ -617,84 +266,11 @@ Kirigami.ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 color: Kirigami.Theme.backgroundColor
-
-                // Main content area - Multiple WebViews in StackLayout
-                StackLayout {
+                WebViewStack {
                     id: webViewStack
                     anchors.fill: parent
-                    currentIndex: root.filteredServices.length > 0 ? 1 : 0 // 0 = empty state, 1+ = services
-                    
-                    // Empty state when no services in current workspace
-                    Item {
-                        visible: root.filteredServices.length === 0
-                        
-                        Kirigami.PlaceholderMessage {
-                            anchors.centerIn: parent
-                            width: parent.width - Kirigami.Units.gridUnit * 4
-                            
-                            text: i18n("No services in workspace")
-                            explanation: i18n("Add your first web service to get started with %1 workspace", root.currentWorkspace)
-                        }
-                    }
-                    
-                    // Create a WebEngineView for each service in current workspace
-                    Repeater {
-                        model: root.filteredServices
-                        
-                        WebEngineView {
-                            // Load the service URL immediately when created
-                            url: modelData.url
-                            
-                            // Don't override profile - use default which already has notification presenter configured
-                            
-                            // Enable settings required for screen sharing, media capture and notifications
-                            settings.screenCaptureEnabled: true
-                            settings.webRTCPublicInterfacesOnly: false
-                            settings.javascriptCanAccessClipboard: true
-                            settings.allowWindowActivationFromJavaScript: true
-                            settings.showScrollBars: false
-                            
-                            // Handle permission requests
-                            onPermissionRequested: function(permission) {
-                                // Auto-grant required permissions for the app to work properly
-                                var requiredPermissions = [
-                                    WebEnginePermission.PermissionType.Geolocation,
-                                    WebEnginePermission.PermissionType.MediaAudioCapture,
-                                    WebEnginePermission.PermissionType.MediaVideoCapture,
-                                    WebEnginePermission.PermissionType.MediaAudioVideoCapture,
-                                    WebEnginePermission.PermissionType.Notifications,
-                                    WebEnginePermission.PermissionType.DesktopVideoCapture,
-                                    WebEnginePermission.PermissionType.DesktopAudioVideoCapture,
-                                    WebEnginePermission.PermissionType.MouseLock,
-                                    WebEnginePermission.PermissionType.ClipboardReadWrite
-                                ]
-                                
-                                if (requiredPermissions.indexOf(permission.permissionType) >= 0) {
-                                    // Automatically grant required permissions
-                                    permission.grant()
-                                    console.log("✅ Permission granted:", permission.permissionType, "for", modelData.title)
-                                } else {
-                                    // For other permissions, deny by default but log them
-                                    permission.deny()
-                                    console.log("❌ Permission denied:", permission.permissionType, "for", modelData.title)
-                                }
-                            }
-                            
-                            // Handle link hovering for better UX
-                            onLinkHovered: function(hoveredUrl) {
-                                if (hoveredUrl.toString() !== "") {
-                                    // Could show status in the future
-                                }
-                            }
-                            
-                            // Log when page loads for debugging
-                            onLoadingChanged: function(loadRequest) {
-                                if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
-                                    console.log("Service loaded: " + modelData.title + " - " + modelData.url)
-                                }
-                            }
-                        }
-                    }
+                    services: root.filteredServices
+                    disabledServices: root.disabledServices
                 }
             }
         }
@@ -709,17 +285,8 @@ Kirigami.ApplicationWindow {
     function setServiceEnabled(serviceId, enabled) {
         var service = findServiceById(serviceId);
         if (service && service.workspace === currentWorkspace) {
-            // Find index in filtered services
-            var filteredIndex = -1;
-            for (var i = 0; i < filteredServices.length; i++) {
-                if (filteredServices[i].id === serviceId) {
-                    filteredIndex = i;
-                    break;
-                }
-            }
-            
-            if (filteredIndex >= 0) {
-                var webView = webViewStack.children[filteredIndex + 1]; // +1 because empty state is index 0
+            var webView = webViewStack.getWebViewByServiceId(serviceId);
+            if (webView) {
                 if (enabled) {
                     // Re-enable service
                     delete disabledServices[serviceId];
