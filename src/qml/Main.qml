@@ -21,42 +21,48 @@ Kirigami.ApplicationWindow {
 
     // Current selected service name for the header
     property string currentServiceName: i18n("Unify - Web app aggregator")
-    
+
     // Current active workspace - bound to configManager
     property string currentWorkspace: configManager ? configManager.currentWorkspace : "Personal"
-    
-    // Current selected service ID (empty string means no service selected)  
+
+    // Current selected service ID (empty string means no service selected)
     property string currentServiceId: ""
-    
+
     // Update configManager when currentWorkspace changes
     onCurrentWorkspaceChanged: {
         if (configManager && configManager.currentWorkspace !== currentWorkspace) {
             configManager.currentWorkspace = currentWorkspace;
         }
     }
-    
+
     // Object to track disabled service IDs (using object instead of Set for QML compatibility)
     property var disabledServices: ({})
-    
+
     // Function to generate random UUID
-    function generateUUID() { return Services.generateUUID() }
-    
+    function generateUUID() {
+        return Services.generateUUID();
+    }
+
     // Function to find service by ID
-    function findServiceById(id) { return Services.findById(services, id) }
-    
+    function findServiceById(id) {
+        return Services.findById(services, id);
+    }
+
     // Function to find service index by ID
-    function findServiceIndexById(id) { return Services.indexById(services, id) }
-    
+    function findServiceIndexById(id) {
+        return Services.indexById(services, id);
+    }
+
     // Function to switch workspace and select first service
     function switchToWorkspace(workspaceName) {
         currentWorkspace = workspaceName;
-        
+
         if (!configManager || !configManager.services) {
             currentServiceName = i18n("Unify - Web app aggregator");
             currentServiceId = "";
             return;
         }
-        
+
         // Find first service in the new workspace
         var services = configManager.services;
         var firstService = null;
@@ -68,7 +74,7 @@ Kirigami.ApplicationWindow {
                 break;
             }
         }
-        
+
         // If we found a service, select it and switch to its WebView
         if (firstService) {
             currentServiceName = firstService.title;
@@ -89,32 +95,32 @@ Kirigami.ApplicationWindow {
             webViewStack.currentIndex = 0; // Show empty state
         }
     }
-    
+
     // Function to switch to a specific service by ID
     function switchToService(serviceId) {
         var service = findServiceById(serviceId);
         if (service && service.workspace === currentWorkspace) {
             currentServiceName = service.title;
             currentServiceId = service.id;
-            
+
             // Find index in filtered services
             webViewStack.setCurrentByServiceId(serviceId);
             return true;
         }
         return false;
     }
-    
+
     // Workspaces configuration array
-    // Workspaces are now managed by configManager  
+    // Workspaces are now managed by configManager
     property var workspaces: configManager ? configManager.workspaces : ["Personal"]
-    
-    // Chrome-like user agent string to ensure compatibility with modern web apps
-    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    
+
+    // Firefox user agent string to ensure compatibility with Google OAuth and modern web apps
+    property string firefoxUserAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0"
+
     // Services configuration array
     // Services are now managed by configManager
     property var services: configManager ? configManager.services : []
-    
+
     // Filtered services based on current workspace
     property var filteredServices: Services.filterByWorkspace(services, currentWorkspace)
 
@@ -129,24 +135,25 @@ Kirigami.ApplicationWindow {
     // and provides additional context for the translators
     title: i18nc("@title:window", "Unify")
 
-
     // Global drawer (hamburger menu)
     globalDrawer: WorkspaceDrawer {
         id: drawer
         workspaces: root.workspaces
         currentWorkspace: root.currentWorkspace
-        onSwitchToWorkspace: function(name) { root.switchToWorkspace(name) }
-        onAddWorkspaceRequested: {
-            addWorkspaceDialog.isEditMode = false
-            addWorkspaceDialog.clearFields()
-            addWorkspaceDialog.open()
+        onSwitchToWorkspace: function (name) {
+            root.switchToWorkspace(name);
         }
-        onEditWorkspaceRequested: function(index) {
+        onAddWorkspaceRequested: {
+            addWorkspaceDialog.isEditMode = false;
+            addWorkspaceDialog.clearFields();
+            addWorkspaceDialog.open();
+        }
+        onEditWorkspaceRequested: function (index) {
             if (index >= 0 && index < root.workspaces.length) {
-                addWorkspaceDialog.isEditMode = true
-                addWorkspaceDialog.editingIndex = index
-                addWorkspaceDialog.populateFields(root.workspaces[index])
-                addWorkspaceDialog.open()
+                addWorkspaceDialog.isEditMode = true;
+                addWorkspaceDialog.editingIndex = index;
+                addWorkspaceDialog.populateFields(root.workspaces[index]);
+                addWorkspaceDialog.open();
             }
         }
     }
@@ -156,11 +163,13 @@ Kirigami.ApplicationWindow {
         id: addServiceDialog
         property bool isEditMode: false
         workspaces: root.workspaces
-        onAcceptedData: function(serviceData) {
+        onAcceptedData: function (serviceData) {
             if (isEditMode) {
-                if (configManager) configManager.updateService(root.currentServiceId, serviceData)
+                if (configManager)
+                    configManager.updateService(root.currentServiceId, serviceData);
             } else {
-                if (configManager) configManager.addService(serviceData)
+                if (configManager)
+                    configManager.addService(serviceData);
             }
         }
     }
@@ -170,31 +179,33 @@ Kirigami.ApplicationWindow {
         id: addWorkspaceDialog
         property bool isEditMode: false
         property int editingIndex: -1
-        onAcceptedName: function(workspaceName) {
+        onAcceptedName: function (workspaceName) {
             if (isEditMode) {
                 if (editingIndex >= 0 && editingIndex < root.workspaces.length && configManager) {
-                    var oldWorkspaceName = root.workspaces[editingIndex]
-                    configManager.renameWorkspace(oldWorkspaceName, workspaceName)
+                    var oldWorkspaceName = root.workspaces[editingIndex];
+                    configManager.renameWorkspace(oldWorkspaceName, workspaceName);
                 }
             } else {
-                if (configManager) configManager.addWorkspace(workspaceName)
+                if (configManager)
+                    configManager.addWorkspace(workspaceName);
             }
         }
     }
 
-
     // Permission Request Dialog (componente)
-    PermissionDialog { id: permissionDialog }
+    PermissionDialog {
+        id: permissionDialog
+    }
 
     // Set the first page that will be loaded when the app opens
     // This can also be set to an id of a Kirigami.Page
     pageStack.initialPage: Kirigami.Page {
         // Remove default padding to make sidebar go to window edge
         padding: 0
-        
+
         // Dynamic title based on selected service
         title: root.currentServiceName
-        
+
         // Add actions to the page header
         actions: [
             Kirigami.Action {
@@ -202,8 +213,8 @@ Kirigami.ApplicationWindow {
                 icon.name: "list-add"
                 onTriggered: {
                     // Reset dialog to add mode
-                    addServiceDialog.isEditMode = false
-                    addServiceDialog.open()
+                    addServiceDialog.isEditMode = false;
+                    addServiceDialog.open();
                 }
             },
             Kirigami.Action {
@@ -212,12 +223,12 @@ Kirigami.ApplicationWindow {
                 enabled: root.currentServiceId !== ""
                 onTriggered: {
                     // Set dialog to edit mode and populate with current service data
-                    addServiceDialog.isEditMode = true
-                    var currentService = root.findServiceById(root.currentServiceId)
+                    addServiceDialog.isEditMode = true;
+                    var currentService = root.findServiceById(root.currentServiceId);
                     if (currentService) {
-                        addServiceDialog.populateFields(currentService)
+                        addServiceDialog.populateFields(currentService);
                     }
-                    addServiceDialog.open()
+                    addServiceDialog.open();
                 }
             },
             Kirigami.Action {
@@ -237,7 +248,7 @@ Kirigami.ApplicationWindow {
                 checked: root.isServiceDisabled(root.currentServiceId)
                 onCheckedChanged: {
                     if (root.currentServiceId !== "") {
-                        root.setServiceEnabled(root.currentServiceId, !checked)
+                        root.setServiceEnabled(root.currentServiceId, !checked);
                     }
                 }
             }
@@ -254,10 +265,11 @@ Kirigami.ApplicationWindow {
                 sidebarWidth: root.sidebarWidth
                 buttonSize: root.buttonSize
                 iconSize: root.iconSize
-                onServiceSelected: function(id) {
-                    root.switchToService(id)
-                    var svc = root.findServiceById(id)
-                    if (svc) console.log(svc.title + " clicked - loading " + svc.url)
+                onServiceSelected: function (id) {
+                    root.switchToService(id);
+                    var svc = root.findServiceById(id);
+                    if (svc)
+                        console.log(svc.title + " clicked - loading " + svc.url);
                 }
             }
 
@@ -302,7 +314,7 @@ Kirigami.ApplicationWindow {
             }
         }
     }
-    
+
     // Function to check if a service is disabled
     function isServiceDisabled(serviceId) {
         return disabledServices.hasOwnProperty(serviceId);

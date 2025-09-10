@@ -12,12 +12,18 @@ WebEngineView {
     // Set the service URL immediately when created
     url: initialUrl
 
-    // Enable settings required for screen sharing, media capture and notifications
+    // Enable settings required for screen sharing, media capture, notifications and OAuth
     settings.screenCaptureEnabled: true
     settings.webRTCPublicInterfacesOnly: false
     settings.javascriptCanAccessClipboard: true
     settings.allowWindowActivationFromJavaScript: true
     settings.showScrollBars: false
+    settings.javascriptEnabled: true
+    settings.localStorageEnabled: true
+    settings.localContentCanAccessRemoteUrls: false
+    settings.localContentCanAccessFileUrls: false
+    settings.allowRunningInsecureContent: false
+    settings.dnsPrefetchEnabled: true
 
     // Handle permission requests: auto-grant required permissions
     onPermissionRequested: function (permission) {

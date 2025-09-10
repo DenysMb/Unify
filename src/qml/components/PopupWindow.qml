@@ -39,10 +39,16 @@ Kirigami.ApplicationWindow {
 
         url: popupWindow.requestedUrl
 
-        // Enable necessary settings for authentication
+        // Enable necessary settings for authentication and OAuth compatibility
         settings.javascriptCanAccessClipboard: true
         settings.allowWindowActivationFromJavaScript: true
         settings.javascriptCanOpenWindows: true
+        settings.javascriptEnabled: true
+        settings.localStorageEnabled: true
+        settings.localContentCanAccessRemoteUrls: false
+        settings.localContentCanAccessFileUrls: false
+        settings.allowRunningInsecureContent: false
+        settings.dnsPrefetchEnabled: true
 
         // Handle permission requests (similar to main ServiceWebView)
         onPermissionRequested: function (permission) {
