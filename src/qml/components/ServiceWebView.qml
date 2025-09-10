@@ -34,7 +34,7 @@ WebEngineView {
             console.log("✅ Permission granted:", permission.permissionType, "for", view.serviceTitle);
         } else {
             permission.deny();
-            console.log("❌ Permission denied:", permission.permissionType, "for", view.serviceTitle);
+            console.log("⛔ Permission denied:", permission.permissionType, "for", view.serviceTitle);
         }
     }
 
@@ -68,10 +68,10 @@ WebEngineView {
                 popup.show();
                 console.log("✅ Popup window created and shown");
             } else {
-                console.log("❌ Failed to create popup window object");
+                console.log("⛔ Failed to create popup window object");
             }
         } else {
-            console.log("❌ Failed to load popup component:", popupComponent.errorString());
+            console.log("⛔ Failed to load popup component:", popupComponent.errorString());
         }
     }
 }
