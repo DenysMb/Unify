@@ -1,6 +1,5 @@
 // Includes relevant modules used by the QML
 import QtQuick
-import QtQuick.Window
 import QtQuick.Layouts
 // Controls and WebEngine are used in components; not needed here
 import org.kde.kirigami as Kirigami
@@ -292,20 +291,6 @@ Kirigami.ApplicationWindow {
     // Initialize with the first workspace on startup
     Component.onCompleted: {
         switchToWorkspace(workspaces[0]); // Start with "Personal"
-    }
-
-    // Toggle fullscreen on F11 (StandardKey.FullScreen)
-    Shortcut {
-        id: fullscreenShortcut
-        sequences: [ StandardKey.FullScreen, "F11" ]
-        context: Qt.WindowShortcut
-        onActivated: {
-            if (root.visibility === Window.FullScreen) {
-                root.showNormal()
-            } else {
-                root.showFullScreen()
-            }
-        }
     }
 
     // Function to disable/enable a service
