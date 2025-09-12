@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import QtWebEngine
 
 WebEngineView {
@@ -24,6 +25,11 @@ WebEngineView {
     settings.localContentCanAccessFileUrls: false
     settings.allowRunningInsecureContent: false
     settings.dnsPrefetchEnabled: true
+    // Ensure page-initiated fullscreen is supported
+    settings.fullScreenSupportEnabled: true
+
+    // Track window state so we can restore it properly
+    property bool _wasWindowFullScreenBeforeRequest: false
 
     // Handle permission requests: auto-grant required permissions
     onPermissionRequested: function (permission) {
@@ -72,6 +78,25 @@ WebEngineView {
             }
         } else {
             console.log("⛔ Failed to load popup component:", popupComponent.errorString());
+        }
+    }
+
+    // Handle page-initiated fullscreen requests (e.g., video players)
+    onFullScreenRequested: function(request) {
+        // Accept and sync the application window visibility
+        request.accept();
+        var win = view.window; // owning Window
+        if (!win)
+            return;
+
+        if (request.toggleOn) {
+            view._wasWindowFullScreenBeforeRequest = (win.visibility === Window.FullScreen);
+            if (!view._wasWindowFullScreenBeforeRequest)
+                win.showFullScreen();
+        } else {
+            if (!view._wasWindowFullScreenBeforeRequest)
+                win.showNormal();
+            view._wasWindowFullScreenBeforeRequest = false;
         }
     }
 }
