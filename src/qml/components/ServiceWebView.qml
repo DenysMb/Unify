@@ -9,8 +9,10 @@ WebEngineView {
     property string serviceTitle: ""
     property string serviceId: ""
     property url initialUrl: "about:blank"
+    property WebEngineProfile webProfile
 
-    // Set the service URL immediately when created
+    // Use shared persistent profile and set the service URL immediately when created
+    profile: webProfile
     url: initialUrl
 
     // Enable settings required for screen sharing, media capture, notifications and OAuth
@@ -65,7 +67,8 @@ WebEngineView {
         if (popupComponent.status === Component.Ready) {
             var popup = popupComponent.createObject(view, {
                 "requestedUrl": request.requestedUrl,
-                "parentService": view.serviceTitle
+                "parentService": view.serviceTitle,
+                "webProfile": view.profile
             });
 
             if (popup) {

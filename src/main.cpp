@@ -132,6 +132,33 @@ int main(int argc, char *argv[])
         notificationPresenter->present(std::move(notification));
     };
     
+    // Configure the default WebEngine profile BEFORE any QML creates WebEngineViews
+    // so that cookies, cache, and storage paths are persistent across runs.
+    auto profile = QWebEngineProfile::defaultProfile();
+    profile->setNotificationPresenter(globalNotificationPresenter);
+
+    // Set Firefox user agent for compatibility with Google OAuth (Google blocks WebEngine detection)
+    QString firefoxUserAgent = QStringLiteral("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0");
+    profile->setHttpUserAgent(firefoxUserAgent);
+
+    // Persist cookies and cache on disk
+    profile->setPersistentCookiesPolicy(QWebEngineProfile::AllowPersistentCookies);
+    profile->setHttpCacheType(QWebEngineProfile::DiskHttpCache);
+
+    // Enable expected features
+    profile->settings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
+    profile->settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
+    profile->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, false); // Disable plugins for security
+    profile->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
+    profile->settings()->setAttribute(QWebEngineSettings::AllowRunningInsecureContent, false);
+
+    // Set proper paths for persistent storage
+    profile->setCachePath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/webengine"));
+    profile->setPersistentStoragePath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/webengine"));
+
+    qDebug() << "✅ Default WebEngine profile configured with persistent storage";
+    qDebug() << "✅ Firefox user agent set for default profile (Google OAuth compatibility)";
+
     QQmlApplicationEngine engine;
 
     // Register the notification presenter, config manager and OAuth manager with QML context
@@ -145,32 +172,6 @@ int main(int argc, char *argv[])
     if (engine.rootObjects().isEmpty()) {
         return -1;
     }
-
-    // Set up notification presenter for default profile
-    QWebEngineProfile::defaultProfile()->setNotificationPresenter(globalNotificationPresenter);
-    
-    // Set Firefox user agent for compatibility with Google OAuth (Google blocks WebEngine detection)
-    QString firefoxUserAgent = QStringLiteral("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0");
-    QWebEngineProfile::defaultProfile()->setHttpUserAgent(firefoxUserAgent);
-    
-    // Configure additional security settings for OAuth compatibility
-    QWebEngineProfile::defaultProfile()->setPersistentCookiesPolicy(QWebEngineProfile::AllowPersistentCookies);
-    QWebEngineProfile::defaultProfile()->setHttpCacheType(QWebEngineProfile::DiskHttpCache);
-    
-    // Enable features that Google OAuth expects
-    auto profile = QWebEngineProfile::defaultProfile();
-    profile->settings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
-    profile->settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
-    profile->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, false); // Disable plugins for security
-    profile->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
-    profile->settings()->setAttribute(QWebEngineSettings::AllowRunningInsecureContent, false);
-    
-    // Set proper paths for OAuth providers storage
-    profile->setCachePath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/webengine"));
-    profile->setPersistentStoragePath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/webengine"));
-    
-    qDebug() << "✅ Notification presenter set up for default profile";
-    qDebug() << "✅ Firefox user agent set for default profile (Google OAuth compatibility)";
 
     return app.exec();
 }

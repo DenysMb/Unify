@@ -2,7 +2,8 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Layouts
-// Controls and WebEngine are used in components; not needed here
+import QtWebEngine
+// Controls are used in components; WebEngine used here for profile
 import org.kde.kirigami as Kirigami
 // Note: QML files are flattened into module root by CMake.
 // Use types directly and import JS by its root alias.
@@ -149,6 +150,17 @@ Kirigami.ApplicationWindow {
     property color borderColor: {
         var textColor = Kirigami.Theme.textColor;
         return Qt.rgba(textColor.r, textColor.g, textColor.b, 0.2);
+    }
+
+    // Shared persistent WebEngine profile for all web views (ensures cookies/storage persist)
+    WebEngineProfile {
+        id: persistentProfile
+        storageName: "unify-default"
+        offTheRecord: false
+        httpUserAgent: root.firefoxUserAgent
+        httpCacheType: WebEngineProfile.DiskHttpCache
+        persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
+        // Use default cache/persistent paths derived from storageName and app dirs
     }
 
     // Window title
@@ -304,6 +316,7 @@ Kirigami.ApplicationWindow {
                     anchors.fill: parent
                     services: root.filteredServices
                     disabledServices: root.disabledServices
+                    webProfile: persistentProfile
                 }
             }
         }

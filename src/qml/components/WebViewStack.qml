@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtWebEngine
 
 import "./" as Components
 import org.kde.kirigami as Kirigami
@@ -10,6 +11,7 @@ StackLayout {
     // Public API
     property var services: [] // array of { id, title, url }
     property var disabledServices: ({})
+    property WebEngineProfile webProfile
 
     function isDisabled(id) {
         return disabledServices && disabledServices.hasOwnProperty(id)
@@ -62,6 +64,7 @@ StackLayout {
             serviceTitle: modelData.title
             serviceId: modelData.id
             initialUrl: root.isDisabled(modelData.id) ? "about:blank" : modelData.url
+            webProfile: root.webProfile
         }
     }
 }

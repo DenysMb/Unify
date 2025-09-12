@@ -10,6 +10,7 @@ Kirigami.ApplicationWindow {
     property url requestedUrl: "about:blank"
     property string parentService: ""
     property alias webView: webEngineView
+    property WebEngineProfile webProfile
 
     // Window configuration
     width: 800
@@ -39,6 +40,7 @@ Kirigami.ApplicationWindow {
         anchors.fill: parent
 
         url: popupWindow.requestedUrl
+        profile: popupWindow.webProfile
 
         // Enable necessary settings for authentication and OAuth compatibility
         settings.javascriptCanAccessClipboard: true
