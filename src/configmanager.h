@@ -37,6 +37,10 @@ public:
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
 
+    // Last-used service persistence (per workspace)
+    Q_INVOKABLE void setLastUsedService(const QString &workspace, const QString &serviceId);
+    Q_INVOKABLE QString lastUsedService(const QString &workspace) const;
+
 Q_SIGNALS:
     void servicesChanged();
     void workspacesChanged();
@@ -49,6 +53,7 @@ private:
     QVariantList m_services;
     QStringList m_workspaces;
     QString m_currentWorkspace;
+    QHash<QString, QString> m_lastServiceByWorkspace; // workspace -> serviceId
 };
 
 #endif // CONFIGMANAGER_H

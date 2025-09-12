@@ -186,6 +186,15 @@ void ConfigManager::saveSettings()
     m_settings.beginGroup(QStringLiteral("Workspaces"));
     m_settings.setValue(QStringLiteral("current"), m_currentWorkspace);
     m_settings.endGroup();
+
+    // Persist last used service per workspace
+    m_settings.beginGroup(QStringLiteral("LastSession"));
+    QVariantMap map;
+    for (auto it = m_lastServiceByWorkspace.constBegin(); it != m_lastServiceByWorkspace.constEnd(); ++it) {
+        map.insert(it.key(), it.value());
+    }
+    m_settings.setValue(QStringLiteral("lastServiceByWorkspace"), map);
+    m_settings.endGroup();
     
     m_settings.sync();
     qDebug() << "Settings saved. Services count:" << m_services.size() 
@@ -201,6 +210,15 @@ void ConfigManager::loadSettings()
     m_settings.beginGroup(QStringLiteral("Workspaces"));
     m_currentWorkspace = m_settings.value(QStringLiteral("current"), QStringLiteral("Personal")).toString();
     m_settings.endGroup();
+
+    // Load last used service mapping
+    m_settings.beginGroup(QStringLiteral("LastSession"));
+    const QVariantMap map = m_settings.value(QStringLiteral("lastServiceByWorkspace"), QVariantMap()).toMap();
+    m_lastServiceByWorkspace.clear();
+    for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
+        m_lastServiceByWorkspace.insert(it.key(), it.value().toString());
+    }
+    m_settings.endGroup();
     
     updateWorkspacesList();
     
@@ -215,6 +233,24 @@ void ConfigManager::loadSettings()
     qDebug() << "Settings loaded. Services count:" << m_services.size() 
              << "Workspaces:" << m_workspaces 
              << "Current workspace:" << m_currentWorkspace;
+}
+
+void ConfigManager::setLastUsedService(const QString &workspace, const QString &serviceId)
+{
+    if (workspace.isEmpty() || serviceId.isEmpty()) {
+        return;
+    }
+    const auto it = m_lastServiceByWorkspace.find(workspace);
+    if (it == m_lastServiceByWorkspace.end() || it.value() != serviceId) {
+        m_lastServiceByWorkspace.insert(workspace, serviceId);
+        saveSettings();
+        qDebug() << "Last used service set:" << workspace << serviceId;
+    }
+}
+
+QString ConfigManager::lastUsedService(const QString &workspace) const
+{
+    return m_lastServiceByWorkspace.value(workspace);
 }
 
 void ConfigManager::updateWorkspacesList()

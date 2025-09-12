@@ -76,19 +76,36 @@ Kirigami.ApplicationWindow {
             }
         }
 
-        // If we found a service, select it and switch to its WebView
-        if (firstService) {
+        // Try last used service for this workspace
+        var lastId = configManager && configManager.lastUsedService ? configManager.lastUsedService(workspaceName) : "";
+        var usedService = null;
+        var usedFilteredIndex = -1;
+        if (lastId && lastId !== "") {
+            for (var j = 0; j < filteredServices.length; j++) {
+                if (filteredServices[j].id === lastId) {
+                    usedService = filteredServices[j];
+                    usedFilteredIndex = j;
+                    break;
+                }
+            }
+        }
+
+        if (usedService) {
+            currentServiceName = usedService.title;
+            currentServiceId = usedService.id;
+            webViewStack.currentIndex = usedFilteredIndex + 1; // +1 because empty state is index 0
+        } else if (firstService) {
             currentServiceName = firstService.title;
             currentServiceId = firstService.id;
             // Find index in filtered services (which is what the repeater uses)
             var filteredIndex = -1;
-            for (var j = 0; j < filteredServices.length; j++) {
-                if (filteredServices[j].id === firstService.id) {
-                    filteredIndex = j;
+            for (var k = 0; k < filteredServices.length; k++) {
+                if (filteredServices[k].id === firstService.id) {
+                    filteredIndex = k;
                     break;
                 }
             }
-            webViewStack.currentIndex = filteredIndex >= 0 ? filteredIndex + 1 : 0; // +1 because empty state is index 0
+            webViewStack.currentIndex = filteredIndex >= 0 ? filteredIndex + 1 : 0;
         } else {
             // No services in this workspace
             currentServiceName = i18n("Unify - Web app aggregator");
@@ -106,6 +123,9 @@ Kirigami.ApplicationWindow {
 
             // Find index in filtered services
             webViewStack.setCurrentByServiceId(serviceId);
+            if (configManager && configManager.setLastUsedService) {
+                configManager.setLastUsedService(currentWorkspace, serviceId);
+            }
             return true;
         }
         return false;
@@ -291,7 +311,10 @@ Kirigami.ApplicationWindow {
 
     // Initialize with the first workspace on startup
     Component.onCompleted: {
-        switchToWorkspace(workspaces[0]); // Start with "Personal"
+        // Use persisted current workspace
+        var ws = root.currentWorkspace;
+        if (!ws || ws === "") ws = workspaces[0];
+        switchToWorkspace(ws);
     }
 
     // Toggle fullscreen on F11 (StandardKey.FullScreen)
