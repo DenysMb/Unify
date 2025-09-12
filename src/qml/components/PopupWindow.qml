@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Window
 import QtWebEngine
 import org.kde.kirigami as Kirigami
 
@@ -50,10 +49,6 @@ Kirigami.ApplicationWindow {
         settings.localContentCanAccessFileUrls: false
         settings.allowRunningInsecureContent: false
         settings.dnsPrefetchEnabled: true
-        settings.fullScreenSupportEnabled: true
-
-        // Track window state for proper restore on exit
-        property bool _wasWindowFullScreenBeforeRequest: false
 
         // Handle permission requests (similar to main ServiceWebView)
         onPermissionRequested: function (permission) {
@@ -92,24 +87,6 @@ Kirigami.ApplicationWindow {
             console.log("🪟 Nested popup requested, opening in same window");
             // For nested popups in auth flows, replace current URL
             webEngineView.url = request.requestedUrl;
-        }
-
-        // Handle fullscreen requests inside the auth popup if any
-        onFullScreenRequested: function(request) {
-            request.accept();
-            var win = popupWindow; // this WebView fills the popup window
-            if (!win)
-                return;
-
-            if (request.toggleOn) {
-                webEngineView._wasWindowFullScreenBeforeRequest = (win.visibility === Window.FullScreen);
-                if (!webEngineView._wasWindowFullScreenBeforeRequest)
-                    win.showFullScreen();
-            } else {
-                if (!webEngineView._wasWindowFullScreenBeforeRequest)
-                    win.showNormal();
-                webEngineView._wasWindowFullScreenBeforeRequest = false;
-            }
         }
     }
 
