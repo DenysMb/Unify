@@ -17,3 +17,4 @@ builddir
 repo
 AGENTS.md
 CLAUDE.md
+.cache
