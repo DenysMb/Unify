@@ -214,6 +214,16 @@ Kirigami.ApplicationWindow {
                     configManager.addService(serviceData);
             }
         }
+        onDeleteRequested: {
+            if (isEditMode && root.currentServiceId !== "" && configManager) {
+                configManager.removeService(root.currentServiceId);
+                // Reset selection
+                root.currentServiceName = i18n("Unify - Web app aggregator");
+                root.currentServiceId = "";
+                webViewStack.currentIndex = 0;
+                addServiceDialog.close();
+            }
+        }
     }
 
     // Add/Edit Workspace Dialog
@@ -236,6 +246,13 @@ Kirigami.ApplicationWindow {
                     if (configManager.setWorkspaceIcon)
                         configManager.setWorkspaceIcon(workspaceName, iconName || "folder");
                 }
+            }
+        }
+        onDeleteRequested: {
+            if (isEditMode && editingIndex >= 0 && editingIndex < root.workspaces.length && configManager) {
+                var wsName = root.workspaces[editingIndex];
+                configManager.removeWorkspace(wsName);
+                addWorkspaceDialog.close();
             }
         }
     }
