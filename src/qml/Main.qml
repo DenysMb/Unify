@@ -334,6 +334,7 @@ Kirigami.ApplicationWindow {
             ServicesSidebar {
                 services: root.filteredServices
                 disabledServices: root.disabledServices
+                currentServiceId: root.currentServiceId
                 sidebarWidth: root.sidebarWidth
                 buttonSize: root.buttonSize
                 iconSize: root.iconSize

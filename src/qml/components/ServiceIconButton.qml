@@ -14,9 +14,13 @@ Controls.Button {
     property int iconSize: 48
     property bool disabledVisual: false
     property bool useDefaultIcon: !root.image
+    property bool active: false
 
     text: i18n(title)
     display: Controls.AbstractButton.IconOnly
+    checkable: true
+    checked: active
+    autoExclusive: true
     Layout.preferredWidth: buttonSize
     Layout.preferredHeight: buttonSize
     Layout.alignment: Qt.AlignHCenter
