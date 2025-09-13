@@ -11,6 +11,7 @@ Rectangle {
     // Public API
     property var services: [] // array of service objects with { id, title, image, url }
     property var disabledServices: ({})
+    property string currentServiceId: ""
     property int sidebarWidth: 80
     property int buttonSize: 64
     property int iconSize: 48
@@ -37,6 +38,7 @@ Rectangle {
                     image: modelData.image
                     buttonSize: root.buttonSize
                     iconSize: root.iconSize
+                    active: modelData.id === root.currentServiceId
                     disabledVisual: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
                     onClicked: root.serviceSelected(modelData.id)
                 }
@@ -56,9 +58,8 @@ Rectangle {
         anchors.bottom: parent.bottom
         width: 1
         color: {
-            const textColor = Kirigami.Theme.textColor
-            Qt.rgba(textColor.r, textColor.g, textColor.b, 0.2)
+            const textColor = Kirigami.Theme.textColor;
+            Qt.rgba(textColor.r, textColor.g, textColor.b, 0.2);
         }
     }
 }
-
