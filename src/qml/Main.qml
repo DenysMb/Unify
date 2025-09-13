@@ -153,6 +153,7 @@ Kirigami.ApplicationWindow {
     }
 
     // Shared persistent WebEngine profile for all web views (ensures cookies/storage persist)
+    // Use the same configuration as main.cpp to avoid inconsistencies
     WebEngineProfile {
         id: persistentProfile
         storageName: "unify-default"
