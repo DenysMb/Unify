@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Effects
+import QtQuick.Window
 import QtQuick.Controls as Controls
 import org.kde.kirigami as Kirigami
 
@@ -23,14 +23,12 @@ Controls.Button {
 
     contentItem: Item {
         id: buttonItem
+        width: iconSize
+        height: iconSize
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
 
-        MultiEffect {
-            source: useDefaultIcon ? iconItem : imageItem
-            anchors.fill: useDefaultIcon ? iconItem : imageItem
-            maskEnabled: true
-            maskSource: mask
-        }
-
+        // Render the provided image at high quality (fixed iconSize, centered)
         Image {
             id: imageItem
             anchors.centerIn: parent
@@ -39,10 +37,14 @@ Controls.Button {
             source: root.image
             fillMode: Image.PreserveAspectFit
             smooth: true
+            mipmap: true
+            cache: true
+            sourceSize: Qt.size(Math.ceil(iconSize * Screen.devicePixelRatio), Math.ceil(iconSize * Screen.devicePixelRatio))
             opacity: root.disabledVisual ? 0.3 : 1.0
-            visible: false
+            visible: !useDefaultIcon
         }
 
+        // Fallback: themed symbolic icon
         Kirigami.Icon {
             id: iconItem
             anchors.centerIn: parent
@@ -51,18 +53,7 @@ Controls.Button {
             source: "internet-web-browser-symbolic"
             isMask: true
             opacity: root.disabledVisual ? 0.3 : 1.0
-            visible: false
-        }
-
-        Item {
-            id: mask
-            anchors.fill: imageItem
-            layer.enabled: true
-            visible: false
-            Rectangle {
-                anchors.fill: parent
-                radius: 8
-            }
+            visible: useDefaultIcon
         }
     }
 }
