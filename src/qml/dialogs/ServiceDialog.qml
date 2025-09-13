@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import QtQuick.Controls as Controls
 import org.kde.kirigami as Kirigami
 
@@ -48,24 +49,37 @@ Kirigami.Dialog {
             id: serviceNameField
             Kirigami.FormData.label: i18n("Service Name:")
             placeholderText: i18n("Enter service name")
+            Layout.fillWidth: true
         }
 
         Controls.TextField {
             id: iconUrlField
             Kirigami.FormData.label: i18n("Icon URL:")
             placeholderText: i18n("Enter icon URL")
+            Layout.fillWidth: true
         }
 
         Controls.TextField {
             id: serviceUrlField
             Kirigami.FormData.label: i18n("Service URL:")
             placeholderText: i18n("Enter service URL")
+            Layout.fillWidth: true
         }
 
         Controls.ComboBox {
             id: workspaceComboBox
             Kirigami.FormData.label: i18n("Workspace:")
             model: root.workspaces
+            Layout.fillWidth: true
+        }
+
+        // Separator before destructive actions (only in edit mode)
+        Rectangle {
+            visible: root.isEditMode
+            Kirigami.FormData.label: ""
+            Layout.fillWidth: true
+            height: 1
+            color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.2)
         }
 
         // Delete button appears only in edit mode
@@ -74,6 +88,7 @@ Kirigami.Dialog {
             Kirigami.FormData.label: ""
             text: i18n("Delete Service")
             icon.name: "edit-delete"
+            Layout.fillWidth: true
             onClicked: root.deleteRequested()
         }
     }

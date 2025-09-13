@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import QtQuick.Controls as Controls
 import org.kde.kirigami as Kirigami
 import org.kde.iconthemes as IconThemes
@@ -49,6 +50,7 @@ Kirigami.Dialog {
             Kirigami.FormData.label: i18n("Workspace Name:")
             placeholderText: i18n("Enter workspace name")
             text: root.initialName
+            Layout.fillWidth: true
         }
 
         Controls.ToolButton {
@@ -57,17 +59,28 @@ Kirigami.Dialog {
             icon.name: root.selectedIconName || "folder"
             text: i18n("Choose…")
             display: Controls.AbstractButton.TextBesideIcon
+            Layout.fillWidth: true
             onClicked: iconDialog.open()
             Controls.ToolTip.visible: hovered
             Controls.ToolTip.text: i18n("Choose icon")
         }
 
+        // Separator before destructive actions (only in edit mode)
+        Rectangle {
+            visible: root.isEditMode
+            Kirigami.FormData.label: ""
+            Layout.fillWidth: true
+            height: 1
+            color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.2)
+        }
+
         // Delete button appears only in edit mode
         Controls.Button {
-            // visible: root.isEditMode
+            visible: root.isEditMode
             Kirigami.FormData.label: ""
             text: i18n("Delete Workspace")
             icon.name: "edit-delete"
+            Layout.fillWidth: true
             onClicked: root.deleteRequested()
         }
     }
