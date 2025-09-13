@@ -81,7 +81,7 @@ Kirigami.Dialog {
             text: i18n("Delete Workspace")
             icon.name: "edit-delete"
             Layout.fillWidth: true
-            onClicked: root.deleteRequested()
+            onClicked: confirmDeleteDialog.open()
         }
     }
 
@@ -92,6 +92,20 @@ Kirigami.Dialog {
             if (typeof iconName !== "undefined" && iconName) {
                 root.selectedIconName = iconName;
             }
+        }
+    }
+
+    // Confirmation dialog for deletion
+    Kirigami.Dialog {
+        id: confirmDeleteDialog
+        title: i18n("Delete Workspace")
+        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+        padding: Kirigami.Units.largeSpacing
+        onAccepted: root.deleteRequested()
+        Controls.Label {
+            text: i18n("Are you sure you want to delete this workspace? All services within it will also be removed. This action cannot be undone.")
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignLeft
         }
     }
 }
