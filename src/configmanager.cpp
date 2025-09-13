@@ -44,6 +44,38 @@ void ConfigManager::setCurrentWorkspace(const QString &workspace)
     }
 }
 
+QVariantMap ConfigManager::workspaceIcons() const
+{
+    QVariantMap map;
+    for (auto it = m_workspaceIcons.constBegin(); it != m_workspaceIcons.constEnd(); ++it) {
+        map.insert(it.key(), it.value());
+    }
+    return map;
+}
+
+QString ConfigManager::workspaceIcon(const QString &workspace) const
+{
+    return m_workspaceIcons.value(workspace);
+}
+
+void ConfigManager::setWorkspaceIcon(const QString &workspace, const QString &iconName)
+{
+    if (workspace.isEmpty()) {
+        return;
+    }
+    const QString value = iconName; // allow empty to clear
+    const auto it = m_workspaceIcons.find(workspace);
+    if (it == m_workspaceIcons.end() || it.value() != value) {
+        if (value.isEmpty()) {
+            m_workspaceIcons.remove(workspace);
+        } else {
+            m_workspaceIcons.insert(workspace, value);
+        }
+        Q_EMIT workspaceIconsChanged();
+        saveSettings();
+    }
+}
+
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
@@ -127,6 +159,12 @@ void ConfigManager::removeWorkspace(const QString &workspaceName)
         
         m_workspaces.removeAll(workspaceName);
         
+        // Remove icon mapping if present
+        if (m_workspaceIcons.contains(workspaceName)) {
+            m_workspaceIcons.remove(workspaceName);
+            Q_EMIT workspaceIconsChanged();
+        }
+        
         // If current workspace was removed, switch to first available or create Personal
         if (m_currentWorkspace == workspaceName) {
             if (!m_workspaces.isEmpty()) {
@@ -169,6 +207,14 @@ void ConfigManager::renameWorkspace(const QString &oldName, const QString &newNa
             Q_EMIT currentWorkspaceChanged();
         }
         
+        // Move icon mapping along with the rename
+        if (m_workspaceIcons.contains(oldName)) {
+            const QString icon = m_workspaceIcons.value(oldName);
+            m_workspaceIcons.remove(oldName);
+            m_workspaceIcons.insert(newName, icon);
+            Q_EMIT workspaceIconsChanged();
+        }
+        
         Q_EMIT servicesChanged();
         Q_EMIT workspacesChanged();
         saveSettings();
@@ -185,6 +231,14 @@ void ConfigManager::saveSettings()
     
     m_settings.beginGroup(QStringLiteral("Workspaces"));
     m_settings.setValue(QStringLiteral("current"), m_currentWorkspace);
+    // Persist workspace icon map
+    {
+        QVariantMap iconMap;
+        for (auto it = m_workspaceIcons.constBegin(); it != m_workspaceIcons.constEnd(); ++it) {
+            iconMap.insert(it.key(), it.value());
+        }
+        m_settings.setValue(QStringLiteral("icons"), iconMap);
+    }
     m_settings.endGroup();
 
     // Persist last used service per workspace
@@ -209,6 +263,14 @@ void ConfigManager::loadSettings()
     
     m_settings.beginGroup(QStringLiteral("Workspaces"));
     m_currentWorkspace = m_settings.value(QStringLiteral("current"), QStringLiteral("Personal")).toString();
+    // Load workspace icon map
+    {
+        const QVariantMap iconMap = m_settings.value(QStringLiteral("icons"), QVariantMap()).toMap();
+        m_workspaceIcons.clear();
+        for (auto it = iconMap.constBegin(); it != iconMap.constEnd(); ++it) {
+            m_workspaceIcons.insert(it.key(), it.value().toString());
+        }
+    }
     m_settings.endGroup();
 
     // Load last used service mapping
