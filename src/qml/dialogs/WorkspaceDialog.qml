@@ -43,6 +43,9 @@ Kirigami.Dialog {
         acceptedWorkspace(workspaceName, iconName);
         clearFields();
     }
+    onRejected: {
+        clearFields();
+    }
 
     Kirigami.FormLayout {
         Controls.TextField {

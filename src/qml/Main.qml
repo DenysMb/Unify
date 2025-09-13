@@ -277,6 +277,7 @@ Kirigami.ApplicationWindow {
                 onTriggered: {
                     // Reset dialog to add mode
                     addServiceDialog.isEditMode = false;
+                    addServiceDialog.clearFields();
                     addServiceDialog.open();
                 }
             },

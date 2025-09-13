@@ -43,6 +43,9 @@ Kirigami.Dialog {
         acceptedData(data)
         clearFields()
     }
+    onRejected: {
+        clearFields()
+    }
 
     Kirigami.FormLayout {
         Controls.TextField {
