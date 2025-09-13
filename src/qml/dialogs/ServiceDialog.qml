@@ -89,7 +89,21 @@ Kirigami.Dialog {
             text: i18n("Delete Service")
             icon.name: "edit-delete"
             Layout.fillWidth: true
-            onClicked: root.deleteRequested()
+            onClicked: confirmDeleteDialog.open()
+        }
+    }
+
+    // Confirmation dialog for deletion
+    Kirigami.Dialog {
+        id: confirmDeleteDialog
+        title: i18n("Delete Service")
+        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+        padding: Kirigami.Units.largeSpacing
+        onAccepted: root.deleteRequested()
+        Controls.Label {
+            text: i18n("Are you sure you want to delete this service? This action cannot be undone.")
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignLeft
         }
     }
 }
