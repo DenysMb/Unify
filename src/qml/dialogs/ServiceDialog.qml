@@ -11,6 +11,7 @@ Kirigami.Dialog {
     property var serviceData: ({ title: "", url: "", image: "", workspace: "" })
 
     signal acceptedData(var data)
+    signal deleteRequested()
 
     title: isEditMode ? i18n("Edit Service") : i18n("Add Service")
     standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
@@ -66,6 +67,14 @@ Kirigami.Dialog {
             Kirigami.FormData.label: i18n("Workspace:")
             model: root.workspaces
         }
+
+        // Delete button appears only in edit mode
+        Controls.Button {
+            visible: root.isEditMode
+            Kirigami.FormData.label: ""
+            text: i18n("Delete Service")
+            icon.name: "edit-delete"
+            onClicked: root.deleteRequested()
+        }
     }
 }
-

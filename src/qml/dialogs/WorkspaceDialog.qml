@@ -16,6 +16,7 @@ Kirigami.Dialog {
 
     // New signal carrying name and icon
     signal acceptedWorkspace(string name, string icon)
+    signal deleteRequested()
 
     title: isEditMode ? i18n("Edit Workspace") : i18n("Add Workspace")
     standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
@@ -59,6 +60,15 @@ Kirigami.Dialog {
             onClicked: iconDialog.open()
             Controls.ToolTip.visible: hovered
             Controls.ToolTip.text: i18n("Choose icon")
+        }
+
+        // Delete button appears only in edit mode
+        Controls.Button {
+            visible: root.isEditMode
+            Kirigami.FormData.label: ""
+            text: i18n("Delete Workspace")
+            icon.name: "edit-delete"
+            onClicked: root.deleteRequested()
         }
     }
 
