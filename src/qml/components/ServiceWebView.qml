@@ -10,8 +10,7 @@ WebEngineView {
     property string serviceId: ""
     property url initialUrl: "about:blank"
     property WebEngineProfile webProfile
-
-    // Use shared persistent profile and set the service URL immediately when created
+    // Use provided persistent profile
     profile: webProfile
     url: initialUrl
 

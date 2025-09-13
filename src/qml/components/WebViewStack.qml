@@ -11,6 +11,7 @@ StackLayout {
     // Public API
     property var services: [] // array of { id, title, url }
     property var disabledServices: ({})
+    // Profile provided by Main.qml (persistent)
     property WebEngineProfile webProfile
 
     function isDisabled(id) {
