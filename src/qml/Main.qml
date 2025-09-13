@@ -186,7 +186,15 @@ Kirigami.ApplicationWindow {
             if (index >= 0 && index < root.workspaces.length) {
                 addWorkspaceDialog.isEditMode = true;
                 addWorkspaceDialog.editingIndex = index;
-                addWorkspaceDialog.populateFields(root.workspaces[index]);
+                addWorkspaceDialog.initialName = root.workspaces[index]
+                // Pre-fill current icon if available
+                if (configManager && configManager.workspaceIcons) {
+                    var iconMap = configManager.workspaceIcons
+                    addWorkspaceDialog.initialIcon = iconMap[addWorkspaceDialog.initialName] || "folder"
+                } else {
+                    addWorkspaceDialog.initialIcon = "folder"
+                }
+                addWorkspaceDialog.populateFields(addWorkspaceDialog.initialName);
                 addWorkspaceDialog.open();
             }
         }
@@ -213,15 +221,21 @@ Kirigami.ApplicationWindow {
         id: addWorkspaceDialog
         property bool isEditMode: false
         property int editingIndex: -1
-        onAcceptedName: function (workspaceName) {
+        onAcceptedWorkspace: function (workspaceName, iconName) {
             if (isEditMode) {
                 if (editingIndex >= 0 && editingIndex < root.workspaces.length && configManager) {
                     var oldWorkspaceName = root.workspaces[editingIndex];
                     configManager.renameWorkspace(oldWorkspaceName, workspaceName);
+                    // Always set/update icon regardless of rename
+                    if (configManager.setWorkspaceIcon)
+                        configManager.setWorkspaceIcon(workspaceName, iconName || "folder");
                 }
             } else {
-                if (configManager)
+                if (configManager) {
                     configManager.addWorkspace(workspaceName);
+                    if (configManager.setWorkspaceIcon)
+                        configManager.setWorkspaceIcon(workspaceName, iconName || "folder");
+                }
             }
         }
     }

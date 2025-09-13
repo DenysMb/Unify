@@ -20,7 +20,7 @@ Kirigami.GlobalDrawer {
                 import org.kde.kirigami as Kirigami
                 Kirigami.Action {
                     text: i18n("${ws}")
-                    icon.name: "folder"
+                    icon.name: (configManager && configManager.workspaceIcons && configManager.workspaceIcons["${ws}"]) ? configManager.workspaceIcons["${ws}"] : "folder"
                     onTriggered: drawer.switchToWorkspace("${ws}")
                 }
             `, drawer));

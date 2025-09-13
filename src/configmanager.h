@@ -14,6 +14,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(QVariantList services READ services WRITE setServices NOTIFY servicesChanged)
     Q_PROPERTY(QStringList workspaces READ workspaces NOTIFY workspacesChanged)
     Q_PROPERTY(QString currentWorkspace READ currentWorkspace WRITE setCurrentWorkspace NOTIFY currentWorkspaceChanged)
+    Q_PROPERTY(QVariantMap workspaceIcons READ workspaceIcons NOTIFY workspaceIconsChanged)
 
 public:
     explicit ConfigManager(QObject *parent = nullptr);
@@ -34,6 +35,11 @@ public:
     Q_INVOKABLE void removeWorkspace(const QString &workspaceName);
     Q_INVOKABLE void renameWorkspace(const QString &oldName, const QString &newName);
 
+    // Per-workspace icon mapping
+    QVariantMap workspaceIcons() const;
+    Q_INVOKABLE QString workspaceIcon(const QString &workspace) const;
+    Q_INVOKABLE void setWorkspaceIcon(const QString &workspace, const QString &iconName);
+
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
 
@@ -45,6 +51,7 @@ Q_SIGNALS:
     void servicesChanged();
     void workspacesChanged();
     void currentWorkspaceChanged();
+    void workspaceIconsChanged();
 
 private:
     void updateWorkspacesList();
@@ -54,6 +61,7 @@ private:
     QStringList m_workspaces;
     QString m_currentWorkspace;
     QHash<QString, QString> m_lastServiceByWorkspace; // workspace -> serviceId
+    QHash<QString, QString> m_workspaceIcons; // workspace -> icon name
 };
 
 #endif // CONFIGMANAGER_H
