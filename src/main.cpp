@@ -17,6 +17,7 @@
 #include <QDBusInterface>
 #include <QDBusReply>
 #include <QStandardPaths>
+#include <QDir>
 #include "configmanager.h"
 #include "oauthmanager.h"
 
@@ -25,6 +26,57 @@ class NotificationPresenter : public QObject
     Q_OBJECT
 public:
     explicit NotificationPresenter(QObject *parent = nullptr) : QObject(parent) {}
+    Q_INVOKABLE void presentFromQml(const QString &titleIn, const QString &messageIn, const QUrl &originUrl)
+    {
+        QString title = titleIn.isEmpty() ? QStringLiteral("Web Notification") : titleIn;
+        QString message = messageIn;
+        QString origin = originUrl.host();
+
+        qDebug() << "📢 QML-present notification:";
+        qDebug() << "   Title:" << title;
+        qDebug() << "   Message:" << message;
+        qDebug() << "   Origin:" << origin;
+        qDebug() << "   URL:" << originUrl.toString();
+
+        KNotification *knotification = new KNotification(QStringLiteral("notification"));
+        knotification->setTitle(title);
+        knotification->setText(message);
+        knotification->setIconName(QStringLiteral("dialog-information"));
+        knotification->setComponentName(QStringLiteral("unify"));
+        knotification->setFlags(KNotification::CloseOnTimeout);
+        knotification->sendEvent();
+        qDebug() << "📢 KNotification sent (QML)";
+
+        QDBusInterface interface(QStringLiteral("org.freedesktop.Notifications"),
+                                 QStringLiteral("/org/freedesktop/Notifications"),
+                                 QStringLiteral("org.freedesktop.Notifications"));
+        if (interface.isValid()) {
+            QDBusReply<uint> reply = interface.call(QStringLiteral("Notify"),
+                                                    QStringLiteral("Unify"),
+                                                    uint(0),
+                                                    QStringLiteral("dialog-information"),
+                                                    title,
+                                                    message,
+                                                    QStringList(),
+                                                    QVariantMap(),
+                                                    int(5000));
+            if (reply.isValid()) {
+                qDebug() << "📢 DBus notification sent with ID (QML):" << reply.value();
+            } else {
+                qDebug() << "❌ DBus notification failed (QML):" << reply.error().message();
+            }
+        }
+
+        if (QSystemTrayIcon::isSystemTrayAvailable()) {
+            auto trayIcon = new QSystemTrayIcon(this);
+            trayIcon->show();
+            trayIcon->showMessage(title, message, QSystemTrayIcon::Information, 5000);
+            qDebug() << "📢 System tray notification sent (QML)";
+            QTimer::singleShot(6000, trayIcon, &QSystemTrayIcon::deleteLater);
+        }
+
+        QTimer::singleShot(5000, knotification, &KNotification::deleteLater);
+    }
     
     void present(std::unique_ptr<QWebEngineNotification> notification)
     {
@@ -132,8 +184,16 @@ int main(int argc, char *argv[])
         notificationPresenter->present(std::move(notification));
     };
     
-    // Set up notification presenter for default profile (for any views that might use it)
-    QWebEngineProfile::defaultProfile()->setNotificationPresenter(globalNotificationPresenter);
+    // Set up notification presenter for default profile and configure persistence
+    auto *defaultProf = QWebEngineProfile::defaultProfile();
+    defaultProf->setNotificationPresenter(globalNotificationPresenter);
+    // Ensure data is persisted on disk (cookies, cache, storage)
+    const QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/webengine/default");
+    QDir().mkpath(dataDir + QStringLiteral("/cache"));
+    QDir().mkpath(dataDir + QStringLiteral("/storage"));
+    defaultProf->setCachePath(dataDir + QStringLiteral("/cache"));
+    defaultProf->setPersistentStoragePath(dataDir + QStringLiteral("/storage"));
+    defaultProf->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
 
     QQmlApplicationEngine engine;
 

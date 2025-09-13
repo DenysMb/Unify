@@ -153,7 +153,7 @@ Kirigami.ApplicationWindow {
     }
 
     // Shared persistent WebEngine profile for all web views (ensures cookies/storage persist)
-    // Use the same configuration as main.cpp to avoid inconsistencies
+    // Keep notifications working by forwarding to C++ presenter.
     WebEngineProfile {
         id: persistentProfile
         storageName: "unify-default"
@@ -161,7 +161,15 @@ Kirigami.ApplicationWindow {
         httpUserAgent: root.firefoxUserAgent
         httpCacheType: WebEngineProfile.DiskHttpCache
         persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
-        // Use default cache/persistent paths derived from storageName and app dirs
+        // Allow 3rd-party cookies to improve SSO persistence across restarts
+        // (property available in recent Qt versions)
+        // thirdPartyCookiePolicy: WebEngineProfile.AlwaysAllowThirdPartyCookies
+        onPresentNotification: function(notification) {
+            if (notificationPresenter && notificationPresenter.presentFromQml) {
+                notificationPresenter.presentFromQml(notification.title, notification.message, notification.origin)
+            }
+            if (notification && notification.close) notification.close()
+        }
     }
 
     // Window title
