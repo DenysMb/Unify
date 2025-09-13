@@ -384,6 +384,71 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // --- Numeric shortcuts: Ctrl+1..9 for services (within current workspace) ---
+    // Helper to switch to Nth service (1-based) in filteredServices
+    function switchToServiceByPosition(pos) {
+        if (!filteredServices || filteredServices.length === 0) return;
+        var idx = Math.max(0, Math.min(filteredServices.length - 1, pos - 1));
+        var svc = filteredServices[idx];
+        if (svc && svc.id) {
+            switchToService(svc.id);
+        }
+    }
+    // Helper to switch to Nth workspace (1-based)
+    function switchToWorkspaceByPosition(pos) {
+        if (!workspaces || workspaces.length === 0) return;
+        var idx = Math.max(0, Math.min(workspaces.length - 1, pos - 1));
+        var ws = workspaces[idx];
+        if (ws) {
+            switchToWorkspace(ws);
+        }
+    }
+    // Cycle helpers
+    function cycleService(next) {
+        if (!filteredServices || filteredServices.length === 0) return;
+        var count = filteredServices.length;
+        var cur = 0;
+        for (var i = 0; i < count; ++i) {
+            if (filteredServices[i].id === currentServiceId) { cur = i; break; }
+        }
+        var target = (cur + (next ? 1 : -1) + count) % count;
+        switchToService(filteredServices[target].id);
+    }
+    function cycleWorkspace(next) {
+        if (!workspaces || workspaces.length === 0) return;
+        var count = workspaces.length;
+        var cur = Math.max(0, workspaces.indexOf(currentWorkspace));
+        var target = (cur + (next ? 1 : -1) + count) % count;
+        switchToWorkspace(workspaces[target]);
+    }
+
+    // Ctrl+Tab: next service
+    Shortcut { sequences: [ "Ctrl+Tab" ]; context: Qt.ApplicationShortcut; onActivated: cycleService(true) }
+    // Ctrl+Shift+Tab: next workspace
+    Shortcut { sequences: [ "Ctrl+Shift+Tab" ]; context: Qt.ApplicationShortcut; onActivated: cycleWorkspace(true) }
+
+    // Ctrl+1..Ctrl+9 => Nth service
+    Shortcut { sequences: [ "Ctrl+1" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(1) }
+    Shortcut { sequences: [ "Ctrl+2" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(2) }
+    Shortcut { sequences: [ "Ctrl+3" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(3) }
+    Shortcut { sequences: [ "Ctrl+4" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(4) }
+    Shortcut { sequences: [ "Ctrl+5" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(5) }
+    Shortcut { sequences: [ "Ctrl+6" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(6) }
+    Shortcut { sequences: [ "Ctrl+7" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(7) }
+    Shortcut { sequences: [ "Ctrl+8" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(8) }
+    Shortcut { sequences: [ "Ctrl+9" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(9) }
+
+    // Ctrl+Shift+1..Ctrl+Shift+9 => Nth workspace
+    Shortcut { sequences: [ "Ctrl+Shift+1" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(1) }
+    Shortcut { sequences: [ "Ctrl+Shift+2" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(2) }
+    Shortcut { sequences: [ "Ctrl+Shift+3" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(3) }
+    Shortcut { sequences: [ "Ctrl+Shift+4" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(4) }
+    Shortcut { sequences: [ "Ctrl+Shift+5" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(5) }
+    Shortcut { sequences: [ "Ctrl+Shift+6" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(6) }
+    Shortcut { sequences: [ "Ctrl+Shift+7" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(7) }
+    Shortcut { sequences: [ "Ctrl+Shift+8" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(8) }
+    Shortcut { sequences: [ "Ctrl+Shift+9" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(9) }
+
     // Function to disable/enable a service
     function setServiceEnabled(serviceId, enabled) {
         var service = findServiceById(serviceId);
