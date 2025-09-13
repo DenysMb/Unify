@@ -13,6 +13,7 @@ Controls.Button {
     property int buttonSize: 64
     property int iconSize: 48
     property bool disabledVisual: false
+    property bool useDefaultIcon: !root.image
 
     text: i18n(title)
     display: Controls.AbstractButton.IconOnly
@@ -24,8 +25,8 @@ Controls.Button {
         id: buttonItem
 
         MultiEffect {
-            source: imageItem
-            anchors.fill: imageItem
+            source: useDefaultIcon ? iconItem : imageItem
+            anchors.fill: useDefaultIcon ? iconItem : imageItem
             maskEnabled: true
             maskSource: mask
         }
@@ -42,6 +43,17 @@ Controls.Button {
             visible: false
         }
 
+        Kirigami.Icon {
+            id: iconItem
+            anchors.centerIn: parent
+            width: iconSize
+            height: iconSize
+            source: "internet-web-browser-symbolic"
+            isMask: true
+            opacity: root.disabledVisual ? 0.3 : 1.0
+            visible: false
+        }
+
         Item {
             id: mask
             anchors.fill: imageItem
@@ -54,4 +66,3 @@ Controls.Button {
         }
     }
 }
-
