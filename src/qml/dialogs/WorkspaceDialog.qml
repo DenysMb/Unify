@@ -16,7 +16,7 @@ Kirigami.Dialog {
 
     // New signal carrying name and icon
     signal acceptedWorkspace(string name, string icon)
-    signal deleteRequested()
+    signal deleteRequested
 
     title: isEditMode ? i18n("Edit Workspace") : i18n("Add Workspace")
     standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
@@ -24,23 +24,23 @@ Kirigami.Dialog {
     preferredWidth: Kirigami.Units.gridUnit * 20
 
     function populateFields(name) {
-        workspaceNameField.text = name || ""
-        root.selectedIconName = root.initialIcon || "folder"
+        workspaceNameField.text = name || "";
+        root.selectedIconName = root.initialIcon || "folder";
     }
     function clearFields() {
-        workspaceNameField.text = ""
-        root.selectedIconName = "folder"
+        workspaceNameField.text = "";
+        root.selectedIconName = "folder";
     }
 
     onAccepted: {
-        var workspaceName = (workspaceNameField.text || "").trim()
-        var iconName = (root.selectedIconName || "").trim() || "folder"
+        var workspaceName = (workspaceNameField.text || "").trim();
+        var iconName = (root.selectedIconName || "").trim() || "folder";
         if (workspaceName === "") {
-            console.log("Workspace name cannot be empty")
-            return
+            console.log("Workspace name cannot be empty");
+            return;
         }
-        acceptedWorkspace(workspaceName, iconName)
-        clearFields()
+        acceptedWorkspace(workspaceName, iconName);
+        clearFields();
     }
 
     Kirigami.FormLayout {
@@ -64,7 +64,7 @@ Kirigami.Dialog {
 
         // Delete button appears only in edit mode
         Controls.Button {
-            visible: root.isEditMode
+            // visible: root.isEditMode
             Kirigami.FormData.label: ""
             text: i18n("Delete Workspace")
             icon.name: "edit-delete"
@@ -77,7 +77,7 @@ Kirigami.Dialog {
         id: iconDialog
         onAccepted: {
             if (typeof iconName !== "undefined" && iconName) {
-                root.selectedIconName = iconName
+                root.selectedIconName = iconName;
             }
         }
     }

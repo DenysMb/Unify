@@ -203,7 +203,6 @@ Kirigami.ApplicationWindow {
     // Add/Edit Service Dialog
     ServiceDialog {
         id: addServiceDialog
-        property bool isEditMode: false
         workspaces: root.workspaces
         onAcceptedData: function (serviceData) {
             if (isEditMode) {
@@ -229,7 +228,6 @@ Kirigami.ApplicationWindow {
     // Add/Edit Workspace Dialog
     WorkspaceDialog {
         id: addWorkspaceDialog
-        property bool isEditMode: false
         property int editingIndex: -1
         onAcceptedWorkspace: function (workspaceName, iconName) {
             if (isEditMode) {
