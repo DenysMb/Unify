@@ -241,12 +241,36 @@ Kirigami.ApplicationWindow {
         }
         onDeleteRequested: {
             if (isEditMode && root.currentServiceId !== "" && configManager) {
-                configManager.removeService(root.currentServiceId);
-                // Reset selection
-                root.currentServiceName = i18n("Unify - Web app aggregator");
-                root.currentServiceId = "";
-                webViewStack.currentIndex = 0;
+                var ws = root.currentWorkspace;
+                var deletedId = root.currentServiceId;
+                configManager.removeService(deletedId);
                 addServiceDialog.close();
+                // After services update, choose next service: last used in workspace if available and exists; otherwise first
+                Qt.callLater(function() {
+                    var nextId = "";
+                    var last = configManager && configManager.lastUsedService ? configManager.lastUsedService(ws) : "";
+                    // Helper to check membership
+                    function findIdx(list, id) {
+                        for (var i = 0; i < list.length; ++i) { if (list[i].id === id) return i; }
+                        return -1;
+                    }
+                    var list = root.filteredServices; // reflects current workspace
+                    if (last && last !== "" && findIdx(list, last) !== -1) {
+                        nextId = last;
+                    } else if (list && list.length > 0) {
+                        nextId = list[0].id;
+                    }
+                    if (nextId && nextId !== "") {
+                        root.switchToService(nextId);
+                        if (configManager && configManager.setLastUsedService)
+                            configManager.setLastUsedService(ws, nextId);
+                    } else {
+                        // No services left in workspace; show empty state
+                        root.currentServiceName = i18n("Unify - Web app aggregator");
+                        root.currentServiceId = "";
+                        webViewStack.currentIndex = 0;
+                    }
+                });
             }
         }
     }
