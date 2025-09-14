@@ -94,19 +94,12 @@ Kirigami.ApplicationWindow {
         if (usedService) {
             currentServiceName = usedService.title;
             currentServiceId = usedService.id;
-            webViewStack.currentIndex = usedFilteredIndex + 1; // +1 because empty state is index 0
+            webViewStack.setCurrentByServiceId(usedService.id);
         } else if (firstService) {
             currentServiceName = firstService.title;
             currentServiceId = firstService.id;
-            // Find index in filtered services (which is what the repeater uses)
-            var filteredIndex = -1;
-            for (var k = 0; k < filteredServices.length; k++) {
-                if (filteredServices[k].id === firstService.id) {
-                    filteredIndex = k;
-                    break;
-                }
-            }
-            webViewStack.currentIndex = filteredIndex >= 0 ? filteredIndex + 1 : 0;
+            // Select by service ID in the global web view stack
+            webViewStack.setCurrentByServiceId(firstService.id);
         } else {
             // No services in this workspace
             currentServiceName = i18n("Unify - Web app aggregator");
@@ -354,7 +347,10 @@ Kirigami.ApplicationWindow {
                 WebViewStack {
                     id: webViewStack
                     anchors.fill: parent
-                    services: root.filteredServices
+                    // Keep all services instantiated to preserve background activity across workspaces
+                    services: root.services
+                    // Drive empty state off the filtered (current workspace) count
+                    filteredCount: root.filteredServices.length
                     disabledServices: root.disabledServices
                     webProfile: persistentProfile
                 }
