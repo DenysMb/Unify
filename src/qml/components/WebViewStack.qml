@@ -11,6 +11,8 @@ StackLayout {
     // Public API
     property var services: [] // array of { id, title, url }
     property var disabledServices: ({})
+    // Number of services visible in the current workspace (for empty state logic)
+    property int filteredCount: 0
     // Profile provided by Main.qml (persistent)
     property WebEngineProfile webProfile
 
@@ -19,7 +21,8 @@ StackLayout {
     }
 
     // currentIndex: 0 = empty state, 1..n = services
-    currentIndex: services.length > 0 ? 1 : 0
+    // Use filteredCount to drive empty state when no services in current workspace
+    currentIndex: filteredCount > 0 ? 1 : 0
 
     function setCurrentByServiceId(serviceId) {
         var idx = -1
@@ -48,7 +51,8 @@ StackLayout {
 
     // Empty state when no services
     Item {
-        visible: services.length === 0
+        // Show empty state when current workspace has no services
+        visible: filteredCount === 0
         Components.EmptyState {
             anchors.centerIn: parent
             width: parent.width
