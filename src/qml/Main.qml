@@ -207,11 +207,36 @@ Kirigami.ApplicationWindow {
         workspaces: root.workspaces
         onAcceptedData: function (serviceData) {
             if (isEditMode) {
+                // If workspace changed during edit, switch to the new workspace and keep service selected
+                var prev = root.findServiceById(root.currentServiceId);
+                var prevWs = prev ? prev.workspace : "";
                 if (configManager)
                     configManager.updateService(root.currentServiceId, serviceData);
+                if (serviceData.workspace && serviceData.workspace !== prevWs) {
+                    root.switchToWorkspace(serviceData.workspace);
+                    Qt.callLater(function() { root.switchToService(root.currentServiceId); });
+                } else {
+                    // Reselect current service after model rebuild
+                    Qt.callLater(function() { webViewStack.setCurrentByServiceId(root.currentServiceId); });
+                }
             } else {
+                // Create a stable ID up front so we can select the new service after adding
+                var newId = root.generateUUID();
+                var newService = {
+                    id: newId,
+                    title: serviceData.title,
+                    url: serviceData.url,
+                    image: serviceData.image,
+                    workspace: serviceData.workspace
+                };
                 if (configManager)
-                    configManager.addService(serviceData);
+                    configManager.addService(newService);
+                // If created in another workspace, switch to it
+                if (newService.workspace && newService.workspace !== root.currentWorkspace) {
+                    root.switchToWorkspace(newService.workspace);
+                }
+                // After the model updates and views are created, select the newly added service
+                Qt.callLater(function() { root.switchToService(newId); });
             }
         }
         onDeleteRequested: {
@@ -259,6 +284,16 @@ Kirigami.ApplicationWindow {
     // Permission Request Dialog (componente)
     PermissionDialog {
         id: permissionDialog
+    }
+
+    // Keep currently selected service visible after services list changes (add/update/remove)
+    Connections {
+        target: configManager
+        function onServicesChanged() {
+            if (root.currentServiceId && root.currentServiceId !== "") {
+                Qt.callLater(function() { webViewStack.setCurrentByServiceId(root.currentServiceId); });
+            }
+        }
     }
 
     // Set the first page that will be loaded when the app opens
