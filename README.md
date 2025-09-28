@@ -32,7 +32,7 @@ cmake --build build -j
 Run:
 
 ```bash
-./build/src/unify
+./build/bin/unify
 ```
 
 Release (optional):
