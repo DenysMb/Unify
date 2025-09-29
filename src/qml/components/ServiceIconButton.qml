@@ -13,8 +13,18 @@ Controls.Button {
     property int buttonSize: 64
     property int iconSize: 48
     property bool disabledVisual: false
-    property bool useDefaultIcon: !root.image
     property bool active: false
+
+    readonly property bool isUrl: {
+        if (!root.image)
+            return false;
+        return root.image.startsWith("http://") || root.image.startsWith("https://") || root.image.startsWith("file://") || root.image.startsWith("qrc:/");
+    }
+
+    readonly property bool hasImage: root.image && root.image.trim() !== ""
+    readonly property bool shouldShowImage: hasImage && isUrl
+    readonly property bool shouldShowIcon: hasImage && !isUrl
+    readonly property bool shouldShowFallback: !hasImage
 
     text: i18n(title)
     display: Controls.AbstractButton.IconOnly
@@ -32,32 +42,39 @@ Controls.Button {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
 
-        // Render the provided image at high quality (fixed iconSize, centered)
         Image {
             id: imageItem
             anchors.centerIn: parent
             width: iconSize
             height: iconSize
-            source: root.image
+            source: shouldShowImage ? root.image : ""
             fillMode: Image.PreserveAspectFit
             smooth: true
             mipmap: true
             cache: true
             sourceSize: Qt.size(Math.ceil(iconSize * Screen.devicePixelRatio), Math.ceil(iconSize * Screen.devicePixelRatio))
             opacity: root.disabledVisual ? 0.3 : 1.0
-            visible: !useDefaultIcon
+            visible: shouldShowImage
         }
 
-        // Fallback: themed symbolic icon
         Kirigami.Icon {
-            id: iconItem
+            id: systemIconItem
+            anchors.centerIn: parent
+            width: iconSize
+            height: iconSize
+            source: shouldShowIcon ? root.image : ""
+            opacity: root.disabledVisual ? 0.3 : 1.0
+            visible: shouldShowIcon
+        }
+
+        Kirigami.Icon {
+            id: fallbackIconItem
             anchors.centerIn: parent
             width: iconSize
             height: iconSize
             source: "internet-web-browser-symbolic"
-            isMask: true
             opacity: root.disabledVisual ? 0.3 : 1.0
-            visible: useDefaultIcon
+            visible: shouldShowFallback
         }
     }
 }

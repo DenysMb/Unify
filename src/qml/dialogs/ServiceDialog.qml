@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
 import org.kde.kirigami as Kirigami
+import org.kde.iconthemes as IconThemes
 
 Kirigami.Dialog {
     id: root
@@ -9,10 +10,17 @@ Kirigami.Dialog {
     // Public API
     property bool isEditMode: false
     property var workspaces: []
-    property var serviceData: ({ title: "", url: "", image: "", workspace: "" })
+    property var serviceData: ({
+            title: "",
+            url: "",
+            image: "",
+            workspace: ""
+        })
 
     signal acceptedData(var data)
-    signal deleteRequested()
+    signal deleteRequested
+
+    property string selectedIconName: "internet-web-browser-symbolic"
 
     title: isEditMode ? i18n("Edit Service") : i18n("Add Service")
     standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
@@ -20,31 +28,33 @@ Kirigami.Dialog {
     preferredWidth: Kirigami.Units.gridUnit * 20
 
     function populateFields(service) {
-        serviceNameField.text = service.title || ""
-        iconUrlField.text = service.image || ""
-        serviceUrlField.text = service.url || ""
-        workspaceComboBox.currentIndex = Math.max(0, workspaces.indexOf(service.workspace || workspaces[0]))
+        serviceNameField.text = service.title || "";
+        iconUrlField.text = service.image || "";
+        serviceUrlField.text = service.url || "";
+        workspaceComboBox.currentIndex = Math.max(0, workspaces.indexOf(service.workspace || workspaces[0]));
+        root.selectedIconName = service.image || "internet-web-browser-symbolic";
     }
 
     function clearFields() {
-        serviceNameField.text = ""
-        iconUrlField.text = ""
-        serviceUrlField.text = ""
-        workspaceComboBox.currentIndex = 0
+        serviceNameField.text = "";
+        iconUrlField.text = "";
+        serviceUrlField.text = "";
+        workspaceComboBox.currentIndex = 0;
+        root.selectedIconName = "internet-web-browser-symbolic";
     }
 
     onAccepted: {
         var data = {
             title: serviceNameField.text,
             url: serviceUrlField.text,
-            image: iconUrlField.text,
+            image: iconUrlField.text.trim() || "internet-web-browser-symbolic",
             workspace: workspaces[workspaceComboBox.currentIndex]
-        }
-        acceptedData(data)
-        clearFields()
+        };
+        acceptedData(data);
+        clearFields();
     }
     onRejected: {
-        clearFields()
+        clearFields();
     }
 
     Kirigami.FormLayout {
@@ -60,6 +70,27 @@ Kirigami.Dialog {
             Kirigami.FormData.label: i18n("Icon URL:")
             placeholderText: i18n("Enter icon URL")
             Layout.fillWidth: true
+        }
+
+        Controls.Button {
+            id: iconButton
+            Kirigami.FormData.label: ""
+            Layout.fillWidth: true
+            Layout.topMargin: Kirigami.Units.smallSpacing
+
+            readonly property bool hasCustomIcon: {
+                var text = iconUrlField.text.trim();
+                return text && !(text.startsWith("http://") || text.startsWith("https://") || text.startsWith("file://") || text.startsWith("qrc:/"));
+            }
+
+            text: hasCustomIcon ? "" : i18n("Or select a custom icon")
+            icon.name: hasCustomIcon ? (iconUrlField.text.trim() || root.selectedIconName) : ""
+            display: hasCustomIcon ? Controls.AbstractButton.IconOnly : Controls.AbstractButton.TextOnly
+
+            onClicked: iconDialog.open()
+
+            Controls.ToolTip.visible: hovered
+            Controls.ToolTip.text: i18n("Choose icon from system")
         }
 
         Controls.TextField {
@@ -96,7 +127,16 @@ Kirigami.Dialog {
         }
     }
 
-    // Confirmation dialog for deletion
+    IconThemes.IconDialog {
+        id: iconDialog
+        onAccepted: {
+            if (typeof iconName !== "undefined" && iconName) {
+                root.selectedIconName = iconName;
+                iconUrlField.text = iconName;
+            }
+        }
+    }
+
     Kirigami.Dialog {
         id: confirmDeleteDialog
         title: i18n("Delete Service")
