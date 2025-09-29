@@ -19,7 +19,7 @@ Kirigami.GlobalDrawer {
             acts.push(Qt.createQmlObject(`
                 import org.kde.kirigami as Kirigami
                 Kirigami.Action {
-                    text: i18n("${ws}")
+                    text: i18n("${ws}") + " (Ctrl+Shift+${i + 1})"
                     icon.name: (configManager && configManager.workspaceIcons && configManager.workspaceIcons["${ws}"]) ? configManager.workspaceIcons["${ws}"] : "folder"
                     onTriggered: drawer.switchToWorkspace("${ws}")
                 }
