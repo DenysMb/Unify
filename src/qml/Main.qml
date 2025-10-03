@@ -399,7 +399,7 @@ Kirigami.ApplicationWindow {
                 enabled: root.currentServiceId !== "" && !root.isServiceDetached(root.currentServiceId)
                 onTriggered: {
                     if (root.currentServiceId !== "") {
-                        root.setServiceEnabled(root.currentServiceId, !root.isServiceDisabled(root.currentServiceId));
+                        root.setServiceEnabled(root.currentServiceId, root.isServiceDisabled(root.currentServiceId));
                     }
                 }
             }
