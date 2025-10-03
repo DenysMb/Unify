@@ -11,6 +11,7 @@ Rectangle {
     // Public API
     property var services: [] // array of service objects with { id, title, image, url }
     property var disabledServices: ({})
+    property var detachedServices: ({})
     property string currentServiceId: ""
     property int sidebarWidth: 80
     property int buttonSize: 64
@@ -39,7 +40,7 @@ Rectangle {
                     buttonSize: root.buttonSize
                     iconSize: root.iconSize
                     active: modelData.id === root.currentServiceId
-                    disabledVisual: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
+                    disabledVisual: (root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)) || (root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id))
                     onClicked: root.serviceSelected(modelData.id)
                 }
             }

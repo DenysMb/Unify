@@ -40,6 +40,9 @@ Kirigami.ApplicationWindow {
     // Object to track disabled service IDs (using object instead of Set for QML compatibility)
     property var disabledServices: ({})
 
+    // Object to track detached service IDs and their window instances
+    property var detachedServices: ({})
+
     // Function to generate random UUID
     function generateUUID() {
         return Services.generateUUID();
@@ -157,11 +160,12 @@ Kirigami.ApplicationWindow {
         // Allow 3rd-party cookies to improve SSO persistence across restarts
         // (property available in recent Qt versions)
         // thirdPartyCookiePolicy: WebEngineProfile.AlwaysAllowThirdPartyCookies
-        onPresentNotification: function(notification) {
+        onPresentNotification: function (notification) {
             if (notificationPresenter && notificationPresenter.presentFromQml) {
-                notificationPresenter.presentFromQml(notification.title, notification.message, notification.origin)
+                notificationPresenter.presentFromQml(notification.title, notification.message, notification.origin);
             }
-            if (notification && notification.close) notification.close()
+            if (notification && notification.close)
+                notification.close();
         }
     }
 
@@ -187,13 +191,13 @@ Kirigami.ApplicationWindow {
             if (index >= 0 && index < root.workspaces.length) {
                 addWorkspaceDialog.isEditMode = true;
                 addWorkspaceDialog.editingIndex = index;
-                addWorkspaceDialog.initialName = root.workspaces[index]
+                addWorkspaceDialog.initialName = root.workspaces[index];
                 // Pre-fill current icon if available
                 if (configManager && configManager.workspaceIcons) {
-                    var iconMap = configManager.workspaceIcons
-                    addWorkspaceDialog.initialIcon = iconMap[addWorkspaceDialog.initialName] || "folder"
+                    var iconMap = configManager.workspaceIcons;
+                    addWorkspaceDialog.initialIcon = iconMap[addWorkspaceDialog.initialName] || "folder";
                 } else {
-                    addWorkspaceDialog.initialIcon = "folder"
+                    addWorkspaceDialog.initialIcon = "folder";
                 }
                 addWorkspaceDialog.populateFields(addWorkspaceDialog.initialName);
                 addWorkspaceDialog.open();
@@ -214,10 +218,14 @@ Kirigami.ApplicationWindow {
                     configManager.updateService(root.currentServiceId, serviceData);
                 if (serviceData.workspace && serviceData.workspace !== prevWs) {
                     root.switchToWorkspace(serviceData.workspace);
-                    Qt.callLater(function() { root.switchToService(root.currentServiceId); });
+                    Qt.callLater(function () {
+                        root.switchToService(root.currentServiceId);
+                    });
                 } else {
                     // Reselect current service after model rebuild
-                    Qt.callLater(function() { webViewStack.setCurrentByServiceId(root.currentServiceId); });
+                    Qt.callLater(function () {
+                        webViewStack.setCurrentByServiceId(root.currentServiceId);
+                    });
                 }
             } else {
                 // Create a stable ID up front so we can select the new service after adding
@@ -236,7 +244,9 @@ Kirigami.ApplicationWindow {
                     root.switchToWorkspace(newService.workspace);
                 }
                 // After the model updates and views are created, select the newly added service
-                Qt.callLater(function() { root.switchToService(newId); });
+                Qt.callLater(function () {
+                    root.switchToService(newId);
+                });
             }
         }
         onDeleteRequested: {
@@ -246,12 +256,15 @@ Kirigami.ApplicationWindow {
                 configManager.removeService(deletedId);
                 addServiceDialog.close();
                 // After services update, choose next service: last used in workspace if available and exists; otherwise first
-                Qt.callLater(function() {
+                Qt.callLater(function () {
                     var nextId = "";
                     var last = configManager && configManager.lastUsedService ? configManager.lastUsedService(ws) : "";
                     // Helper to check membership
                     function findIdx(list, id) {
-                        for (var i = 0; i < list.length; ++i) { if (list[i].id === id) return i; }
+                        for (var i = 0; i < list.length; ++i) {
+                            if (list[i].id === id)
+                                return i;
+                        }
                         return -1;
                     }
                     var list = root.filteredServices; // reflects current workspace
@@ -315,7 +328,9 @@ Kirigami.ApplicationWindow {
         target: configManager
         function onServicesChanged() {
             if (root.currentServiceId && root.currentServiceId !== "") {
-                Qt.callLater(function() { webViewStack.setCurrentByServiceId(root.currentServiceId); });
+                Qt.callLater(function () {
+                    webViewStack.setCurrentByServiceId(root.currentServiceId);
+                });
             }
         }
     }
@@ -358,21 +373,33 @@ Kirigami.ApplicationWindow {
             Kirigami.Action {
                 text: i18n("Refresh Service")
                 icon.name: "view-refresh"
-                enabled: root.currentServiceId !== "" && !root.isServiceDisabled(root.currentServiceId)
+                enabled: root.currentServiceId !== "" && !root.isServiceDisabled(root.currentServiceId) && !root.isServiceDetached(root.currentServiceId)
                 onTriggered: {
                     webViewStack.refreshCurrent();
                     console.log("Refreshing service: " + root.currentServiceName);
                 }
             },
             Kirigami.Action {
+                text: root.isServiceDetached(root.currentServiceId) ? i18n("Reattach Service") : i18n("Detach Service")
+                icon.name: root.isServiceDetached(root.currentServiceId) ? "view-restore" : "view-split-left-right"
+                enabled: root.currentServiceId !== "" && !root.isServiceDisabled(root.currentServiceId)
+                onTriggered: {
+                    if (root.currentServiceId !== "") {
+                        if (root.isServiceDetached(root.currentServiceId)) {
+                            root.reattachService(root.currentServiceId);
+                        } else {
+                            root.detachService(root.currentServiceId);
+                        }
+                    }
+                }
+            },
+            Kirigami.Action {
                 text: root.isServiceDisabled(root.currentServiceId) ? i18n("Enable Service") : i18n("Disable Service")
                 icon.name: root.isServiceDisabled(root.currentServiceId) ? "media-playback-start" : "media-playback-pause"
-                enabled: root.currentServiceId !== ""
-                checkable: true
-                checked: root.isServiceDisabled(root.currentServiceId)
-                onCheckedChanged: {
+                enabled: root.currentServiceId !== "" && !root.isServiceDetached(root.currentServiceId)
+                onTriggered: {
                     if (root.currentServiceId !== "") {
-                        root.setServiceEnabled(root.currentServiceId, !checked);
+                        root.setServiceEnabled(root.currentServiceId, !root.isServiceDisabled(root.currentServiceId));
                     }
                 }
             }
@@ -386,6 +413,7 @@ Kirigami.ApplicationWindow {
             ServicesSidebar {
                 services: root.filteredServices
                 disabledServices: root.disabledServices
+                detachedServices: root.detachedServices
                 currentServiceId: root.currentServiceId
                 sidebarWidth: root.sidebarWidth
                 buttonSize: root.buttonSize
@@ -421,20 +449,21 @@ Kirigami.ApplicationWindow {
     Component.onCompleted: {
         // Use persisted current workspace
         var ws = root.currentWorkspace;
-        if (!ws || ws === "") ws = workspaces[0];
+        if (!ws || ws === "")
+            ws = workspaces[0];
         switchToWorkspace(ws);
     }
 
     // Toggle fullscreen on F11 (StandardKey.FullScreen)
     Shortcut {
         id: fullscreenShortcut
-        sequences: [ StandardKey.FullScreen, "F11" ]
+        sequences: [StandardKey.FullScreen, "F11"]
         context: Qt.WindowShortcut
         onActivated: {
             if (root.visibility === Window.FullScreen) {
-                root.showNormal()
+                root.showNormal();
             } else {
-                root.showFullScreen()
+                root.showFullScreen();
             }
         }
     }
@@ -442,7 +471,8 @@ Kirigami.ApplicationWindow {
     // --- Numeric shortcuts: Ctrl+1..9 for services (within current workspace) ---
     // Helper to switch to Nth service (1-based) in filteredServices
     function switchToServiceByPosition(pos) {
-        if (!filteredServices || filteredServices.length === 0) return;
+        if (!filteredServices || filteredServices.length === 0)
+            return;
         var idx = Math.max(0, Math.min(filteredServices.length - 1, pos - 1));
         var svc = filteredServices[idx];
         if (svc && svc.id) {
@@ -451,7 +481,8 @@ Kirigami.ApplicationWindow {
     }
     // Helper to switch to Nth workspace (1-based)
     function switchToWorkspaceByPosition(pos) {
-        if (!workspaces || workspaces.length === 0) return;
+        if (!workspaces || workspaces.length === 0)
+            return;
         var idx = Math.max(0, Math.min(workspaces.length - 1, pos - 1));
         var ws = workspaces[idx];
         if (ws) {
@@ -460,17 +491,22 @@ Kirigami.ApplicationWindow {
     }
     // Cycle helpers
     function cycleService(next) {
-        if (!filteredServices || filteredServices.length === 0) return;
+        if (!filteredServices || filteredServices.length === 0)
+            return;
         var count = filteredServices.length;
         var cur = 0;
         for (var i = 0; i < count; ++i) {
-            if (filteredServices[i].id === currentServiceId) { cur = i; break; }
+            if (filteredServices[i].id === currentServiceId) {
+                cur = i;
+                break;
+            }
         }
         var target = (cur + (next ? 1 : -1) + count) % count;
         switchToService(filteredServices[target].id);
     }
     function cycleWorkspace(next) {
-        if (!workspaces || workspaces.length === 0) return;
+        if (!workspaces || workspaces.length === 0)
+            return;
         var count = workspaces.length;
         var cur = Math.max(0, workspaces.indexOf(currentWorkspace));
         var target = (cur + (next ? 1 : -1) + count) % count;
@@ -478,31 +514,222 @@ Kirigami.ApplicationWindow {
     }
 
     // Ctrl+Tab: next service
-    Shortcut { sequences: [ "Ctrl+Tab" ]; context: Qt.ApplicationShortcut; onActivated: cycleService(true) }
+    Shortcut {
+        sequences: ["Ctrl+Tab"]
+        context: Qt.ApplicationShortcut
+        onActivated: cycleService(true)
+    }
     // Ctrl+Shift+Tab: next workspace
-    Shortcut { sequences: [ "Ctrl+Shift+Tab" ]; context: Qt.ApplicationShortcut; onActivated: cycleWorkspace(true) }
+    Shortcut {
+        sequences: ["Ctrl+Shift+Tab"]
+        context: Qt.ApplicationShortcut
+        onActivated: cycleWorkspace(true)
+    }
 
     // Ctrl+1..Ctrl+9 => Nth service
-    Shortcut { sequences: [ "Ctrl+1" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(1) }
-    Shortcut { sequences: [ "Ctrl+2" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(2) }
-    Shortcut { sequences: [ "Ctrl+3" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(3) }
-    Shortcut { sequences: [ "Ctrl+4" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(4) }
-    Shortcut { sequences: [ "Ctrl+5" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(5) }
-    Shortcut { sequences: [ "Ctrl+6" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(6) }
-    Shortcut { sequences: [ "Ctrl+7" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(7) }
-    Shortcut { sequences: [ "Ctrl+8" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(8) }
-    Shortcut { sequences: [ "Ctrl+9" ]; context: Qt.ApplicationShortcut; onActivated: switchToServiceByPosition(9) }
+    Shortcut {
+        sequences: ["Ctrl+1"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToServiceByPosition(1)
+    }
+    Shortcut {
+        sequences: ["Ctrl+2"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToServiceByPosition(2)
+    }
+    Shortcut {
+        sequences: ["Ctrl+3"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToServiceByPosition(3)
+    }
+    Shortcut {
+        sequences: ["Ctrl+4"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToServiceByPosition(4)
+    }
+    Shortcut {
+        sequences: ["Ctrl+5"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToServiceByPosition(5)
+    }
+    Shortcut {
+        sequences: ["Ctrl+6"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToServiceByPosition(6)
+    }
+    Shortcut {
+        sequences: ["Ctrl+7"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToServiceByPosition(7)
+    }
+    Shortcut {
+        sequences: ["Ctrl+8"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToServiceByPosition(8)
+    }
+    Shortcut {
+        sequences: ["Ctrl+9"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToServiceByPosition(9)
+    }
 
     // Ctrl+Shift+1..Ctrl+Shift+9 => Nth workspace
-    Shortcut { sequences: [ "Ctrl+Shift+1" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(1) }
-    Shortcut { sequences: [ "Ctrl+Shift+2" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(2) }
-    Shortcut { sequences: [ "Ctrl+Shift+3" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(3) }
-    Shortcut { sequences: [ "Ctrl+Shift+4" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(4) }
-    Shortcut { sequences: [ "Ctrl+Shift+5" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(5) }
-    Shortcut { sequences: [ "Ctrl+Shift+6" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(6) }
-    Shortcut { sequences: [ "Ctrl+Shift+7" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(7) }
-    Shortcut { sequences: [ "Ctrl+Shift+8" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(8) }
-    Shortcut { sequences: [ "Ctrl+Shift+9" ]; context: Qt.ApplicationShortcut; onActivated: switchToWorkspaceByPosition(9) }
+    Shortcut {
+        sequences: ["Ctrl+Shift+1"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToWorkspaceByPosition(1)
+    }
+    Shortcut {
+        sequences: ["Ctrl+Shift+2"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToWorkspaceByPosition(2)
+    }
+    Shortcut {
+        sequences: ["Ctrl+Shift+3"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToWorkspaceByPosition(3)
+    }
+    Shortcut {
+        sequences: ["Ctrl+Shift+4"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToWorkspaceByPosition(4)
+    }
+    Shortcut {
+        sequences: ["Ctrl+Shift+5"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToWorkspaceByPosition(5)
+    }
+    Shortcut {
+        sequences: ["Ctrl+Shift+6"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToWorkspaceByPosition(6)
+    }
+    Shortcut {
+        sequences: ["Ctrl+Shift+7"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToWorkspaceByPosition(7)
+    }
+    Shortcut {
+        sequences: ["Ctrl+Shift+8"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToWorkspaceByPosition(8)
+    }
+    Shortcut {
+        sequences: ["Ctrl+Shift+9"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToWorkspaceByPosition(9)
+    }
+
+    // Function to detach a service (open in separate window)
+    function detachService(serviceId) {
+        var service = findServiceById(serviceId);
+        if (!service || service.workspace !== currentWorkspace) {
+            return false;
+        }
+
+        // Check if already detached
+        if (isServiceDetached(serviceId)) {
+            console.log("Service already detached:", service.title);
+            return false;
+        }
+
+        // Get the current WebView to preserve state
+        var webView = webViewStack.getWebViewByServiceId(serviceId);
+        if (!webView) {
+            console.log("WebView not found for service:", serviceId);
+            return false;
+        }
+
+        // Create detached window component
+        var detachedComponent = Qt.createComponent("DetachedServiceWindow.qml");
+        if (detachedComponent.status !== Component.Ready) {
+            console.log("Failed to load detached window component:", detachedComponent.errorString());
+            return false;
+        }
+
+        // Create the detached window
+        var detachedWindow = detachedComponent.createObject(root, {
+            "serviceId": serviceId,
+            "serviceTitle": service.title,
+            "serviceUrl": webView.url // Use current URL to preserve state
+            ,
+            "webProfile": persistentProfile
+        });
+
+        if (!detachedWindow) {
+            console.log("Failed to create detached window for:", service.title);
+            return false;
+        }
+
+        // Connect to window closed signal
+        detachedWindow.windowClosed.connect(function (closedServiceId) {
+            reattachService(closedServiceId);
+        });
+
+        // Store the detached window reference
+        detachedServices[serviceId] = detachedWindow;
+
+        // Disable the service in the main window (similar to disabled services)
+        disabledServices[serviceId] = true;
+        webView.stop();
+        webView.url = "about:blank";
+
+        // Show the detached window
+        detachedWindow.show();
+        detachedWindow.raise();
+
+        // Emit signals to update UI
+        disabledServicesChanged();
+
+        console.log("Service detached:", service.title);
+        return true;
+    }
+
+    // Function to reattach a service (close detached window and re-enable in main)
+    function reattachService(serviceId) {
+        if (!isServiceDetached(serviceId)) {
+            return false;
+        }
+
+        var service = findServiceById(serviceId);
+        if (!service) {
+            return false;
+        }
+
+        // Get the detached window
+        var detachedWindow = detachedServices[serviceId];
+        if (detachedWindow && detachedWindow.webView) {
+            // Get the current URL from the detached window to preserve state
+            var currentUrl = detachedWindow.webView.url;
+
+            // Re-enable service in main window
+            delete disabledServices[serviceId];
+            var mainWebView = webViewStack.getWebViewByServiceId(serviceId);
+            if (mainWebView && currentUrl && currentUrl.toString() !== "about:blank") {
+                mainWebView.url = currentUrl;
+            } else if (mainWebView) {
+                mainWebView.url = service.url;
+            }
+
+            // Close and cleanup detached window
+            detachedWindow.close();
+            detachedWindow.destroy();
+        }
+
+        // Remove from detached services
+        delete detachedServices[serviceId];
+
+        // Emit signals to update UI
+        disabledServicesChanged();
+
+        console.log("Service reattached:", service.title);
+        return true;
+    }
+
+    // Function to check if a service is detached
+    function isServiceDetached(serviceId) {
+        return detachedServices.hasOwnProperty(serviceId);
+    }
 
     // Function to disable/enable a service
     function setServiceEnabled(serviceId, enabled) {
