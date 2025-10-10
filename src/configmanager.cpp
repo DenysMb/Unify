@@ -76,6 +76,53 @@ void ConfigManager::setWorkspaceIcon(const QString &workspace, const QString &ic
     }
 }
 
+QVariantMap ConfigManager::disabledServices() const
+{
+    return m_disabledServices;
+}
+
+void ConfigManager::setDisabledServices(const QVariantMap &disabledServices)
+{
+    if (m_disabledServices != disabledServices) {
+        m_disabledServices = disabledServices;
+        Q_EMIT disabledServicesChanged();
+        saveSettings();
+    }
+}
+
+void ConfigManager::setServiceDisabled(const QString &serviceId, bool disabled)
+{
+    if (serviceId.isEmpty()) {
+        return;
+    }
+
+    bool changed = false;
+    if (disabled) {
+        // Add to disabled services if not already present
+        if (!m_disabledServices.contains(serviceId) || m_disabledServices.value(serviceId).toBool() != true) {
+            m_disabledServices.insert(serviceId, true);
+            changed = true;
+        }
+    } else {
+        // Remove from disabled services if present
+        if (m_disabledServices.contains(serviceId)) {
+            m_disabledServices.remove(serviceId);
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        Q_EMIT disabledServicesChanged();
+        saveSettings();
+        qDebug() << "Service" << serviceId << (disabled ? "disabled" : "enabled");
+    }
+}
+
+bool ConfigManager::isServiceDisabled(const QString &serviceId) const
+{
+    return m_disabledServices.contains(serviceId) && m_disabledServices.value(serviceId).toBool();
+}
+
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
@@ -228,7 +275,7 @@ void ConfigManager::saveSettings()
     m_settings.beginGroup(QStringLiteral("Services"));
     m_settings.setValue(QStringLiteral("list"), m_services);
     m_settings.endGroup();
-    
+
     m_settings.beginGroup(QStringLiteral("Workspaces"));
     m_settings.setValue(QStringLiteral("current"), m_currentWorkspace);
     // Persist workspace icon map
@@ -249,10 +296,15 @@ void ConfigManager::saveSettings()
     }
     m_settings.setValue(QStringLiteral("lastServiceByWorkspace"), map);
     m_settings.endGroup();
-    
+
+    // Persist disabled services
+    m_settings.beginGroup(QStringLiteral("DisabledServices"));
+    m_settings.setValue(QStringLiteral("list"), m_disabledServices);
+    m_settings.endGroup();
+
     m_settings.sync();
-    qDebug() << "Settings saved. Services count:" << m_services.size() 
-             << "Current workspace:" << m_currentWorkspace;
+    qDebug() << "Settings saved. Services count:" << m_services.size() << "Current workspace:" << m_currentWorkspace
+             << "Disabled services count:" << m_disabledServices.size();
 }
 
 void ConfigManager::loadSettings()
@@ -260,7 +312,7 @@ void ConfigManager::loadSettings()
     m_settings.beginGroup(QStringLiteral("Services"));
     m_services = m_settings.value(QStringLiteral("list"), QVariantList()).toList();
     m_settings.endGroup();
-    
+
     m_settings.beginGroup(QStringLiteral("Workspaces"));
     m_currentWorkspace = m_settings.value(QStringLiteral("current"), QStringLiteral("Personal")).toString();
     // Load workspace icon map
@@ -281,9 +333,14 @@ void ConfigManager::loadSettings()
         m_lastServiceByWorkspace.insert(it.key(), it.value().toString());
     }
     m_settings.endGroup();
-    
+
+    // Load disabled services
+    m_settings.beginGroup(QStringLiteral("DisabledServices"));
+    m_disabledServices = m_settings.value(QStringLiteral("list"), QVariantMap()).toMap();
+    m_settings.endGroup();
+
     updateWorkspacesList();
-    
+
     // Ensure we have at least one workspace
     if (m_workspaces.isEmpty()) {
         m_workspaces.append(QStringLiteral("Personal"));
@@ -291,10 +348,9 @@ void ConfigManager::loadSettings()
         Q_EMIT workspacesChanged();
         Q_EMIT currentWorkspaceChanged();
     }
-    
-    qDebug() << "Settings loaded. Services count:" << m_services.size() 
-             << "Workspaces:" << m_workspaces 
-             << "Current workspace:" << m_currentWorkspace;
+
+    qDebug() << "Settings loaded. Services count:" << m_services.size() << "Workspaces:" << m_workspaces << "Current workspace:" << m_currentWorkspace
+             << "Disabled services count:" << m_disabledServices.size();
 }
 
 void ConfigManager::setLastUsedService(const QString &workspace, const QString &serviceId)
