@@ -17,7 +17,7 @@ StackLayout {
     property WebEngineProfile webProfile
 
     function isDisabled(id) {
-        return disabledServices && disabledServices.hasOwnProperty(id)
+        return disabledServices && disabledServices.hasOwnProperty(id);
     }
 
     // currentIndex: 0 = empty state, 1..n = services
@@ -25,28 +25,33 @@ StackLayout {
     currentIndex: filteredCount > 0 ? 1 : 0
 
     function setCurrentByServiceId(serviceId) {
-        var idx = -1
+        var idx = -1;
         for (var i = 0; i < services.length; i++) {
-            if (services[i].id === serviceId) { idx = i; break }
+            if (services[i].id === serviceId) {
+                idx = i;
+                break;
+            }
         }
-        root.currentIndex = idx >= 0 ? (idx + 1) : 0
+        root.currentIndex = idx >= 0 ? (idx + 1) : 0;
     }
 
     function refreshCurrent() {
         if (root.currentIndex > 0 && root.currentIndex < root.children.length) {
-            var wv = root.children[root.currentIndex]
-            if (wv && wv.reload) wv.reload()
+            var wv = root.children[root.currentIndex];
+            if (wv && wv.reload)
+                wv.reload();
         }
     }
 
     function getWebViewByServiceId(serviceId) {
         for (var i = 0; i < services.length; i++) {
             if (services[i].id === serviceId) {
-                var childIndex = i + 1
-                if (childIndex < root.children.length) return root.children[childIndex]
+                var childIndex = i + 1;
+                if (childIndex < root.children.length)
+                    return root.children[childIndex];
             }
         }
-        return null
+        return null;
     }
 
     // Empty state when no services
@@ -70,6 +75,7 @@ StackLayout {
             serviceId: modelData.id
             initialUrl: root.isDisabled(modelData.id) ? "about:blank" : modelData.url
             webProfile: root.webProfile
+            isServiceDisabled: root.isDisabled(modelData.id)
         }
     }
 }
