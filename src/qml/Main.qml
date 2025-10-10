@@ -38,7 +38,8 @@ Kirigami.ApplicationWindow {
     }
 
     // Object to track disabled service IDs (using object instead of Set for QML compatibility)
-    property var disabledServices: ({})
+    // Now loaded from and saved to configManager
+    property var disabledServices: configManager ? configManager.disabledServices : ({})
 
     // Object to track detached service IDs and their window instances
     property var detachedServices: ({})
@@ -333,6 +334,10 @@ Kirigami.ApplicationWindow {
                 });
             }
         }
+        function onDisabledServicesChanged() {
+            // Update local disabledServices when configManager changes
+            root.disabledServices = configManager.disabledServices;
+        }
     }
 
     // Set the first page that will be loaded when the app opens
@@ -447,6 +452,11 @@ Kirigami.ApplicationWindow {
 
     // Initialize with the first workspace on startup
     Component.onCompleted: {
+        // Initialize disabled services from configManager
+        if (configManager && configManager.disabledServices) {
+            root.disabledServices = configManager.disabledServices;
+        }
+
         // Use persisted current workspace
         var ws = root.currentWorkspace;
         if (!ws || ws === "")
@@ -747,8 +757,10 @@ Kirigami.ApplicationWindow {
                     webView.stop();
                     webView.url = "about:blank";
                 }
-                // Emit property change signal so QML knows to update bindings
-                disabledServicesChanged();
+                // Update configManager to persist the state
+                if (configManager && configManager.setServiceDisabled) {
+                    configManager.setServiceDisabled(serviceId, !enabled);
+                }
             }
         }
     }
