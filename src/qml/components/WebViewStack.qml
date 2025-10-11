@@ -48,7 +48,7 @@ StackLayout {
             if (services[i].id === serviceId) {
                 var childIndex = i + 1;
                 if (childIndex < root.children.length)
-                    return root.children[childIndex];
+                    return root.children[childIndex].contents;
             }
         }
         return null;
