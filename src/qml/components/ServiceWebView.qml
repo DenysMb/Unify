@@ -12,6 +12,7 @@ Item {
     property url initialUrl: "about:blank"
     property WebEngineProfile webProfile
     property bool isServiceDisabled: false
+    property alias contents: webView
 
     // Show either the WebView or placeholder based on service state
     WebEngineView {
