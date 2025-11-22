@@ -307,6 +307,8 @@ Kirigami.ApplicationWindow {
                     configManager.addWorkspace(workspaceName);
                     if (configManager.setWorkspaceIcon)
                         configManager.setWorkspaceIcon(workspaceName, iconName || "folder");
+                    // Switch to the newly created workspace
+                    root.switchToWorkspace(workspaceName);
                 }
             }
         }
