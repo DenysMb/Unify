@@ -338,6 +338,12 @@ Kirigami.ApplicationWindow {
             // Update local disabledServices when configManager changes
             root.disabledServices = configManager.disabledServices;
         }
+        function onCurrentWorkspaceChanged() {
+            // Sync QML currentWorkspace when ConfigManager changes it (e.g., after workspace deletion)
+            if (configManager.currentWorkspace !== root.currentWorkspace) {
+                root.switchToWorkspace(configManager.currentWorkspace);
+            }
+        }
     }
 
     // Set the first page that will be loaded when the app opens
