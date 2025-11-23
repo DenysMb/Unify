@@ -48,7 +48,7 @@ public:
         knotification->setText(message);
         knotification->setIconName(QStringLiteral("dialog-information"));
         knotification->setComponentName(QStringLiteral("unify"));
-        knotification->setFlags(KNotification::CloseOnTimeout);
+        knotification->setFlags(KNotification::Persistent);
         knotification->sendEvent();
         qDebug() << "📢 KNotification sent (QML)";
 
@@ -103,7 +103,7 @@ public:
         knotification->setText(message);
         knotification->setIconName(QStringLiteral("dialog-information"));
         knotification->setComponentName(QStringLiteral("unify"));
-        knotification->setFlags(KNotification::CloseOnTimeout);
+        knotification->setFlags(KNotification::Persistent);
         knotification->sendEvent();
         qDebug() << "📢 KNotification sent";
 
