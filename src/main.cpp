@@ -26,8 +26,9 @@ class NotificationPresenter : public QObject
 {
     Q_OBJECT
 public:
-    explicit NotificationPresenter(QObject *parent = nullptr)
+    explicit NotificationPresenter(QObject *parent = nullptr, TrayIconManager *trayManager = nullptr)
         : QObject(parent)
+        , m_trayManager(trayManager)
     {
     }
     Q_INVOKABLE void presentFromQml(const QString &titleIn, const QString &messageIn, const QUrl &originUrl)
@@ -71,12 +72,9 @@ public:
             }
         }
 
-        if (QSystemTrayIcon::isSystemTrayAvailable()) {
-            auto trayIcon = new QSystemTrayIcon(this);
-            trayIcon->show();
-            trayIcon->showMessage(title, message, QSystemTrayIcon::Information, 5000);
-            qDebug() << "📢 System tray notification sent (QML)";
-            QTimer::singleShot(6000, trayIcon, &QSystemTrayIcon::deleteLater);
+        // Use the existing tray icon manager to show notification
+        if (m_trayManager) {
+            m_trayManager->showNotification(title, message);
         }
 
         QTimer::singleShot(5000, knotification, &KNotification::deleteLater);
@@ -132,17 +130,9 @@ public:
             qDebug() << "❌ DBus notification interface not available";
         }
 
-        // Try system tray notification as fallback
-        if (QSystemTrayIcon::isSystemTrayAvailable()) {
-            // Create a temporary system tray icon for the notification
-            auto trayIcon = new QSystemTrayIcon(this);
-            trayIcon->show(); // Must show the tray icon first
-            trayIcon->showMessage(title, message, QSystemTrayIcon::Information, 5000);
-            qDebug() << "📢 System tray notification sent";
-            // Clean up the tray icon after the message
-            QTimer::singleShot(6000, trayIcon, &QSystemTrayIcon::deleteLater);
-        } else {
-            qDebug() << "❌ System tray not available";
+        // Use the existing tray icon manager to show notification
+        if (m_trayManager) {
+            m_trayManager->showNotification(title, message);
         }
 
         // Keep the notification object alive for a reasonable time
@@ -151,6 +141,9 @@ public:
         // Close the WebEngine notification since we're handling it ourselves
         notification->close();
     }
+
+private:
+    TrayIconManager *m_trayManager;
 };
 
 int main(int argc, char *argv[])
@@ -175,9 +168,6 @@ int main(int argc, char *argv[])
         QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
     }
 
-    // Create notification presenter instance
-    NotificationPresenter *notificationPresenter = new NotificationPresenter(&app);
-
     // Create config manager instance
     ConfigManager *configManager = new ConfigManager(&app);
 
@@ -186,6 +176,9 @@ int main(int argc, char *argv[])
 
     // Create tray icon manager instance
     TrayIconManager *trayIconManager = new TrayIconManager(&app);
+
+    // Create notification presenter instance with tray manager reference
+    NotificationPresenter *notificationPresenter = new NotificationPresenter(&app, trayIconManager);
 
     // Set up a global notification presenter function that can be used by all profiles
     auto globalNotificationPresenter = [notificationPresenter](std::unique_ptr<QWebEngineNotification> notification) {
