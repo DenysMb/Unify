@@ -133,8 +133,8 @@ Kirigami.ApplicationWindow {
     // Workspaces are now managed by configManager
     property var workspaces: configManager ? configManager.workspaces : ["Personal"]
 
-    // Firefox user agent string to ensure compatibility with Google OAuth and modern web apps
-    property string firefoxUserAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0"
+    // Modern Chrome User-Agent string for compatibility with web services (WhatsApp Web, Proton, etc.)
+    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
     // Services configuration array
     // Services are now managed by configManager
@@ -155,7 +155,7 @@ Kirigami.ApplicationWindow {
         id: persistentProfile
         storageName: "unify-default"
         offTheRecord: false
-        httpUserAgent: root.firefoxUserAgent
+        httpUserAgent: root.chromeUserAgent
         httpCacheType: WebEngineProfile.DiskHttpCache
         persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
         // Allow 3rd-party cookies to improve SSO persistence across restarts
