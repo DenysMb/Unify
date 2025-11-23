@@ -67,38 +67,15 @@ Kirigami.ApplicationWindow {
             initialUrl: detachedWindow.serviceUrl
             webProfile: detachedWindow.webProfile
 
-            // Handle new window requests in the detached window context
-            onNewWindowRequested: function (request) {
-                console.log("New window requested in detached service:", request.requestedUrl, "from:", serviceTitle);
-
-                // Create a popup window for authentication flows etc.
-                var popupComponent = Qt.createComponent("PopupWindow.qml");
-                if (popupComponent.status === Component.Ready) {
-                    var popup = popupComponent.createObject(detachedWindow, {
-                        "requestedUrl": request.requestedUrl,
-                        "parentService": serviceTitle,
-                        "webProfile": webProfile
-                    });
-
-                    if (popup) {
-                        request.openIn(popup.webView);
-                        popup.show();
-                        console.log("Popup window created for detached service");
-                    } else {
-                        console.log("Failed to create popup window for detached service");
-                    }
-                } else {
-                    console.log("Failed to load popup component for detached service:", popupComponent.errorString());
-                }
-            }
+            // Note: onNewWindowRequested is already handled internally by ServiceWebView
+            // The popup windows will be created using the same logic as in the main window
         }
     }
 
     // Handle window lifecycle
     Component.onCompleted: {
         console.log("Detached service window created for:", serviceTitle);
-        // Ensure the WebView loads the correct URL
-        serviceWebView.url = serviceUrl;
+        // ServiceWebView already loads initialUrl, no need to set it again
     }
 
     onClosing: {
