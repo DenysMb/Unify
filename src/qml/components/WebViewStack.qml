@@ -35,16 +35,17 @@ Item {
             return;
         }
 
-        // Ensure view exists for this service
-        if (!webViewCache[serviceId]) {
-            createWebViewForService(serviceId);
-        }
-
-        // Switch to the view
+        // Switch to the view (should already exist)
         if (webViewCache[serviceId]) {
             stackLayout.currentIndex = webViewCache[serviceId].stackIndex;
         } else {
-            stackLayout.currentIndex = 0;
+            // Fallback: create if doesn't exist
+            createWebViewForService(serviceId);
+            if (webViewCache[serviceId]) {
+                stackLayout.currentIndex = webViewCache[serviceId].stackIndex;
+            } else {
+                stackLayout.currentIndex = 0;
+            }
         }
     }
 
@@ -118,6 +119,24 @@ Item {
         console.log("Created WebView for service:", serviceId, "at index:", nextIndex);
     }
 
+    function updateWebViewForService(serviceId, serviceData) {
+        var view = webViewCache[serviceId];
+        if (!view) {
+            return;
+        }
+
+        // Update properties
+        view.serviceTitle = serviceData.title;
+        view.isServiceDisabled = root.isDisabled(serviceData.id);
+
+        // If URL changed, reload the WebView
+        var newUrl = root.isDisabled(serviceData.id) ? "about:blank" : serviceData.url;
+        if (view.contents && view.contents.url.toString() !== newUrl) {
+            view.contents.url = newUrl;
+            console.log("URL changed for service:", serviceId, "reloading to:", newUrl);
+        }
+    }
+
     function destroyWebViewForService(serviceId) {
         if (webViewCache[serviceId]) {
             webViewCache[serviceId].destroy();
@@ -130,21 +149,23 @@ Item {
 
     // Sync views when services list changes
     onServicesChanged: {
-        // Create views for new services
+        var currentServiceIds = [];
+
+        // Create or update views for all services
         for (var i = 0; i < services.length; i++) {
             var svc = services[i];
-            if (!webViewCache[svc.id])
-            // Don't create immediately - wait until user switches to it
-            // This is lazy loading to improve performance
-            {}
+            currentServiceIds.push(svc.id);
+
+            if (!webViewCache[svc.id]) {
+                // Create new view
+                createWebViewForService(svc.id);
+            } else {
+                // Update existing view properties
+                updateWebViewForService(svc.id, svc);
+            }
         }
 
         // Destroy views for removed services
-        var currentServiceIds = [];
-        for (var j = 0; j < services.length; j++) {
-            currentServiceIds.push(services[j].id);
-        }
-
         var cachedIds = Object.keys(webViewCache);
         for (var k = 0; k < cachedIds.length; k++) {
             var cachedId = cachedIds[k];
