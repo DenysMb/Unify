@@ -1,18 +1,47 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   height="22"
-   width="22"
+   viewBox="0 0 16 16"
    version="1.1"
-   id="svg8"
-   sodipodi:docname="unify-tray.svg"
+   id="svg1"
+   sodipodi:docname="unify-tray-light.svg"
    inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-  <path
-     d="m 18.272089,13.644396 q 0,1.956853 -0.793319,3.543491 -0.793318,1.560193 -2.432844,2.485732 -1.613081,0.899094 -4.125257,0.899094 -3.5170473,0 -5.3681246,-1.903965 -1.8246332,-1.930409 -1.8246332,-5.07724 V 1.4272868 H 6.1078676 V 13.67084 q 0,2.300624 1.2164222,3.569934 1.2428661,1.269311 3.7285982,1.269311 2.565064,0 3.702155,-1.348642 1.163533,-1.375086 1.163533,-3.517047 V 1.4272868 h 2.353513 z"
-     id="text1"
-     style="fill:#fcfcfc;stroke-width:0.220366"
-     aria-label="U" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#6c6c6c"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="52.375"
+     inkscape:cx="7.9904535"
+     inkscape:cy="9.0883055"
+     inkscape:window-width="2560"
+     inkscape:window-height="1020"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <defs
+     id="defs3051">
+    <style
+       type="text/css"
+       id="current-color-scheme">.ColorScheme-Text { color: #fcfcfc; } </style>
+  </defs>
+  <text
+     xml:space="preserve"
+     style="font-size:16.5563px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#fcfcfc;fill-opacity:1;stroke-width:0.137968"
+     x="1.9569546"
+     y="13.827821"
+     id="text1"><tspan
+       sodipodi:role="line"
+       id="tspan1"
+       x="1.9569546"
+       y="13.827821"
+       style="fill:#fcfcfc;fill-opacity:1;stroke-width:0.137968">U</tspan></text>
 </svg>

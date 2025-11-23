@@ -4,8 +4,10 @@
 #include "trayiconmanager.h"
 #include <KLocalizedString>
 #include <QDebug>
+#include <QEvent>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QPalette>
 
 TrayIconManager::TrayIconManager(QObject *parent)
     : QObject(parent)
@@ -19,10 +21,17 @@ TrayIconManager::TrayIconManager(QObject *parent)
 {
     createTrayIcon();
     createMenu();
+
+    // Install event filter to detect palette changes
+    qApp->installEventFilter(this);
+
+    // Set initial icon based on current color scheme
+    updateIconBasedOnColorScheme();
 }
 
 TrayIconManager::~TrayIconManager()
 {
+    qApp->removeEventFilter(this);
     if (m_trayIcon) {
         m_trayIcon->hide();
         delete m_trayIcon;
@@ -32,13 +41,11 @@ TrayIconManager::~TrayIconManager()
 void TrayIconManager::createTrayIcon()
 {
     m_trayIcon = new QSystemTrayIcon(this);
-
-    // Use dark icon by default as requested
-    QIcon trayIcon(QStringLiteral(":/io.github.denysmb.unify/assets/unify-tray-dark.png"));
-    m_trayIcon->setIcon(trayIcon);
     m_trayIcon->setToolTip(i18n("Unify"));
 
     connect(m_trayIcon, &QSystemTrayIcon::activated, this, &TrayIconManager::onActivated);
+
+    // Icon will be set by updateIconBasedOnColorScheme()
 }
 
 void TrayIconManager::createMenu()
@@ -137,4 +144,54 @@ void TrayIconManager::showNotification(const QString &title, const QString &mess
         m_trayIcon->showMessage(title, message, QSystemTrayIcon::Information, 5000);
         qDebug() << "📢 Tray notification shown:" << title;
     }
+}
+
+bool TrayIconManager::isDarkColorScheme() const
+{
+    // Get the current application palette
+    QPalette palette = qApp->palette();
+
+    // Check if the window background is dark
+    // A color is considered dark if its lightness is less than 128 (middle of 0-255 range)
+    QColor backgroundColor = palette.color(QPalette::Window);
+    int lightness = backgroundColor.lightness();
+
+    qDebug() << "🎨 Color scheme detection - Background lightness:" << lightness;
+
+    return lightness < 128;
+}
+
+void TrayIconManager::updateIconBasedOnColorScheme()
+{
+    if (!m_trayIcon) {
+        return;
+    }
+
+    bool isDark = isDarkColorScheme();
+
+    // If system is dark, use light icon for contrast
+    // If system is light, use dark icon for contrast
+    QString iconPath = isDark ? QStringLiteral(":/io.github.denysmb.unify/assets/unify-tray-light.png")
+                              : QStringLiteral(":/io.github.denysmb.unify/assets/unify-tray-dark.png");
+
+    QIcon trayIcon(iconPath);
+    m_trayIcon->setIcon(trayIcon);
+
+    qDebug() << "🎨 Tray icon updated for" << (isDark ? "DARK" : "LIGHT") << "color scheme, using" << (isDark ? "LIGHT" : "DARK") << "icon";
+}
+
+void TrayIconManager::updateTrayIconForColorScheme()
+{
+    updateIconBasedOnColorScheme();
+}
+
+bool TrayIconManager::eventFilter(QObject *watched, QEvent *event)
+{
+    // Detect when the application palette changes (theme/color scheme change)
+    if (event->type() == QEvent::ApplicationPaletteChange || event->type() == QEvent::PaletteChange) {
+        qDebug() << "🎨 Palette change detected, updating tray icon...";
+        updateIconBasedOnColorScheme();
+    }
+
+    return QObject::eventFilter(watched, event);
 }
