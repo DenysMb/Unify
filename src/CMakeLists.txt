@@ -15,6 +15,9 @@ target_sources(unify
     configmanager.h
     oauthmanager.cpp
     oauthmanager.h
+    trayiconmanager.cpp
+    trayiconmanager.h
+    resources.qrc
 )
 
 ecm_target_qml_sources(unify

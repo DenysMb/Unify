@@ -3,10 +3,10 @@
 
 #include <QObject>
 #include <QSettings>
+#include <QString>
+#include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
-#include <QStringList>
-#include <QString>
 
 class ConfigManager : public QObject
 {
@@ -24,14 +24,14 @@ public:
     void setServices(const QVariantList &services);
 
     QStringList workspaces() const;
-    
+
     QString currentWorkspace() const;
     void setCurrentWorkspace(const QString &workspace);
 
     Q_INVOKABLE void addService(const QVariantMap &service);
     Q_INVOKABLE void updateService(const QString &serviceId, const QVariantMap &service);
     Q_INVOKABLE void removeService(const QString &serviceId);
-    
+
     Q_INVOKABLE void addWorkspace(const QString &workspaceName);
     Q_INVOKABLE void removeWorkspace(const QString &workspaceName);
     Q_INVOKABLE void renameWorkspace(const QString &oldName, const QString &newName);

@@ -1,12 +1,12 @@
 #ifndef OAUTHMANAGER_H
 #define OAUTHMANAGER_H
 
-#include <QObject>
+#include <QNetworkAccessManager>
 #include <QOAuth2AuthorizationCodeFlow>
 #include <QOAuthHttpServerReplyHandler>
-#include <QNetworkAccessManager>
-#include <QUrl>
+#include <QObject>
 #include <QString>
+#include <QUrl>
 #include <QVariantMap>
 
 class OAuthManager : public QObject
@@ -45,12 +45,12 @@ private:
     QOAuth2AuthorizationCodeFlow *m_googleFlow;
     QOAuthHttpServerReplyHandler *m_replyHandler;
     QNetworkAccessManager *m_networkManager;
-    
+
     bool m_isAuthenticated;
     QString m_userEmail;
     QString m_userName;
     QString m_accessToken;
-    
+
     // Google OAuth2 configuration
     static const QString GOOGLE_CLIENT_ID;
     static const QString GOOGLE_CLIENT_SECRET;
