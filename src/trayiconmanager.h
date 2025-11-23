@@ -7,6 +7,7 @@
 #include <QAction>
 #include <QMenu>
 #include <QObject>
+#include <QPalette>
 #include <QSystemTrayIcon>
 #include <QWindow>
 #include <QtCore/QObject>
@@ -37,10 +38,14 @@ Q_SIGNALS:
 private Q_SLOTS:
     void onActivated(QSystemTrayIcon::ActivationReason reason);
     void updateMenuActions();
+    void updateTrayIconForColorScheme();
 
 private:
     void createTrayIcon();
     void createMenu();
+    bool isDarkColorScheme() const;
+    void updateIconBasedOnColorScheme();
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
     QSystemTrayIcon *m_trayIcon;
     QMenu *m_trayMenu;
