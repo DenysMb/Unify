@@ -55,26 +55,21 @@ Kirigami.ApplicationWindow {
         if (match && match[1]) {
             var count = parseInt(match[1], 10);
 
-            // Only show badge if count > 0 and service is not currently active
-            if (count > 0 && serviceId !== currentServiceId) {
+            // Show badge if count > 0, regardless of whether service is active
+            if (count > 0) {
                 var newCounts = Object.assign({}, serviceNotificationCounts);
-
                 newCounts[serviceId] = count;
                 serviceNotificationCounts = newCounts;
             } else {
-                // Remove badge if count is 0 or service is active
+                // Remove badge if count is 0
                 var newCounts = Object.assign({}, serviceNotificationCounts);
-
                 delete newCounts[serviceId];
-
                 serviceNotificationCounts = newCounts;
             }
         } else {
             // No match found, remove badge if exists
             var newCounts = Object.assign({}, serviceNotificationCounts);
-
             delete newCounts[serviceId];
-
             serviceNotificationCounts = newCounts;
         }
     }
@@ -154,16 +149,8 @@ Kirigami.ApplicationWindow {
             currentServiceName = service.title;
             currentServiceId = service.id;
 
-            // Clear notification badge when switching to service
-            var newCounts = Object.assign({}, serviceNotificationCounts);
-
-            delete newCounts[serviceId];
-
-            serviceNotificationCounts = newCounts;
-
             // Find index in filtered services
             webViewStack.setCurrentByServiceId(serviceId);
-
             if (configManager && configManager.setLastUsedService) {
                 configManager.setLastUsedService(currentWorkspace, serviceId);
             }
