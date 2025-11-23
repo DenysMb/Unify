@@ -262,14 +262,8 @@ Kirigami.ApplicationWindow {
                     Qt.callLater(function () {
                         root.switchToService(serviceId);
                     });
-                } else {
-                    // Reselect current service after model rebuild (only if it was the active one)
-                    if (serviceId === root.currentServiceId) {
-                        Qt.callLater(function () {
-                            webViewStack.setCurrentByServiceId(root.currentServiceId);
-                        });
-                    }
                 }
+                // No need to manually reselect - onServicesChanged handler will take care of it
                 // Clear temporary editing ID
                 root.editingServiceId = "";
             } else {
@@ -380,10 +374,14 @@ Kirigami.ApplicationWindow {
     Connections {
         target: configManager
         function onServicesChanged() {
+            // Only reselect if we have an active service and it still exists
             if (root.currentServiceId && root.currentServiceId !== "") {
-                Qt.callLater(function () {
-                    webViewStack.setCurrentByServiceId(root.currentServiceId);
-                });
+                var stillExists = root.findServiceById(root.currentServiceId);
+                if (stillExists) {
+                    Qt.callLater(function () {
+                        webViewStack.setCurrentByServiceId(root.currentServiceId);
+                    });
+                }
             }
         }
         function onDisabledServicesChanged() {

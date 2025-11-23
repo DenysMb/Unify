@@ -14,6 +14,7 @@ Item {
     property bool isServiceDisabled: false
     property alias contents: webView
     property var onTitleUpdated: null
+    property int stackIndex: 0
 
     // Show either the WebView or placeholder based on service state
     WebEngineView {
