@@ -44,6 +44,41 @@ Kirigami.ApplicationWindow {
     // Object to track detached service IDs and their window instances
     property var detachedServices: ({})
 
+    // Object to track notification counts per service ID
+    property var serviceNotificationCounts: ({})
+
+    // Function to update badge from service title
+    function updateBadgeFromTitle(serviceId, title) {
+        // Regex to extract notification count from title: (n) or [n] at the beginning
+        var match = title.match(/^\s*[\(\[]\s*(\d+)\s*[\)\]]/);
+
+        if (match && match[1]) {
+            var count = parseInt(match[1], 10);
+
+            // Only show badge if count > 0 and service is not currently active
+            if (count > 0 && serviceId !== currentServiceId) {
+                var newCounts = Object.assign({}, serviceNotificationCounts);
+
+                newCounts[serviceId] = count;
+                serviceNotificationCounts = newCounts;
+            } else {
+                // Remove badge if count is 0 or service is active
+                var newCounts = Object.assign({}, serviceNotificationCounts);
+
+                delete newCounts[serviceId];
+
+                serviceNotificationCounts = newCounts;
+            }
+        } else {
+            // No match found, remove badge if exists
+            var newCounts = Object.assign({}, serviceNotificationCounts);
+
+            delete newCounts[serviceId];
+
+            serviceNotificationCounts = newCounts;
+        }
+    }
+
     // Function to generate random UUID
     function generateUUID() {
         return Services.generateUUID();
@@ -119,8 +154,16 @@ Kirigami.ApplicationWindow {
             currentServiceName = service.title;
             currentServiceId = service.id;
 
+            // Clear notification badge when switching to service
+            var newCounts = Object.assign({}, serviceNotificationCounts);
+
+            delete newCounts[serviceId];
+
+            serviceNotificationCounts = newCounts;
+
             // Find index in filtered services
             webViewStack.setCurrentByServiceId(serviceId);
+
             if (configManager && configManager.setLastUsedService) {
                 configManager.setLastUsedService(currentWorkspace, serviceId);
             }
@@ -428,6 +471,7 @@ Kirigami.ApplicationWindow {
                 services: root.filteredServices
                 disabledServices: root.disabledServices
                 detachedServices: root.detachedServices
+                notificationCounts: root.serviceNotificationCounts
                 currentServiceId: root.currentServiceId
                 sidebarWidth: root.sidebarWidth
                 buttonSize: root.buttonSize
@@ -454,6 +498,7 @@ Kirigami.ApplicationWindow {
                     filteredCount: root.filteredServices.length
                     disabledServices: root.disabledServices
                     webProfile: persistentProfile
+                    onTitleUpdated: root.updateBadgeFromTitle
                 }
             }
         }
