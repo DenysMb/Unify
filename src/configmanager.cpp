@@ -278,6 +278,8 @@ void ConfigManager::saveSettings()
 
     m_settings.beginGroup(QStringLiteral("Workspaces"));
     m_settings.setValue(QStringLiteral("current"), m_currentWorkspace);
+    // Persist workspace list
+    m_settings.setValue(QStringLiteral("list"), m_workspaces);
     // Persist workspace icon map
     {
         QVariantMap iconMap;
@@ -314,6 +316,8 @@ void ConfigManager::loadSettings()
     m_settings.endGroup();
 
     m_settings.beginGroup(QStringLiteral("Workspaces"));
+    // Load workspace list explicitly
+    m_workspaces = m_settings.value(QStringLiteral("list"), QStringList()).toStringList();
     m_currentWorkspace = m_settings.value(QStringLiteral("current"), QStringLiteral("Personal")).toString();
     // Load workspace icon map
     {
@@ -339,14 +343,16 @@ void ConfigManager::loadSettings()
     m_disabledServices = m_settings.value(QStringLiteral("list"), QVariantMap()).toMap();
     m_settings.endGroup();
 
-    updateWorkspacesList();
-
-    // Ensure we have at least one workspace
+    // Only update workspaces list if it's empty (first run)
     if (m_workspaces.isEmpty()) {
-        m_workspaces.append(QStringLiteral("Personal"));
-        m_currentWorkspace = QStringLiteral("Personal");
-        Q_EMIT workspacesChanged();
-        Q_EMIT currentWorkspaceChanged();
+        updateWorkspacesList();
+        // If still empty after updating, create Personal workspace as default
+        if (m_workspaces.isEmpty()) {
+            m_workspaces.append(QStringLiteral("Personal"));
+            m_currentWorkspace = QStringLiteral("Personal");
+            Q_EMIT workspacesChanged();
+            Q_EMIT currentWorkspaceChanged();
+        }
     }
 
     qDebug() << "Settings loaded. Services count:" << m_services.size() << "Workspaces:" << m_workspaces << "Current workspace:" << m_currentWorkspace
@@ -388,12 +394,7 @@ void ConfigManager::updateWorkspacesList()
     if (!m_currentWorkspace.isEmpty() && !newWorkspaces.contains(m_currentWorkspace)) {
         newWorkspaces.append(m_currentWorkspace);
     }
-    
-    // Always have at least "Personal" workspace
-    if (newWorkspaces.isEmpty() || !newWorkspaces.contains(QStringLiteral("Personal"))) {
-        newWorkspaces.append(QStringLiteral("Personal"));
-    }
-    
+
     if (newWorkspaces != m_workspaces) {
         m_workspaces = newWorkspaces;
         Q_EMIT workspacesChanged();
