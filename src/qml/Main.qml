@@ -257,6 +257,12 @@ Kirigami.ApplicationWindow {
                 var prevWs = prev ? prev.workspace : "";
                 if (configManager)
                     configManager.updateService(serviceId, serviceData);
+
+                // Update current service name if we edited the active service
+                if (serviceId === root.currentServiceId) {
+                    root.currentServiceName = serviceData.title;
+                }
+
                 if (serviceData.workspace && serviceData.workspace !== prevWs) {
                     root.switchToWorkspace(serviceData.workspace);
                     Qt.callLater(function () {
