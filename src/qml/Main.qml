@@ -44,6 +44,9 @@ Kirigami.ApplicationWindow {
     // Object to track detached service IDs and their window instances
     property var detachedServices: ({})
 
+    // Temporary property to track which service is being edited (to avoid changing currentServiceId)
+    property string editingServiceId: ""
+
     // Object to track notification counts per service ID
     property var serviceNotificationCounts: ({})
 
@@ -241,24 +244,34 @@ Kirigami.ApplicationWindow {
         id: addServiceDialog
         workspaces: root.workspaces
         currentWorkspace: root.currentWorkspace
+        onRejected: {
+            // Clear temporary editing ID when dialog is cancelled
+            root.editingServiceId = "";
+        }
         onAcceptedData: function (serviceData) {
             if (isEditMode) {
+                // Use editingServiceId if set (right-click edit), otherwise use currentServiceId (menu edit)
+                var serviceId = root.editingServiceId || root.currentServiceId;
                 // If workspace changed during edit, switch to the new workspace and keep service selected
-                var prev = root.findServiceById(root.currentServiceId);
+                var prev = root.findServiceById(serviceId);
                 var prevWs = prev ? prev.workspace : "";
                 if (configManager)
-                    configManager.updateService(root.currentServiceId, serviceData);
+                    configManager.updateService(serviceId, serviceData);
                 if (serviceData.workspace && serviceData.workspace !== prevWs) {
                     root.switchToWorkspace(serviceData.workspace);
                     Qt.callLater(function () {
-                        root.switchToService(root.currentServiceId);
+                        root.switchToService(serviceId);
                     });
                 } else {
-                    // Reselect current service after model rebuild
-                    Qt.callLater(function () {
-                        webViewStack.setCurrentByServiceId(root.currentServiceId);
-                    });
+                    // Reselect current service after model rebuild (only if it was the active one)
+                    if (serviceId === root.currentServiceId) {
+                        Qt.callLater(function () {
+                            webViewStack.setCurrentByServiceId(root.currentServiceId);
+                        });
+                    }
                 }
+                // Clear temporary editing ID
+                root.editingServiceId = "";
             } else {
                 // Create a stable ID up front so we can select the new service after adding
                 var newId = root.generateUUID();
@@ -282,11 +295,17 @@ Kirigami.ApplicationWindow {
             }
         }
         onDeleteRequested: {
-            if (isEditMode && root.currentServiceId !== "" && configManager) {
+            if (isEditMode && configManager) {
+                // Use editingServiceId if set (right-click edit), otherwise use currentServiceId (menu edit)
+                var deletedId = root.editingServiceId || root.currentServiceId;
+                if (deletedId === "")
+                    return;
+
                 var ws = root.currentWorkspace;
-                var deletedId = root.currentServiceId;
                 configManager.removeService(deletedId);
                 addServiceDialog.close();
+                // Clear temporary editing ID
+                root.editingServiceId = "";
                 // After services update, choose next service: last used in workspace if available and exists; otherwise first
                 Qt.callLater(function () {
                     var nextId = "";
@@ -468,6 +487,17 @@ Kirigami.ApplicationWindow {
                     var svc = root.findServiceById(id);
                     if (svc)
                         console.log(svc.title + " clicked - loading " + svc.url);
+                }
+                onServiceRightClicked: function (id) {
+                    var svc = root.findServiceById(id);
+                    if (svc) {
+                        // Store which service is being edited without changing the active service
+                        root.editingServiceId = id;
+                        // Open edit dialog for this service
+                        addServiceDialog.isEditMode = true;
+                        addServiceDialog.populateFields(svc);
+                        addServiceDialog.open();
+                    }
                 }
             }
 

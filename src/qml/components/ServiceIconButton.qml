@@ -16,6 +16,8 @@ Controls.Button {
     property bool active: false
     property int notificationCount: 0
 
+    signal rightClicked
+
     readonly property bool isUrl: {
         if (!root.image)
             return false;
@@ -35,6 +37,13 @@ Controls.Button {
     Layout.preferredWidth: buttonSize
     Layout.preferredHeight: buttonSize
     Layout.alignment: Qt.AlignHCenter
+
+    // Handle right click
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton
+        onClicked: root.rightClicked()
+    }
 
     contentItem: Item {
         id: buttonItem
