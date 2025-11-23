@@ -82,24 +82,24 @@ Controls.Button {
         Rectangle {
             id: badge
             visible: root.notificationCount > 0
-            anchors.right: parent.right
             anchors.top: parent.top
-            anchors.rightMargin: -Kirigami.Units.smallSpacing
-            anchors.topMargin: -Kirigami.Units.smallSpacing
-            width: badgeText.width + Kirigami.Units.smallSpacing * 2
-            height: Math.max(Kirigami.Units.gridUnit, badgeText.height + Kirigami.Units.smallSpacing)
+            anchors.right: parent.right
+            anchors.margins: -Kirigami.Units.smallSpacing / 2
+            height: Kirigami.Units.gridUnit
+            width: Math.max(height, badgeText.implicitWidth + Kirigami.Units.smallSpacing)
             radius: height / 2
-            color: Kirigami.Theme.negativeBackgroundColor
-            border.color: Kirigami.Theme.backgroundColor
-            border.width: 2
+            color: Kirigami.Theme.highlightColor
+            // border.color: Kirigami.Theme.backgroundColor
+            // border.width: visible ? 1 : 0
 
-            Controls.Label {
+            Text {
                 id: badgeText
                 anchors.centerIn: parent
                 text: root.notificationCount > 99 ? "99+" : root.notificationCount.toString()
-                color: Kirigami.Theme.negativeTextColor
-                font.pixelSize: Kirigami.Theme.smallFont.pixelSize
-                font.bold: true
+                color: Kirigami.Theme.highlightedTextColor
+                font.pixelSize: Kirigami.Units.smallSpacing * 2
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
             }
         }
     }
