@@ -210,6 +210,7 @@ Kirigami.ApplicationWindow {
     ServiceDialog {
         id: addServiceDialog
         workspaces: root.workspaces
+        currentWorkspace: root.currentWorkspace
         onAcceptedData: function (serviceData) {
             if (isEditMode) {
                 // If workspace changed during edit, switch to the new workspace and keep service selected
