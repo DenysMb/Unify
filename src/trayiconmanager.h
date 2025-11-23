@@ -16,6 +16,7 @@ class TrayIconManager : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool windowVisible READ windowVisible WRITE setWindowVisible NOTIFY windowVisibleChanged)
+    Q_PROPERTY(bool hasNotifications READ hasNotifications WRITE setHasNotifications NOTIFY hasNotificationsChanged)
 
 public:
     explicit TrayIconManager(QObject *parent = nullptr);
@@ -24,6 +25,9 @@ public:
     bool windowVisible() const;
     void setWindowVisible(bool visible);
 
+    bool hasNotifications() const;
+    void setHasNotifications(bool hasNotifications);
+
     Q_INVOKABLE void setMainWindow(QWindow *window);
     Q_INVOKABLE void show();
     Q_INVOKABLE void hide();
@@ -31,6 +35,7 @@ public:
 
 Q_SIGNALS:
     void windowVisibleChanged();
+    void hasNotificationsChanged();
     void showWindowRequested();
     void hideWindowRequested();
     void quitRequested();
@@ -54,6 +59,7 @@ private:
     QAction *m_quitAction;
     QWindow *m_mainWindow;
     bool m_windowVisible;
+    bool m_hasNotifications;
 };
 
 #endif // TRAYICONMANAGER_H

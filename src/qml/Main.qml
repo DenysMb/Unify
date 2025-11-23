@@ -50,6 +50,21 @@ Kirigami.ApplicationWindow {
     // Object to track notification counts per service ID
     property var serviceNotificationCounts: ({})
 
+    // Watcher for notification counts to update tray icon
+    onServiceNotificationCountsChanged: {
+        if (trayIconManager) {
+            // Check if there are any notifications across all services
+            var hasNotifications = false;
+            for (var serviceId in serviceNotificationCounts) {
+                if (serviceNotificationCounts[serviceId] > 0) {
+                    hasNotifications = true;
+                    break;
+                }
+            }
+            trayIconManager.hasNotifications = hasNotifications;
+        }
+    }
+
     // Function to update badge from service title
     function updateBadgeFromTitle(serviceId, title) {
         // Regex to extract notification count from title: (n) or [n] at the beginning
