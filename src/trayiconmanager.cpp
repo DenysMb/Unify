@@ -18,6 +18,7 @@ TrayIconManager::TrayIconManager(QObject *parent)
     , m_quitAction(nullptr)
     , m_mainWindow(nullptr)
     , m_windowVisible(true)
+    , m_hasNotifications(false)
 {
     createTrayIcon();
     createMenu();
@@ -113,6 +114,21 @@ void TrayIconManager::setWindowVisible(bool visible)
     }
 }
 
+bool TrayIconManager::hasNotifications() const
+{
+    return m_hasNotifications;
+}
+
+void TrayIconManager::setHasNotifications(bool hasNotifications)
+{
+    if (m_hasNotifications != hasNotifications) {
+        m_hasNotifications = hasNotifications;
+        qDebug() << "🔔 Notification state changed:" << (hasNotifications ? "HAS notifications" : "NO notifications");
+        updateIconBasedOnColorScheme();
+        Q_EMIT hasNotificationsChanged();
+    }
+}
+
 void TrayIconManager::setMainWindow(QWindow *window)
 {
     m_mainWindow = window;
@@ -167,17 +183,22 @@ void TrayIconManager::updateIconBasedOnColorScheme()
         return;
     }
 
-    bool isDark = isDarkColorScheme();
+    QString iconPath;
 
-    // If system is dark, use light icon for contrast
-    // If system is light, use dark icon for contrast
-    QString iconPath = isDark ? QStringLiteral(":/io.github.denysmb.unify/assets/unify-tray-light.png")
-                              : QStringLiteral(":/io.github.denysmb.unify/assets/unify-tray-dark.png");
+    if (m_hasNotifications) {
+        // Use single notification icon regardless of color scheme
+        iconPath = QStringLiteral(":/io.github.denysmb.unify/assets/unify-tray-notification.png");
+        qDebug() << "🔔 Tray icon updated: using NOTIFICATION icon";
+    } else {
+        // Use color scheme appropriate icon when no notifications
+        bool isDark = isDarkColorScheme();
+        iconPath = isDark ? QStringLiteral(":/io.github.denysmb.unify/assets/unify-tray-light.png")
+                          : QStringLiteral(":/io.github.denysmb.unify/assets/unify-tray-dark.png");
+        qDebug() << "🎨 Tray icon updated for" << (isDark ? "DARK" : "LIGHT") << "color scheme, using" << (isDark ? "LIGHT" : "DARK") << "normal icon";
+    }
 
     QIcon trayIcon(iconPath);
     m_trayIcon->setIcon(trayIcon);
-
-    qDebug() << "🎨 Tray icon updated for" << (isDark ? "DARK" : "LIGHT") << "color scheme, using" << (isDark ? "LIGHT" : "DARK") << "icon";
 }
 
 void TrayIconManager::updateTrayIconForColorScheme()

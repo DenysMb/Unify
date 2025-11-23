@@ -5,5 +5,7 @@
         <file>assets/unify-tray-light.png</file>
         <file>assets/unify-tray-dark.svg</file>
         <file>assets/unify-tray-light.svg</file>
+        <file>assets/unify-tray-notification.png</file>
+        <file>assets/unify-tray-notification.svg</file>
     </qresource>
 </RCC>
