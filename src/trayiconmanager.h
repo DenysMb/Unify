@@ -26,6 +26,7 @@ public:
     Q_INVOKABLE void setMainWindow(QWindow *window);
     Q_INVOKABLE void show();
     Q_INVOKABLE void hide();
+    Q_INVOKABLE void showNotification(const QString &title, const QString &message);
 
 Q_SIGNALS:
     void windowVisibleChanged();

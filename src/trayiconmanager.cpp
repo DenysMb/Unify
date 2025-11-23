@@ -130,3 +130,11 @@ void TrayIconManager::hide()
         qDebug() << "System tray icon hidden";
     }
 }
+
+void TrayIconManager::showNotification(const QString &title, const QString &message)
+{
+    if (m_trayIcon && m_trayIcon->isVisible()) {
+        m_trayIcon->showMessage(title, message, QSystemTrayIcon::Information, 5000);
+        qDebug() << "📢 Tray notification shown:" << title;
+    }
+}
