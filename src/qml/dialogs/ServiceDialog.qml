@@ -10,6 +10,7 @@ Kirigami.Dialog {
     // Public API
     property bool isEditMode: false
     property var workspaces: []
+    property string currentWorkspace: ""
     property var serviceData: ({
             title: "",
             url: "",
@@ -39,7 +40,9 @@ Kirigami.Dialog {
         serviceNameField.text = "";
         iconUrlField.text = "";
         serviceUrlField.text = "";
-        workspaceComboBox.currentIndex = 0;
+        // Set to current workspace if available, otherwise default to first
+        var wsIndex = root.currentWorkspace ? Math.max(0, workspaces.indexOf(root.currentWorkspace)) : 0;
+        workspaceComboBox.currentIndex = wsIndex;
         root.selectedIconName = "internet-web-browser-symbolic";
     }
 
