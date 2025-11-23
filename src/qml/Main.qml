@@ -402,6 +402,31 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Handle tray icon manager signals
+    Connections {
+        target: trayIconManager
+        function onShowWindowRequested() {
+            root.show();
+            root.raise();
+            root.requestActivate();
+            trayIconManager.windowVisible = true;
+        }
+        function onHideWindowRequested() {
+            root.hide();
+            trayIconManager.windowVisible = false;
+        }
+        function onQuitRequested() {
+            Qt.quit();
+        }
+    }
+
+    // Update tray icon manager when window visibility changes
+    onVisibilityChanged: {
+        if (trayIconManager) {
+            trayIconManager.windowVisible = (visibility !== Window.Hidden && visibility !== Window.Minimized);
+        }
+    }
+
     // Set the first page that will be loaded when the app opens
     // This can also be set to an id of a Kirigami.Page
     pageStack.initialPage: Kirigami.Page {

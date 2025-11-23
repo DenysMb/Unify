@@ -1,0 +1,9 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/io.github.denysmb.unify">
+        <file>assets/unify-tray-dark.png</file>
+        <file>assets/unify-tray-light.png</file>
+        <file>assets/unify-tray-dark.svg</file>
+        <file>assets/unify-tray-light.svg</file>
+    </qresource>
+</RCC>

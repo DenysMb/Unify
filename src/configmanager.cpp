@@ -126,24 +126,23 @@ bool ConfigManager::isServiceDisabled(const QString &serviceId) const
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
-    
+
     // Generate UUID if not provided
     if (!newService.contains(QStringLiteral("id")) || newService[QStringLiteral("id")].toString().isEmpty()) {
         newService[QStringLiteral("id")] = QUuid::createUuid().toString(QUuid::WithoutBraces);
     }
-    
+
     // Set default workspace if not provided
     if (!newService.contains(QStringLiteral("workspace")) || newService[QStringLiteral("workspace")].toString().isEmpty()) {
         newService[QStringLiteral("workspace")] = m_currentWorkspace.isEmpty() ? QStringLiteral("Personal") : m_currentWorkspace;
     }
-    
+
     m_services.append(newService);
     updateWorkspacesList();
     Q_EMIT servicesChanged();
     saveSettings();
-    
-    qDebug() << "Added service:" << newService[QStringLiteral("title")].toString() 
-             << "to workspace:" << newService[QStringLiteral("workspace")].toString();
+
+    qDebug() << "Added service:" << newService[QStringLiteral("title")].toString() << "to workspace:" << newService[QStringLiteral("workspace")].toString();
 }
 
 void ConfigManager::updateService(const QString &serviceId, const QVariantMap &service)
@@ -157,7 +156,7 @@ void ConfigManager::updateService(const QString &serviceId, const QVariantMap &s
             updateWorkspacesList();
             Q_EMIT servicesChanged();
             saveSettings();
-            
+
             qDebug() << "Updated service:" << serviceId;
             return;
         }
@@ -174,7 +173,7 @@ void ConfigManager::removeService(const QString &serviceId)
             updateWorkspacesList();
             Q_EMIT servicesChanged();
             saveSettings();
-            
+
             qDebug() << "Removed service:" << serviceId;
             return;
         }
@@ -188,7 +187,7 @@ void ConfigManager::addWorkspace(const QString &workspaceName)
         m_workspaces.append(workspaceName);
         Q_EMIT workspacesChanged();
         saveSettings();
-        
+
         qDebug() << "Added workspace:" << workspaceName;
     }
 }
@@ -203,15 +202,15 @@ void ConfigManager::removeWorkspace(const QString &workspaceName)
                 m_services.removeAt(i);
             }
         }
-        
+
         m_workspaces.removeAll(workspaceName);
-        
+
         // Remove icon mapping if present
         if (m_workspaceIcons.contains(workspaceName)) {
             m_workspaceIcons.remove(workspaceName);
             Q_EMIT workspaceIconsChanged();
         }
-        
+
         // If current workspace was removed, switch to first available or create Personal
         if (m_currentWorkspace == workspaceName) {
             if (!m_workspaces.isEmpty()) {
@@ -221,11 +220,11 @@ void ConfigManager::removeWorkspace(const QString &workspaceName)
                 setCurrentWorkspace(QStringLiteral("Personal"));
             }
         }
-        
+
         Q_EMIT servicesChanged();
         Q_EMIT workspacesChanged();
         saveSettings();
-        
+
         qDebug() << "Removed workspace:" << workspaceName;
     }
 }
@@ -241,19 +240,19 @@ void ConfigManager::renameWorkspace(const QString &oldName, const QString &newNa
                 m_services[i] = service;
             }
         }
-        
+
         // Update workspace list
         int index = m_workspaces.indexOf(oldName);
         if (index >= 0) {
             m_workspaces[index] = newName;
         }
-        
+
         // Update current workspace if it was the renamed one
         if (m_currentWorkspace == oldName) {
             m_currentWorkspace = newName;
             Q_EMIT currentWorkspaceChanged();
         }
-        
+
         // Move icon mapping along with the rename
         if (m_workspaceIcons.contains(oldName)) {
             const QString icon = m_workspaceIcons.value(oldName);
@@ -261,11 +260,11 @@ void ConfigManager::renameWorkspace(const QString &oldName, const QString &newNa
             m_workspaceIcons.insert(newName, icon);
             Q_EMIT workspaceIconsChanged();
         }
-        
+
         Q_EMIT servicesChanged();
         Q_EMIT workspacesChanged();
         saveSettings();
-        
+
         qDebug() << "Renamed workspace from:" << oldName << "to:" << newName;
     }
 }
@@ -380,7 +379,7 @@ QString ConfigManager::lastUsedService(const QString &workspace) const
 void ConfigManager::updateWorkspacesList()
 {
     QStringList newWorkspaces;
-    
+
     // Extract workspaces from services
     for (const QVariant &serviceVariant : m_services) {
         QVariantMap service = serviceVariant.toMap();
@@ -389,7 +388,7 @@ void ConfigManager::updateWorkspacesList()
             newWorkspaces.append(workspace);
         }
     }
-    
+
     // Ensure current workspace is in the list
     if (!m_currentWorkspace.isEmpty() && !newWorkspaces.contains(m_currentWorkspace)) {
         newWorkspaces.append(m_currentWorkspace);
