@@ -15,6 +15,8 @@ StackLayout {
     property int filteredCount: 0
     // Profile provided by Main.qml (persistent)
     property WebEngineProfile webProfile
+    // Callback to update badge from title
+    property var onTitleUpdated: null
 
     function isDisabled(id) {
         return disabledServices && disabledServices.hasOwnProperty(id);
@@ -76,6 +78,7 @@ StackLayout {
             initialUrl: root.isDisabled(modelData.id) ? "about:blank" : modelData.url
             webProfile: root.webProfile
             isServiceDisabled: root.isDisabled(modelData.id)
+            onTitleUpdated: root.onTitleUpdated
         }
     }
 }

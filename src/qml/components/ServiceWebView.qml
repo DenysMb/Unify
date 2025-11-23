@@ -13,6 +13,7 @@ Item {
     property WebEngineProfile webProfile
     property bool isServiceDisabled: false
     property alias contents: webView
+    property var onTitleUpdated: null
 
     // Show either the WebView or placeholder based on service state
     WebEngineView {
@@ -63,6 +64,13 @@ Item {
         onLoadingChanged: function (loadRequest) {
             if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
                 console.log("Service loaded: " + view.serviceTitle + " - " + view.url);
+            }
+        }
+
+        // Monitor title changes to extract notification badges
+        onTitleChanged: {
+            if (view.onTitleUpdated && typeof view.onTitleUpdated === "function") {
+                view.onTitleUpdated(view.serviceId, webView.title);
             }
         }
 

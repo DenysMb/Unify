@@ -12,6 +12,7 @@ Rectangle {
     property var services: [] // array of service objects with { id, title, image, url }
     property var disabledServices: ({})
     property var detachedServices: ({})
+    property var notificationCounts: ({})
     property string currentServiceId: ""
     property int sidebarWidth: 80
     property int buttonSize: 64
@@ -41,6 +42,7 @@ Rectangle {
                     iconSize: root.iconSize
                     active: modelData.id === root.currentServiceId
                     disabledVisual: (root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)) || (root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id))
+                    notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
                     onClicked: root.serviceSelected(modelData.id)
                 }
             }

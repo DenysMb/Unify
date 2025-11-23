@@ -14,6 +14,7 @@ Controls.Button {
     property int iconSize: 48
     property bool disabledVisual: false
     property bool active: false
+    property int notificationCount: 0
 
     readonly property bool isUrl: {
         if (!root.image)
@@ -75,6 +76,31 @@ Controls.Button {
             source: "internet-web-browser-symbolic"
             opacity: root.disabledVisual ? 0.3 : 1.0
             visible: shouldShowFallback
+        }
+
+        // Notification badge
+        Rectangle {
+            id: badge
+            visible: root.notificationCount > 0
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.rightMargin: -Kirigami.Units.smallSpacing
+            anchors.topMargin: -Kirigami.Units.smallSpacing
+            width: badgeText.width + Kirigami.Units.smallSpacing * 2
+            height: Math.max(Kirigami.Units.gridUnit, badgeText.height + Kirigami.Units.smallSpacing)
+            radius: height / 2
+            color: Kirigami.Theme.negativeBackgroundColor
+            border.color: Kirigami.Theme.backgroundColor
+            border.width: 2
+
+            Controls.Label {
+                id: badgeText
+                anchors.centerIn: parent
+                text: root.notificationCount > 99 ? "99+" : root.notificationCount.toString()
+                color: Kirigami.Theme.negativeTextColor
+                font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                font.bold: true
+            }
         }
     }
 }
