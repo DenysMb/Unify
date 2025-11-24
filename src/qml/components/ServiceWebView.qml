@@ -85,7 +85,7 @@ Item {
                 var popup = popupComponent.createObject(view, {
                     "requestedUrl": request.requestedUrl,
                     "parentService": view.serviceTitle,
-                    "webProfile": view.profile
+                    "webProfile": view.webProfile
                 });
 
                 if (popup) {
