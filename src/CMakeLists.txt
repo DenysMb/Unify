@@ -13,8 +13,6 @@ target_sources(unify
     main.cpp
     configmanager.cpp
     configmanager.h
-    oauthmanager.cpp
-    oauthmanager.h
     trayiconmanager.cpp
     trayiconmanager.h
     resources.qrc
@@ -33,7 +31,6 @@ ecm_target_qml_sources(unify
     qml/dialogs/ServiceDialog.qml
     qml/dialogs/PermissionDialog.qml
     qml/dialogs/WorkspaceDialog.qml
-    qml/dialogs/OAuth2Dialog.qml
     qml/drawers/WorkspaceDrawer.qml
     qml/utils/Services.js
 )
@@ -46,7 +43,6 @@ target_link_libraries(unify
     Qt6::QuickControls2
     Qt6::Widgets
     Qt6::WebEngineQuick
-    Qt6::NetworkAuth
     Qt6::DBus
     KF6::I18n
     KF6::CoreAddons

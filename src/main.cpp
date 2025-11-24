@@ -1,5 +1,4 @@
 #include "configmanager.h"
-#include "oauthmanager.h"
 #include "trayiconmanager.h"
 #include <KIconTheme>
 #include <KLocalizedContext>
@@ -171,9 +170,6 @@ int main(int argc, char *argv[])
     // Create config manager instance
     ConfigManager *configManager = new ConfigManager(&app);
 
-    // Create OAuth manager instance
-    OAuthManager *oauthManager = new OAuthManager(&app);
-
     // Create tray icon manager instance
     TrayIconManager *trayIconManager = new TrayIconManager(&app);
 
@@ -198,10 +194,9 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
 
-    // Register the notification presenter, config manager, OAuth manager and tray icon manager with QML context
+    // Register the notification presenter, config manager and tray icon manager with QML context
     engine.rootContext()->setContextProperty(QStringLiteral("notificationPresenter"), notificationPresenter);
     engine.rootContext()->setContextProperty(QStringLiteral("configManager"), configManager);
-    engine.rootContext()->setContextProperty(QStringLiteral("oauthManager"), oauthManager);
     engine.rootContext()->setContextProperty(QStringLiteral("trayIconManager"), trayIconManager);
 
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
