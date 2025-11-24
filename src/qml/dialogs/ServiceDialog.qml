@@ -74,6 +74,23 @@ Kirigami.Dialog {
         }
 
         Controls.TextField {
+            id: serviceUrlField
+            Kirigami.FormData.label: i18n("Service URL:")
+            placeholderText: i18n("Enter service URL")
+            Layout.fillWidth: true
+        }
+
+        Controls.CheckBox {
+            id: useFaviconCheckbox
+            Kirigami.FormData.label: ""
+            text: i18n("Use service favicon in sidebar")
+            checked: root.useFavicon
+            onCheckedChanged: root.useFavicon = checked
+            Controls.ToolTip.visible: hovered
+            Controls.ToolTip.text: i18n("When enabled, the service's favicon will be displayed in the sidebar instead of the selected icon")
+        }
+
+        Controls.TextField {
             id: iconUrlField
             Kirigami.FormData.label: i18n("Icon URL:")
             placeholderText: i18n("Enter icon URL")
@@ -101,23 +118,6 @@ Kirigami.Dialog {
 
             Controls.ToolTip.visible: hovered
             Controls.ToolTip.text: i18n("Choose icon from system")
-        }
-
-        Controls.CheckBox {
-            id: useFaviconCheckbox
-            Kirigami.FormData.label: ""
-            text: i18n("Use service favicon in sidebar")
-            checked: root.useFavicon
-            onCheckedChanged: root.useFavicon = checked
-            Controls.ToolTip.visible: hovered
-            Controls.ToolTip.text: i18n("When enabled, the service's favicon will be displayed in the sidebar instead of the selected icon")
-        }
-
-        Controls.TextField {
-            id: serviceUrlField
-            Kirigami.FormData.label: i18n("Service URL:")
-            placeholderText: i18n("Enter service URL")
-            Layout.fillWidth: true
         }
 
         Controls.ComboBox {
