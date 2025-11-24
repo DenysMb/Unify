@@ -15,13 +15,15 @@ Kirigami.Dialog {
             title: "",
             url: "",
             image: "",
-            workspace: ""
+            workspace: "",
+            useFavicon: false
         })
 
     signal acceptedData(var data)
     signal deleteRequested
 
     property string selectedIconName: "internet-web-browser-symbolic"
+    property bool useFavicon: false
 
     title: isEditMode ? i18n("Edit Service") : i18n("Add Service")
     standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
@@ -34,6 +36,7 @@ Kirigami.Dialog {
         serviceUrlField.text = service.url || "";
         workspaceComboBox.currentIndex = Math.max(0, workspaces.indexOf(service.workspace || workspaces[0]));
         root.selectedIconName = service.image || "internet-web-browser-symbolic";
+        root.useFavicon = service.useFavicon || false;
     }
 
     function clearFields() {
@@ -44,6 +47,7 @@ Kirigami.Dialog {
         var wsIndex = root.currentWorkspace ? Math.max(0, workspaces.indexOf(root.currentWorkspace)) : 0;
         workspaceComboBox.currentIndex = wsIndex;
         root.selectedIconName = "internet-web-browser-symbolic";
+        root.useFavicon = false;
     }
 
     onAccepted: {
@@ -51,7 +55,8 @@ Kirigami.Dialog {
             title: serviceNameField.text,
             url: serviceUrlField.text,
             image: iconUrlField.text.trim() || "internet-web-browser-symbolic",
-            workspace: workspaces[workspaceComboBox.currentIndex]
+            workspace: workspaces[workspaceComboBox.currentIndex],
+            useFavicon: root.useFavicon
         };
         acceptedData(data);
         clearFields();
@@ -73,6 +78,7 @@ Kirigami.Dialog {
             Kirigami.FormData.label: i18n("Icon URL:")
             placeholderText: i18n("Enter icon URL")
             Layout.fillWidth: true
+            enabled: !useFaviconCheckbox.checked
         }
 
         Controls.Button {
@@ -91,9 +97,20 @@ Kirigami.Dialog {
             display: hasCustomIcon ? Controls.AbstractButton.IconOnly : Controls.AbstractButton.TextOnly
 
             onClicked: iconDialog.open()
+            enabled: !useFaviconCheckbox.checked
 
             Controls.ToolTip.visible: hovered
             Controls.ToolTip.text: i18n("Choose icon from system")
+        }
+
+        Controls.CheckBox {
+            id: useFaviconCheckbox
+            Kirigami.FormData.label: ""
+            text: i18n("Use service favicon in sidebar")
+            checked: root.useFavicon
+            onCheckedChanged: root.useFavicon = checked
+            Controls.ToolTip.visible: hovered
+            Controls.ToolTip.text: i18n("When enabled, the service's favicon will be displayed in the sidebar instead of the selected icon")
         }
 
         Controls.TextField {

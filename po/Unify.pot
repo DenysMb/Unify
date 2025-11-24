@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Unify 0.1.0\n"
 "Report-Msgid-Bugs-To:  \n"
-"POT-Creation-Date: 2025-11-23 21:07+0000\n"
+"POT-Creation-Date: 2025-11-24 09:46+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: io.github.denysmb.unify.desktop:2 src/trayiconmanager.cpp:39
+#: io.github.denysmb.unify.desktop:2 src/trayiconmanager.cpp:45
 #, kde-format
 msgid "Unify"
 msgstr ""
@@ -38,49 +38,49 @@ msgctxt "EMAIL OF TRANSLATORS"
 msgid "Your emails"
 msgstr ""
 
-#: src/qml/Main.qml:25 src/qml/Main.qml:100 src/qml/Main.qml:142
-#: src/qml/Main.qml:333
+#: src/qml/Main.qml:25 src/qml/Main.qml:115 src/qml/Main.qml:157
+#: src/qml/Main.qml:349
 #, kde-format
 msgid "Unify - Web app aggregator"
 msgstr ""
 
-#: src/qml/Main.qml:209
+#: src/qml/Main.qml:224
 #, kde-format
 msgctxt "@title:window"
 msgid "Unify"
 msgstr ""
 
-#: src/qml/Main.qml:442 src/qml/dialogs/ServiceDialog.qml:26
+#: src/qml/Main.qml:458 src/qml/dialogs/ServiceDialog.qml:28
 #, kde-format
 msgid "Add Service"
 msgstr ""
 
-#: src/qml/Main.qml:452 src/qml/dialogs/ServiceDialog.qml:26
+#: src/qml/Main.qml:468 src/qml/dialogs/ServiceDialog.qml:28
 #, kde-format
 msgid "Edit Service"
 msgstr ""
 
-#: src/qml/Main.qml:466
+#: src/qml/Main.qml:482
 #, kde-format
 msgid "Refresh Service"
 msgstr ""
 
-#: src/qml/Main.qml:475
+#: src/qml/Main.qml:491
 #, kde-format
 msgid "Reattach Service"
 msgstr ""
 
-#: src/qml/Main.qml:475
+#: src/qml/Main.qml:491
 #, kde-format
 msgid "Detach Service"
 msgstr ""
 
-#: src/qml/Main.qml:489
+#: src/qml/Main.qml:505
 #, kde-format
 msgid "Enable Service"
 msgstr ""
 
-#: src/qml/Main.qml:489
+#: src/qml/Main.qml:505
 #, kde-format
 msgid "Disable Service"
 msgstr ""
@@ -207,57 +207,69 @@ msgstr ""
 msgid "access unknown or unsupported permission type [%1]?"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:66
+#: src/qml/dialogs/ServiceDialog.qml:71
 #, kde-format
 msgid "Service Name:"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:67
+#: src/qml/dialogs/ServiceDialog.qml:72
 #, kde-format
 msgid "Enter service name"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:73
+#: src/qml/dialogs/ServiceDialog.qml:78
 #, kde-format
 msgid "Icon URL:"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:74
+#: src/qml/dialogs/ServiceDialog.qml:79
 #, kde-format
 msgid "Enter icon URL"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:89
+#: src/qml/dialogs/ServiceDialog.qml:95
 #, kde-format
 msgid "Or select a custom icon"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:96
+#: src/qml/dialogs/ServiceDialog.qml:103
 #, kde-format
 msgid "Choose icon from system"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:101
+#: src/qml/dialogs/ServiceDialog.qml:109
+#, kde-format
+msgid "Use service favicon in sidebar"
+msgstr ""
+
+#: src/qml/dialogs/ServiceDialog.qml:113
+#, kde-format
+msgid ""
+"When enabled, the service's favicon will be displayed in the sidebar instead "
+"of the selected icon"
+msgstr ""
+
+#: src/qml/dialogs/ServiceDialog.qml:118
 #, kde-format
 msgid "Service URL:"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:102
+#: src/qml/dialogs/ServiceDialog.qml:119
 #, kde-format
 msgid "Enter service URL"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:108
+#: src/qml/dialogs/ServiceDialog.qml:125
 #, kde-format
 msgid "Workspace:"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:126 src/qml/dialogs/ServiceDialog.qml:145
+#: src/qml/dialogs/ServiceDialog.qml:143 src/qml/dialogs/ServiceDialog.qml:162
 #, kde-format
 msgid "Delete Service"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:150
+#: src/qml/dialogs/ServiceDialog.qml:167
 #, kde-format
 msgid ""
 "Are you sure you want to delete this service? This action cannot be undone."
@@ -318,17 +330,17 @@ msgstr ""
 msgid "${ws}"
 msgstr ""
 
-#: src/trayiconmanager.cpp:49
+#: src/trayiconmanager.cpp:57
 #, kde-format
 msgid "Show Unify"
 msgstr ""
 
-#: src/trayiconmanager.cpp:55
+#: src/trayiconmanager.cpp:63
 #, kde-format
 msgid "Hide Unify"
 msgstr ""
 
-#: src/trayiconmanager.cpp:63
+#: src/trayiconmanager.cpp:71
 #, kde-format
 msgid "Quit Unify"
 msgstr ""
