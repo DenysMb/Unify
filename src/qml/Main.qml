@@ -295,7 +295,8 @@ Kirigami.ApplicationWindow {
                     title: serviceData.title,
                     url: serviceData.url,
                     image: serviceData.image,
-                    workspace: serviceData.workspace
+                    workspace: serviceData.workspace,
+                    useFavicon: serviceData.useFavicon || false
                 };
                 if (configManager)
                     configManager.addService(newService);

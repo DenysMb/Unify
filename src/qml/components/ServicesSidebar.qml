@@ -39,6 +39,8 @@ Rectangle {
                 Components.ServiceIconButton {
                     title: modelData.title
                     image: modelData.image
+                    serviceUrl: modelData.url || ""
+                    useFavicon: modelData.useFavicon || false
                     buttonSize: root.buttonSize
                     iconSize: root.iconSize
                     active: modelData.id === root.currentServiceId

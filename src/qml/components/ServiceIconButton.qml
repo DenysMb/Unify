@@ -10,6 +10,8 @@ Controls.Button {
     // Public API
     property string title: ""
     property string image: ""
+    property string serviceUrl: ""
+    property bool useFavicon: false
     property int buttonSize: 64
     property int iconSize: 48
     property bool disabledVisual: false
@@ -18,6 +20,18 @@ Controls.Button {
 
     signal rightClicked
 
+    readonly property string faviconUrl: {
+        if (!root.useFavicon || !root.serviceUrl)
+            return "";
+        // Extract domain from service URL and use Google's favicon service
+        try {
+            var url = new URL(root.serviceUrl);
+            return "https://www.google.com/s2/favicons?domain=" + url.hostname + "&sz=128";
+        } catch (e) {
+            return "";
+        }
+    }
+
     readonly property bool isUrl: {
         if (!root.image)
             return false;
@@ -25,9 +39,10 @@ Controls.Button {
     }
 
     readonly property bool hasImage: root.image && root.image.trim() !== ""
-    readonly property bool shouldShowImage: hasImage && isUrl
-    readonly property bool shouldShowIcon: hasImage && !isUrl
-    readonly property bool shouldShowFallback: !hasImage
+    readonly property bool shouldShowFavicon: root.useFavicon && root.faviconUrl !== ""
+    readonly property bool shouldShowImage: !shouldShowFavicon && hasImage && isUrl
+    readonly property bool shouldShowIcon: !shouldShowFavicon && hasImage && !isUrl
+    readonly property bool shouldShowFallback: !shouldShowFavicon && !hasImage
 
     text: i18n(title)
     display: Controls.AbstractButton.IconOnly
@@ -51,6 +66,21 @@ Controls.Button {
         height: iconSize
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
+
+        Image {
+            id: faviconItem
+            anchors.centerIn: parent
+            width: iconSize
+            height: iconSize
+            source: shouldShowFavicon ? root.faviconUrl : ""
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            mipmap: true
+            cache: true
+            sourceSize: Qt.size(Math.ceil(iconSize * Screen.devicePixelRatio), Math.ceil(iconSize * Screen.devicePixelRatio))
+            opacity: root.disabledVisual ? 0.3 : 1.0
+            visible: shouldShowFavicon
+        }
 
         Image {
             id: imageItem
