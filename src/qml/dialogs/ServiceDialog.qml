@@ -23,7 +23,7 @@ Kirigami.Dialog {
     signal deleteRequested
 
     property string selectedIconName: "internet-web-browser-symbolic"
-    property bool useFavicon: false
+    property bool useFavicon: true
 
     title: isEditMode ? i18n("Edit Service") : i18n("Add Service")
     standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
@@ -47,7 +47,7 @@ Kirigami.Dialog {
         var wsIndex = root.currentWorkspace ? Math.max(0, workspaces.indexOf(root.currentWorkspace)) : 0;
         workspaceComboBox.currentIndex = wsIndex;
         root.selectedIconName = "internet-web-browser-symbolic";
-        root.useFavicon = false;
+        root.useFavicon = true;
     }
 
     onAccepted: {
