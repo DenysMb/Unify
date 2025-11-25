@@ -181,6 +181,22 @@ void ConfigManager::removeService(const QString &serviceId)
     qDebug() << "Service not found for removal:" << serviceId;
 }
 
+void ConfigManager::moveService(int fromIndex, int toIndex)
+{
+    if (fromIndex < 0 || fromIndex >= m_services.size() || toIndex < 0 || toIndex >= m_services.size() || fromIndex == toIndex) {
+        qDebug() << "Invalid move indices:" << fromIndex << "to" << toIndex;
+        return;
+    }
+
+    QVariant service = m_services.takeAt(fromIndex);
+    m_services.insert(toIndex, service);
+
+    Q_EMIT servicesChanged();
+    saveSettings();
+
+    qDebug() << "Moved service from index" << fromIndex << "to" << toIndex;
+}
+
 void ConfigManager::addWorkspace(const QString &workspaceName)
 {
     if (!workspaceName.isEmpty() && !m_workspaces.contains(workspaceName)) {
