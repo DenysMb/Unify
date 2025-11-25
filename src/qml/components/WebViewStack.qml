@@ -26,6 +26,18 @@ Item {
         return disabledServices && disabledServices.hasOwnProperty(id);
     }
 
+    // Update all webviews when disabledServices changes
+    onDisabledServicesChanged: {
+        for (var serviceId in webViewCache) {
+            if (webViewCache.hasOwnProperty(serviceId)) {
+                var view = webViewCache[serviceId];
+                if (view) {
+                    view.isServiceDisabled = isDisabled(serviceId);
+                }
+            }
+        }
+    }
+
     function setCurrentByServiceId(serviceId) {
         root.currentServiceId = serviceId;
 
