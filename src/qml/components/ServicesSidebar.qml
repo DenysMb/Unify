@@ -22,6 +22,8 @@ Rectangle {
     signal editServiceRequested(string id)
     signal moveServiceUp(string id)
     signal moveServiceDown(string id)
+    signal disableService(string id)
+    signal detachService(string id)
 
     Layout.preferredWidth: sidebarWidth
     Layout.fillHeight: true
@@ -48,10 +50,14 @@ Rectangle {
                     active: modelData.id === root.currentServiceId
                     disabledVisual: (root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)) || (root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id))
                     notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
+                    isDisabled: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
+                    isDetached: root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id)
                     onClicked: root.serviceSelected(modelData.id)
                     onEditServiceRequested: root.editServiceRequested(modelData.id)
                     onMoveUpRequested: root.moveServiceUp(modelData.id)
                     onMoveDownRequested: root.moveServiceDown(modelData.id)
+                    onDisableServiceRequested: root.disableService(modelData.id)
+                    onDetachServiceRequested: root.detachService(modelData.id)
                 }
             }
 

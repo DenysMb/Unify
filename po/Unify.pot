@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Unify 0.1.0\n"
 "Report-Msgid-Bugs-To:  \n"
-"POT-Creation-Date: 2025-11-25 15:11+0000\n"
+"POT-Creation-Date: 2025-11-25 15:27+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -55,7 +55,7 @@ msgstr ""
 msgid "Add Service"
 msgstr ""
 
-#: src/qml/Main.qml:466 src/qml/components/ServiceIconButton.qml:70
+#: src/qml/Main.qml:466 src/qml/components/ServiceIconButton.qml:74
 #: src/qml/dialogs/ServiceDialog.qml:28
 #, kde-format
 msgid "Edit Service"
@@ -66,22 +66,22 @@ msgstr ""
 msgid "Refresh Service"
 msgstr ""
 
-#: src/qml/Main.qml:489
+#: src/qml/Main.qml:489 src/qml/components/ServiceIconButton.qml:96
 #, kde-format
 msgid "Reattach Service"
 msgstr ""
 
-#: src/qml/Main.qml:489
+#: src/qml/Main.qml:489 src/qml/components/ServiceIconButton.qml:96
 #, kde-format
 msgid "Detach Service"
 msgstr ""
 
-#: src/qml/Main.qml:503
+#: src/qml/Main.qml:503 src/qml/components/ServiceIconButton.qml:103
 #, kde-format
 msgid "Enable Service"
 msgstr ""
 
-#: src/qml/Main.qml:503
+#: src/qml/Main.qml:503 src/qml/components/ServiceIconButton.qml:103
 #, kde-format
 msgid "Disable Service"
 msgstr ""
@@ -106,12 +106,12 @@ msgstr ""
 msgid "Authentication - %1"
 msgstr ""
 
-#: src/qml/components/ServiceIconButton.qml:78
+#: src/qml/components/ServiceIconButton.qml:82
 #, kde-format
 msgid "Move Service Up"
 msgstr ""
 
-#: src/qml/components/ServiceIconButton.qml:84
+#: src/qml/components/ServiceIconButton.qml:88
 #, kde-format
 msgid "Move Service Down"
 msgstr ""
