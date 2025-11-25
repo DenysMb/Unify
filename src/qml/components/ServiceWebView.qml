@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Window
 import QtWebEngine
 import org.kde.kirigami as Kirigami
+import "AntiDetection.js" as AntiDetection
 
 Item {
     id: view
@@ -15,6 +16,9 @@ Item {
     property alias contents: webView
     property var onTitleUpdated: null
     property int stackIndex: 0
+
+    // Anti-detection script for Google OAuth compatibility
+    // Injected via runJavaScript on each page load
 
     // Show either the WebView or placeholder based on service state
     WebEngineView {
@@ -63,8 +67,14 @@ Item {
         }
 
         onLoadingChanged: function (loadRequest) {
+            // Inject anti-detection script as early as possible
+            if (loadRequest.status === WebEngineView.LoadStartedStatus) {
+                webView.runJavaScript(AntiDetection.getScript());
+            }
             if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
                 console.log("Service loaded: " + view.serviceTitle + " - " + view.url);
+                // Re-inject after load to ensure it's applied
+                webView.runJavaScript(AntiDetection.getScript());
             }
         }
 

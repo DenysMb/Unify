@@ -33,6 +33,7 @@ ecm_target_qml_sources(unify
     qml/dialogs/WorkspaceDialog.qml
     qml/drawers/WorkspaceDrawer.qml
     qml/utils/Services.js
+    qml/utils/AntiDetection.js
 )
 
 target_link_libraries(unify

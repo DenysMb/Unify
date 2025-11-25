@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Window
 import QtWebEngine
 import org.kde.kirigami as Kirigami
+import "AntiDetection.js" as AntiDetection
 
 Kirigami.ApplicationWindow {
     id: popupWindow
@@ -11,6 +12,9 @@ Kirigami.ApplicationWindow {
     property string parentService: ""
     property alias webView: webEngineView
     property WebEngineProfile webProfile
+
+    // Anti-detection script for Google OAuth compatibility
+    // Injected via runJavaScript on each page load
 
     // Window configuration
     width: 800
@@ -71,8 +75,14 @@ Kirigami.ApplicationWindow {
         }
 
         onLoadingChanged: function (loadRequest) {
+            // Inject anti-detection script as early as possible
+            if (loadRequest.status === WebEngineView.LoadStartedStatus) {
+                webEngineView.runJavaScript(AntiDetection.getScript());
+            }
             if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
                 console.log("📱 Popup loaded:", webEngineView.url);
+                // Re-inject after load to ensure it's applied
+                webEngineView.runJavaScript(AntiDetection.getScript());
                 // Check if authentication is complete
                 popupWindow.checkForAuthComplete();
             }
@@ -97,7 +107,7 @@ Kirigami.ApplicationWindow {
         }
 
         // Handle fullscreen requests inside the auth popup if any
-        onFullScreenRequested: function(request) {
+        onFullScreenRequested: function (request) {
             request.accept();
             var win = popupWindow; // this WebView fills the popup window
             if (!win)

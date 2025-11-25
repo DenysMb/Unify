@@ -181,8 +181,9 @@ Kirigami.ApplicationWindow {
     // Workspaces are now managed by configManager
     property var workspaces: configManager ? configManager.workspaces : ["Personal"]
 
-    // Modern Chrome User-Agent string for compatibility with web services (WhatsApp Web, Proton, etc.)
-    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    // Modern Chrome User-Agent string for compatibility with web services (WhatsApp Web, Google, etc.)
+    // Using latest stable Chrome version to avoid "browser not secure" errors with Google OAuth
+    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
     // Services configuration array
     // Services are now managed by configManager
@@ -198,7 +199,6 @@ Kirigami.ApplicationWindow {
     }
 
     // Shared persistent WebEngine profile for all web views (ensures cookies/storage persist)
-    // Keep notifications working by forwarding to C++ presenter.
     WebEngineProfile {
         id: persistentProfile
         storageName: "unify-default"
@@ -206,9 +206,7 @@ Kirigami.ApplicationWindow {
         httpUserAgent: root.chromeUserAgent
         httpCacheType: WebEngineProfile.DiskHttpCache
         persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
-        // Allow 3rd-party cookies to improve SSO persistence across restarts
-        // (property available in recent Qt versions)
-        // thirdPartyCookiePolicy: WebEngineProfile.AlwaysAllowThirdPartyCookies
+
         onPresentNotification: function (notification) {
             if (notificationPresenter && notificationPresenter.presentFromQml) {
                 notificationPresenter.presentFromQml(notification.title, notification.message, notification.origin);
