@@ -18,7 +18,7 @@ Controls.Button {
     property bool active: false
     property int notificationCount: 0
 
-    signal rightClicked
+    signal editServiceRequested
 
     readonly property string faviconUrl: {
         if (!root.useFavicon || !root.serviceUrl)
@@ -53,11 +53,22 @@ Controls.Button {
     Layout.preferredHeight: buttonSize
     Layout.alignment: Qt.AlignHCenter
 
-    // Handle right click
+    // Handle right click - show context menu
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.RightButton
-        onClicked: root.rightClicked()
+        onClicked: contextMenu.popup()
+    }
+
+    // Context menu
+    Controls.Menu {
+        id: contextMenu
+
+        Controls.MenuItem {
+            text: i18n("Edit Service")
+            icon.name: "document-edit"
+            onTriggered: root.editServiceRequested()
+        }
     }
 
     contentItem: Item {
