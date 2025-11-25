@@ -542,6 +542,12 @@ Kirigami.ApplicationWindow {
                         addServiceDialog.open();
                     }
                 }
+                onMoveServiceUp: function (id) {
+                    root.moveServiceUp(id);
+                }
+                onMoveServiceDown: function (id) {
+                    root.moveServiceDown(id);
+                }
             }
 
             // Main content area
@@ -882,5 +888,79 @@ Kirigami.ApplicationWindow {
     // Function to check if a service is disabled
     function isServiceDisabled(serviceId) {
         return disabledServices.hasOwnProperty(serviceId);
+    }
+
+    // Function to move a service up in the list
+    function moveServiceUp(serviceId) {
+        if (!configManager || !configManager.moveService) {
+            console.log("ConfigManager moveService not available");
+            return false;
+        }
+
+        var currentIndex = findServiceIndexById(serviceId);
+        if (currentIndex <= 0) {
+            // Already at the top or not found
+            return false;
+        }
+
+        // Find the previous service in the same workspace
+        var service = findServiceById(serviceId);
+        if (!service) {
+            return false;
+        }
+
+        var targetIndex = -1;
+        for (var i = currentIndex - 1; i >= 0; i--) {
+            if (services[i].workspace === service.workspace) {
+                targetIndex = i;
+                break;
+            }
+        }
+
+        if (targetIndex === -1) {
+            // No previous service in the same workspace
+            return false;
+        }
+
+        configManager.moveService(currentIndex, targetIndex);
+        console.log("Moved service up:", service.title);
+        return true;
+    }
+
+    // Function to move a service down in the list
+    function moveServiceDown(serviceId) {
+        if (!configManager || !configManager.moveService) {
+            console.log("ConfigManager moveService not available");
+            return false;
+        }
+
+        var currentIndex = findServiceIndexById(serviceId);
+        if (currentIndex === -1 || currentIndex >= services.length - 1) {
+            // Not found or already at the bottom
+            return false;
+        }
+
+        // Find the next service in the same workspace
+        var service = findServiceById(serviceId);
+        if (!service) {
+            return false;
+        }
+
+        var targetIndex = -1;
+        for (var i = currentIndex + 1; i < services.length; i++) {
+            if (services[i].workspace === service.workspace) {
+                targetIndex = i;
+                break;
+            }
+        }
+
+        if (targetIndex === -1) {
+            // No next service in the same workspace
+            return false;
+        }
+
+        configManager.moveService(currentIndex, targetIndex);
+        console.log("Moved service down:", service.title);
+        return true;
     }
 }

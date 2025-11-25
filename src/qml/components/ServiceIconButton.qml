@@ -19,6 +19,8 @@ Controls.Button {
     property int notificationCount: 0
 
     signal editServiceRequested
+    signal moveUpRequested
+    signal moveDownRequested
 
     readonly property string faviconUrl: {
         if (!root.useFavicon || !root.serviceUrl)
@@ -68,6 +70,20 @@ Controls.Button {
             text: i18n("Edit Service")
             icon.name: "document-edit"
             onTriggered: root.editServiceRequested()
+        }
+
+        Controls.MenuSeparator {}
+
+        Controls.MenuItem {
+            text: i18n("Move Service Up")
+            icon.name: "go-up"
+            onTriggered: root.moveUpRequested()
+        }
+
+        Controls.MenuItem {
+            text: i18n("Move Service Down")
+            icon.name: "go-down"
+            onTriggered: root.moveDownRequested()
         }
     }
 

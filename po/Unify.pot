@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Unify 0.1.0\n"
 "Report-Msgid-Bugs-To:  \n"
-"POT-Creation-Date: 2025-11-24 09:46+0000\n"
+"POT-Creation-Date: 2025-11-25 15:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -39,48 +39,49 @@ msgid "Your emails"
 msgstr ""
 
 #: src/qml/Main.qml:25 src/qml/Main.qml:115 src/qml/Main.qml:157
-#: src/qml/Main.qml:349
+#: src/qml/Main.qml:347
 #, kde-format
 msgid "Unify - Web app aggregator"
 msgstr ""
 
-#: src/qml/Main.qml:224
+#: src/qml/Main.qml:222
 #, kde-format
 msgctxt "@title:window"
 msgid "Unify"
 msgstr ""
 
-#: src/qml/Main.qml:458 src/qml/dialogs/ServiceDialog.qml:28
+#: src/qml/Main.qml:456 src/qml/dialogs/ServiceDialog.qml:28
 #, kde-format
 msgid "Add Service"
 msgstr ""
 
-#: src/qml/Main.qml:468 src/qml/dialogs/ServiceDialog.qml:28
+#: src/qml/Main.qml:466 src/qml/components/ServiceIconButton.qml:70
+#: src/qml/dialogs/ServiceDialog.qml:28
 #, kde-format
 msgid "Edit Service"
 msgstr ""
 
-#: src/qml/Main.qml:482
+#: src/qml/Main.qml:480
 #, kde-format
 msgid "Refresh Service"
 msgstr ""
 
-#: src/qml/Main.qml:491
+#: src/qml/Main.qml:489
 #, kde-format
 msgid "Reattach Service"
 msgstr ""
 
-#: src/qml/Main.qml:491
+#: src/qml/Main.qml:489
 #, kde-format
 msgid "Detach Service"
 msgstr ""
 
-#: src/qml/Main.qml:505
+#: src/qml/Main.qml:503
 #, kde-format
 msgid "Enable Service"
 msgstr ""
 
-#: src/qml/Main.qml:505
+#: src/qml/Main.qml:503
 #, kde-format
 msgid "Disable Service"
 msgstr ""
@@ -100,17 +101,27 @@ msgstr ""
 msgid "Reattach"
 msgstr ""
 
-#: src/qml/components/PopupWindow.qml:21
+#: src/qml/components/PopupWindow.qml:25
 #, kde-format
 msgid "Authentication - %1"
 msgstr ""
 
-#: src/qml/components/ServiceWebView.qml:129
+#: src/qml/components/ServiceIconButton.qml:78
+#, kde-format
+msgid "Move Service Up"
+msgstr ""
+
+#: src/qml/components/ServiceIconButton.qml:84
+#, kde-format
+msgid "Move Service Down"
+msgstr ""
+
+#: src/qml/components/ServiceWebView.qml:139
 #, kde-format
 msgid "Service Disabled"
 msgstr ""
 
-#: src/qml/components/ServiceWebView.qml:130
+#: src/qml/components/ServiceWebView.qml:140
 #, kde-format
 msgid "This service is currently disabled. Enable it to use this web service."
 msgstr ""
@@ -123,43 +134,6 @@ msgstr ""
 #: src/qml/components/WebViewStack.qml:189
 #, kde-format
 msgid "Add your first web service to get started"
-msgstr ""
-
-#: src/qml/dialogs/OAuth2Dialog.qml:9
-#, kde-format
-msgid "Google Authentication"
-msgstr ""
-
-#: src/qml/dialogs/OAuth2Dialog.qml:25
-#, kde-format
-msgid "Signed in as %1"
-msgstr ""
-
-#: src/qml/dialogs/OAuth2Dialog.qml:25 src/qml/dialogs/OAuth2Dialog.qml:40
-#, kde-format
-msgid "Sign in with Google"
-msgstr ""
-
-#: src/qml/dialogs/OAuth2Dialog.qml:30
-#, kde-format
-msgid "Email: %1"
-msgstr ""
-
-#: src/qml/dialogs/OAuth2Dialog.qml:30
-#, kde-format
-msgid ""
-"Click the button below to sign in with your Google account. This will open "
-"your default browser."
-msgstr ""
-
-#: src/qml/dialogs/OAuth2Dialog.qml:51
-#, kde-format
-msgid "Sign Out"
-msgstr ""
-
-#: src/qml/dialogs/OAuth2Dialog.qml:61
-#, kde-format
-msgid "Close"
 msgstr ""
 
 #: src/qml/dialogs/PermissionDialog.qml:14
@@ -219,44 +193,44 @@ msgstr ""
 
 #: src/qml/dialogs/ServiceDialog.qml:78
 #, kde-format
-msgid "Icon URL:"
+msgid "Service URL:"
 msgstr ""
 
 #: src/qml/dialogs/ServiceDialog.qml:79
 #, kde-format
-msgid "Enter icon URL"
+msgid "Enter service URL"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:95
-#, kde-format
-msgid "Or select a custom icon"
-msgstr ""
-
-#: src/qml/dialogs/ServiceDialog.qml:103
-#, kde-format
-msgid "Choose icon from system"
-msgstr ""
-
-#: src/qml/dialogs/ServiceDialog.qml:109
+#: src/qml/dialogs/ServiceDialog.qml:86
 #, kde-format
 msgid "Use service favicon in sidebar"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:113
+#: src/qml/dialogs/ServiceDialog.qml:90
 #, kde-format
 msgid ""
 "When enabled, the service's favicon will be displayed in the sidebar instead "
 "of the selected icon"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:118
+#: src/qml/dialogs/ServiceDialog.qml:95
 #, kde-format
-msgid "Service URL:"
+msgid "Icon URL:"
 msgstr ""
 
-#: src/qml/dialogs/ServiceDialog.qml:119
+#: src/qml/dialogs/ServiceDialog.qml:96
 #, kde-format
-msgid "Enter service URL"
+msgid "Enter icon URL"
+msgstr ""
+
+#: src/qml/dialogs/ServiceDialog.qml:112
+#, kde-format
+msgid "Or select a custom icon"
+msgstr ""
+
+#: src/qml/dialogs/ServiceDialog.qml:120
+#, kde-format
+msgid "Choose icon from system"
 msgstr ""
 
 #: src/qml/dialogs/ServiceDialog.qml:125

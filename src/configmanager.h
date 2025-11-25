@@ -31,6 +31,7 @@ public:
     Q_INVOKABLE void addService(const QVariantMap &service);
     Q_INVOKABLE void updateService(const QString &serviceId, const QVariantMap &service);
     Q_INVOKABLE void removeService(const QString &serviceId);
+    Q_INVOKABLE void moveService(int fromIndex, int toIndex);
 
     Q_INVOKABLE void addWorkspace(const QString &workspaceName);
     Q_INVOKABLE void removeWorkspace(const QString &workspaceName);

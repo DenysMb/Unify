@@ -20,6 +20,8 @@ Rectangle {
 
     signal serviceSelected(string id)
     signal editServiceRequested(string id)
+    signal moveServiceUp(string id)
+    signal moveServiceDown(string id)
 
     Layout.preferredWidth: sidebarWidth
     Layout.fillHeight: true
@@ -48,6 +50,8 @@ Rectangle {
                     notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
                     onClicked: root.serviceSelected(modelData.id)
                     onEditServiceRequested: root.editServiceRequested(modelData.id)
+                    onMoveUpRequested: root.moveServiceUp(modelData.id)
+                    onMoveDownRequested: root.moveServiceDown(modelData.id)
                 }
             }
 
