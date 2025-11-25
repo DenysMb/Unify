@@ -25,6 +25,7 @@ Item {
         id: webView
         anchors.fill: parent
         visible: !view.isServiceDisabled
+        z: 0
         // Use provided persistent profile
         profile: view.webProfile
         url: view.initialUrl
@@ -136,6 +137,7 @@ Item {
         anchors.centerIn: parent
         width: parent.width - Kirigami.Units.gridUnit * 4
         visible: view.isServiceDisabled
+        z: 1
         text: i18n("Service Disabled")
         explanation: i18n("This service is currently disabled. Enable it to use this web service.")
         icon.name: "offline"
