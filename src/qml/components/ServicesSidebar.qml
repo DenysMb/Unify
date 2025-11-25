@@ -19,7 +19,7 @@ Rectangle {
     property int iconSize: 48
 
     signal serviceSelected(string id)
-    signal serviceRightClicked(string id)
+    signal editServiceRequested(string id)
 
     Layout.preferredWidth: sidebarWidth
     Layout.fillHeight: true
@@ -47,7 +47,7 @@ Rectangle {
                     disabledVisual: (root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)) || (root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id))
                     notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
                     onClicked: root.serviceSelected(modelData.id)
-                    onRightClicked: root.serviceRightClicked(modelData.id)
+                    onEditServiceRequested: root.editServiceRequested(modelData.id)
                 }
             }
 

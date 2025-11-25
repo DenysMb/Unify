@@ -531,7 +531,7 @@ Kirigami.ApplicationWindow {
                     if (svc)
                         console.log(svc.title + " clicked - loading " + svc.url);
                 }
-                onServiceRightClicked: function (id) {
+                onEditServiceRequested: function (id) {
                     var svc = root.findServiceById(id);
                     if (svc) {
                         // Store which service is being edited without changing the active service
