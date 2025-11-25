@@ -17,10 +17,14 @@ Controls.Button {
     property bool disabledVisual: false
     property bool active: false
     property int notificationCount: 0
+    property bool isDisabled: false
+    property bool isDetached: false
 
     signal editServiceRequested
     signal moveUpRequested
     signal moveDownRequested
+    signal disableServiceRequested
+    signal detachServiceRequested
 
     readonly property string faviconUrl: {
         if (!root.useFavicon || !root.serviceUrl)
@@ -84,6 +88,22 @@ Controls.Button {
             text: i18n("Move Service Down")
             icon.name: "go-down"
             onTriggered: root.moveDownRequested()
+        }
+
+        Controls.MenuSeparator {}
+
+        Controls.MenuItem {
+            text: root.isDetached ? i18n("Reattach Service") : i18n("Detach Service")
+            icon.name: root.isDetached ? "view-restore" : "view-split-left-right"
+            enabled: !root.isDisabled
+            onTriggered: root.detachServiceRequested()
+        }
+
+        Controls.MenuItem {
+            text: root.isDisabled ? i18n("Enable Service") : i18n("Disable Service")
+            icon.name: root.isDisabled ? "media-playback-start" : "media-playback-pause"
+            enabled: !root.isDetached
+            onTriggered: root.disableServiceRequested()
         }
     }
 

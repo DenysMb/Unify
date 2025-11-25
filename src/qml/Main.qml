@@ -548,6 +548,18 @@ Kirigami.ApplicationWindow {
                 onMoveServiceDown: function (id) {
                     root.moveServiceDown(id);
                 }
+                onDisableService: function (id) {
+                    // Toggle the disable state
+                    root.setServiceEnabled(id, root.isServiceDisabled(id));
+                }
+                onDetachService: function (id) {
+                    // Toggle the detach state
+                    if (root.isServiceDetached(id)) {
+                        root.reattachService(id);
+                    } else {
+                        root.detachService(id);
+                    }
+                }
             }
 
             // Main content area
