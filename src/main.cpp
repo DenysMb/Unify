@@ -147,9 +147,24 @@ private:
 
 int main(int argc, char *argv[])
 {
-    // Set Chromium command line arguments for better OAuth compatibility
+    // Set Chromium command line arguments for better OAuth/Google compatibility
+    // These flags help avoid detection as an automated/embedded browser
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
-            "--disable-features=VizDisplayCompositor --disable-blink-features=AutomationControlled --exclude-switches=enable-automation");
+            "--disable-blink-features=AutomationControlled "
+            "--disable-features=VizDisplayCompositor "
+            "--disable-web-security=false "
+            "--enable-features=NetworkService,NetworkServiceInProcess "
+            "--disable-background-networking=false "
+            "--disable-client-side-phishing-detection "
+            "--disable-default-apps "
+            "--disable-extensions "
+            "--disable-hang-monitor "
+            "--disable-popup-blocking "
+            "--disable-prompt-on-repost "
+            "--disable-sync "
+            "--metrics-recording-only "
+            "--no-first-run "
+            "--safebrowsing-disable-auto-update");
 
     // Initialize WebEngine before QApplication
     QtWebEngineQuick::initialize();
@@ -181,16 +196,9 @@ int main(int argc, char *argv[])
         notificationPresenter->present(std::move(notification));
     };
 
-    // Set up notification presenter for default profile and configure persistence
+    // Set up notification presenter for default profile
     auto *defaultProf = QWebEngineProfile::defaultProfile();
     defaultProf->setNotificationPresenter(globalNotificationPresenter);
-    // Ensure data is persisted on disk (cookies, cache, storage)
-    const QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/webengine/default");
-    QDir().mkpath(dataDir + QStringLiteral("/cache"));
-    QDir().mkpath(dataDir + QStringLiteral("/storage"));
-    defaultProf->setCachePath(dataDir + QStringLiteral("/cache"));
-    defaultProf->setPersistentStoragePath(dataDir + QStringLiteral("/storage"));
-    defaultProf->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
 
     QQmlApplicationEngine engine;
 
