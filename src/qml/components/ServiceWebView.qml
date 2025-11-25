@@ -142,4 +142,40 @@ Item {
         explanation: i18n("This service is currently disabled. Enable it to use this web service.")
         icon.name: "offline"
     }
+
+    // Loading overlay - shows while page is loading
+    Rectangle {
+        anchors.fill: parent
+        visible: !view.isServiceDisabled && webView.loading && webView.loadProgress < 100
+        z: 2
+        color: Kirigami.Theme.backgroundColor
+
+        Kirigami.LoadingPlaceholder {
+            anchors.centerIn: parent
+            text: i18n("Loading %1...", view.serviceTitle)
+        }
+
+        // Show progress bar at the top
+        Rectangle {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 3
+            color: Kirigami.Theme.backgroundColor
+
+            Rectangle {
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                width: parent.width * (webView.loadProgress / 100)
+                color: Kirigami.Theme.highlightColor
+
+                Behavior on width {
+                    NumberAnimation {
+                        duration: Kirigami.Units.shortDuration
+                    }
+                }
+            }
+        }
+    }
 }

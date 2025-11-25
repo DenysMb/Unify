@@ -47,11 +47,12 @@ Item {
             return;
         }
 
-        // Switch to the view (should already exist)
+        // Switch to the view (all services are pre-loaded, so it should always exist)
         if (webViewCache[serviceId]) {
             stackLayout.currentIndex = webViewCache[serviceId].stackIndex;
         } else {
-            // Fallback: create if doesn't exist
+            // This shouldn't happen with pre-loading, but keep as fallback
+            console.warn("Service not pre-loaded:", serviceId, "- creating now");
             createWebViewForService(serviceId);
             if (webViewCache[serviceId]) {
                 stackLayout.currentIndex = webViewCache[serviceId].stackIndex;
@@ -163,13 +164,15 @@ Item {
     onServicesChanged: {
         var currentServiceIds = [];
 
-        // Create or update views for all services
+        // PRE-LOAD: Create or update views for ALL services immediately
+        // This ensures instant switching between services with no loading delay
         for (var i = 0; i < services.length; i++) {
             var svc = services[i];
             currentServiceIds.push(svc.id);
 
             if (!webViewCache[svc.id]) {
-                // Create new view
+                // Create new view (will load immediately)
+                console.log("Pre-loading service:", svc.title);
                 createWebViewForService(svc.id);
             } else {
                 // Update existing view properties
