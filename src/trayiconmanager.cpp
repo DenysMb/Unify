@@ -19,14 +19,23 @@ TrayIconManager::TrayIconManager(QObject *parent)
     , m_mainWindow(nullptr)
     , m_windowVisible(true)
     , m_hasNotifications(false)
+    , m_debounceTimer(nullptr)
+    , m_lastKnownDarkScheme(false)
+    , m_colorSchemeInitialized(false)
 {
     createTrayIcon();
     createMenu();
+
+    // Create debounce timer for palette change events
+    m_debounceTimer = new QTimer(this);
+    m_debounceTimer->setSingleShot(true);
+    connect(m_debounceTimer, &QTimer::timeout, this, &TrayIconManager::performDebouncedIconUpdate);
 
     // Install event filter to detect palette changes
     qApp->installEventFilter(this);
 
     // Set initial icon based on current color scheme
+    // This also initializes m_lastKnownDarkScheme and m_colorSchemeInitialized
     updateIconBasedOnColorScheme();
 }
 
@@ -172,15 +181,45 @@ bool TrayIconManager::isDarkColorScheme() const
     QColor backgroundColor = palette.color(QPalette::Window);
     int lightness = backgroundColor.lightness();
 
-    qDebug() << "🎨 Color scheme detection - Background lightness:" << lightness;
-
     return lightness < 128;
+}
+
+void TrayIconManager::scheduleIconUpdate()
+{
+    // Restart the debounce timer - this groups multiple rapid palette changes into one update
+    m_debounceTimer->start(DEBOUNCE_DELAY_MS);
+}
+
+void TrayIconManager::performDebouncedIconUpdate()
+{
+    bool currentDarkScheme = isDarkColorScheme();
+
+    // Only update if the color scheme actually changed
+    if (m_colorSchemeInitialized && currentDarkScheme == m_lastKnownDarkScheme) {
+        qDebug() << "🎨 Palette change detected but color scheme unchanged, skipping update";
+        return;
+    }
+
+    qDebug() << "🎨 Color scheme changed from" << (m_lastKnownDarkScheme ? "DARK" : "LIGHT") << "to" << (currentDarkScheme ? "DARK" : "LIGHT");
+    m_lastKnownDarkScheme = currentDarkScheme;
+    m_colorSchemeInitialized = true;
+
+    updateIconBasedOnColorScheme();
 }
 
 void TrayIconManager::updateIconBasedOnColorScheme()
 {
     if (!m_trayIcon) {
         return;
+    }
+
+    bool isDark = isDarkColorScheme();
+
+    // Update cached state on direct calls (not through debounce)
+    if (!m_colorSchemeInitialized) {
+        m_lastKnownDarkScheme = isDark;
+        m_colorSchemeInitialized = true;
+        qDebug() << "🎨 Color scheme detection - Background lightness:" << qApp->palette().color(QPalette::Window).lightness();
     }
 
     QString iconPath;
@@ -191,7 +230,6 @@ void TrayIconManager::updateIconBasedOnColorScheme()
         qDebug() << "🔔 Tray icon updated: using NOTIFICATION icon";
     } else {
         // Use color scheme appropriate icon when no notifications
-        bool isDark = isDarkColorScheme();
         iconPath = isDark ? QStringLiteral(":/io.github.denysmb.unify/assets/unify-tray-light.png")
                           : QStringLiteral(":/io.github.denysmb.unify/assets/unify-tray-dark.png");
         qDebug() << "🎨 Tray icon updated for" << (isDark ? "DARK" : "LIGHT") << "color scheme, using" << (isDark ? "LIGHT" : "DARK") << "normal icon";
@@ -210,8 +248,8 @@ bool TrayIconManager::eventFilter(QObject *watched, QEvent *event)
 {
     // Detect when the application palette changes (theme/color scheme change)
     if (event->type() == QEvent::ApplicationPaletteChange || event->type() == QEvent::PaletteChange) {
-        qDebug() << "🎨 Palette change detected, updating tray icon...";
-        updateIconBasedOnColorScheme();
+        // Use debouncing to avoid multiple rapid updates during startup
+        scheduleIconUpdate();
     }
 
     return QObject::eventFilter(watched, event);

@@ -435,9 +435,9 @@ Kirigami.ApplicationWindow {
     }
 
     // Update tray icon manager when window visibility changes
-    onVisibilityChanged: {
+    onVisibilityChanged: function () {
         if (trayIconManager) {
-            trayIconManager.windowVisible = (visibility !== Window.Hidden && visibility !== Window.Minimized);
+            trayIconManager.windowVisible = (root.visibility !== Window.Hidden && root.visibility !== Window.Minimized);
         }
     }
 

@@ -9,6 +9,7 @@
 #include <QObject>
 #include <QPalette>
 #include <QSystemTrayIcon>
+#include <QTimer>
 #include <QWindow>
 #include <QtCore/QObject>
 
@@ -44,12 +45,14 @@ private Q_SLOTS:
     void onActivated(QSystemTrayIcon::ActivationReason reason);
     void updateMenuActions();
     void updateTrayIconForColorScheme();
+    void performDebouncedIconUpdate();
 
 private:
     void createTrayIcon();
     void createMenu();
     bool isDarkColorScheme() const;
     void updateIconBasedOnColorScheme();
+    void scheduleIconUpdate();
     bool eventFilter(QObject *watched, QEvent *event) override;
 
     QSystemTrayIcon *m_trayIcon;
@@ -60,6 +63,12 @@ private:
     QWindow *m_mainWindow;
     bool m_windowVisible;
     bool m_hasNotifications;
+
+    // Debouncing and change detection for color scheme updates
+    QTimer *m_debounceTimer;
+    bool m_lastKnownDarkScheme;
+    bool m_colorSchemeInitialized;
+    static constexpr int DEBOUNCE_DELAY_MS = 100;
 };
 
 #endif // TRAYICONMANAGER_H
