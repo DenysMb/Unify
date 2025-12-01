@@ -209,8 +209,8 @@ int main(int argc, char *argv[])
     defaultProf->setHttpCacheType(QWebEngineProfile::DiskHttpCache);
     defaultProf->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
 
-    // Set user agent for compatibility
-    defaultProf->setHttpUserAgent(QStringLiteral("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"));
+    // Set user agent for compatibility - Firefox simulation
+    defaultProf->setHttpUserAgent(QStringLiteral("Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/121.0"));
 
     // Set up notification presenter
     defaultProf->setNotificationPresenter(globalNotificationPresenter);
