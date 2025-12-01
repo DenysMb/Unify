@@ -150,8 +150,11 @@ int main(int argc, char *argv[])
 {
     // Set Chromium command line arguments for better OAuth/Google compatibility
     // These flags help avoid detection as an automated/embedded browser
+    // Chromium flags with GPU acceleration disabled to prevent freezing on some systems
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
             "--disable-blink-features=AutomationControlled "
+            "--disable-gpu "
+            "--disable-gpu-compositing "
             "--disable-features=VizDisplayCompositor "
             "--disable-web-security=false "
             "--enable-features=NetworkService,NetworkServiceInProcess "
@@ -201,17 +204,17 @@ int main(int argc, char *argv[])
     // Note: The default profile is already disk-based (not off-the-record)
     // In Qt 6, profile type is determined by constructor, not setter methods
     auto *defaultProf = QWebEngineProfile::defaultProfile();
-    
+
     // Configure persistence settings
     defaultProf->setHttpCacheType(QWebEngineProfile::DiskHttpCache);
     defaultProf->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
-    
+
     // Set user agent for compatibility
     defaultProf->setHttpUserAgent(QStringLiteral("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"));
-    
+
     // Set up notification presenter
     defaultProf->setNotificationPresenter(globalNotificationPresenter);
-    
+
     qDebug() << "Default WebEngineProfile configured:";
     qDebug() << "  Storage name:" << defaultProf->storageName();
     qDebug() << "  Off-the-record:" << defaultProf->isOffTheRecord();
