@@ -17,8 +17,73 @@ Item {
     property var onTitleUpdated: null
     property int stackIndex: 0
 
+    // Internal state tracking
+    property bool profileReady: webProfile !== null
+    property bool urlLoaded: false
+
     // Anti-detection script for Google OAuth compatibility
     // Injected via runJavaScript on each page load
+
+    // Monitor profile readiness
+    onProfileReadyChanged: {
+        if (profileReady && !urlLoaded && !isServiceDisabled && initialUrl.toString() !== "about:blank") {
+            console.log("Profile ready, loading URL for:", serviceTitle);
+            loadUrlWhenReady();
+        }
+    }
+
+    // Delay URL loading to ensure profile is fully initialized
+    function loadUrlWhenReady() {
+        if (!webProfile) {
+            console.warn("Cannot load URL - profile not ready for:", serviceTitle);
+            return;
+        }
+        
+        if (webView.url.toString() === "about:blank" && initialUrl.toString() !== "about:blank") {
+            urlLoadTimer.start();
+        }
+    }
+
+    // Timer to delay URL loading slightly
+    Timer {
+        id: urlLoadTimer
+        interval: 50
+        repeat: false
+        onTriggered: {
+            if (!view.isServiceDisabled && view.initialUrl.toString() !== "about:blank") {
+                console.log("Timer triggered, loading:", view.initialUrl, "for:", view.serviceTitle);
+                webView.url = view.initialUrl;
+                view.urlLoaded = true;
+            }
+        }
+    }
+
+    // Timeout timer to detect stuck loading
+    Timer {
+        id: loadTimeoutTimer
+        interval: 30000  // 30 seconds timeout
+        repeat: false
+        onTriggered: {
+            if (webView.loading) {
+                console.warn("Load timeout for:", view.serviceTitle, "- stopping and retrying");
+                webView.stop();
+                // Retry after a short delay
+                retryTimer.start();
+            }
+        }
+    }
+
+    Timer {
+        id: retryTimer
+        interval: 1000
+        repeat: false
+        onTriggered: {
+            if (!view.isServiceDisabled && view.initialUrl.toString() !== "about:blank") {
+                console.log("Retrying load for:", view.serviceTitle);
+                webView.reload();
+            }
+        }
+    }
 
     // Show either the WebView or placeholder based on service state
     WebEngineView {
@@ -26,9 +91,12 @@ Item {
         anchors.fill: parent
         visible: !view.isServiceDisabled
         z: 0
+        
         // Use provided persistent profile
         profile: view.webProfile
-        url: view.initialUrl
+        
+        // Start with about:blank, URL will be set when profile is ready
+        url: "about:blank"
 
         // Enable settings required for screen sharing, media capture, notifications and OAuth
         settings.screenCaptureEnabled: true
@@ -71,11 +139,21 @@ Item {
             // Inject anti-detection script as early as possible
             if (loadRequest.status === WebEngineView.LoadStartedStatus) {
                 webView.runJavaScript(AntiDetection.getScript());
+                loadTimeoutTimer.restart();
             }
             if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
-                console.log("Service loaded: " + view.serviceTitle + " - " + view.url);
+                loadTimeoutTimer.stop();
+                console.log("Service loaded: " + view.serviceTitle + " - " + webView.url);
                 // Re-inject after load to ensure it's applied
                 webView.runJavaScript(AntiDetection.getScript());
+            }
+            if (loadRequest.status === WebEngineView.LoadFailedStatus) {
+                loadTimeoutTimer.stop();
+                console.warn("Service load failed: " + view.serviceTitle + " - " + loadRequest.errorString);
+            }
+            if (loadRequest.status === WebEngineView.LoadStoppedStatus) {
+                loadTimeoutTimer.stop();
+                console.log("Service load stopped: " + view.serviceTitle);
             }
         }
 
@@ -129,6 +207,13 @@ Item {
                     win.showNormal();
                 view._wasWindowFullScreenBeforeRequest = false;
             }
+        }
+    }
+
+    // Initialize URL loading when component is ready
+    Component.onCompleted: {
+        if (webProfile && !isServiceDisabled && initialUrl.toString() !== "about:blank") {
+            loadUrlWhenReady();
         }
     }
 

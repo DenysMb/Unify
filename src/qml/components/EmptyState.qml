@@ -13,4 +13,3 @@ Item {
         explanation: root.explanation
     }
 }
-

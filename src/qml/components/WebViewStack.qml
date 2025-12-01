@@ -21,6 +21,7 @@ Item {
     // Internal properties
     property string currentServiceId: ""
     property var webViewCache: ({}) // serviceId -> WebView component instance
+    property bool isInitialized: false
 
     function isDisabled(id) {
         return disabledServices && disabledServices.hasOwnProperty(id);
@@ -79,6 +80,12 @@ Item {
     }
 
     function createWebViewForService(serviceId) {
+        // Don't create if profile is not ready
+        if (!root.webProfile) {
+            console.warn("WebProfile not ready, delaying service creation:", serviceId);
+            return;
+        }
+
         // Find service data
         var serviceData = null;
         for (var i = 0; i < services.length; i++) {
@@ -108,11 +115,13 @@ Item {
         // Calculate next stack index (empty state is 0, views start at 1)
         var nextIndex = Object.keys(webViewCache).length + 1;
 
-        // Create the instance
+        // Create the instance with delayed URL loading for disabled services
+        var initialUrl = root.isDisabled(serviceData.id) ? "about:blank" : serviceData.url;
+        
         var instance = component.createObject(stackLayout, {
             "serviceTitle": serviceData.title,
             "serviceId": serviceData.id,
-            "initialUrl": root.isDisabled(serviceData.id) ? "about:blank" : serviceData.url,
+            "initialUrl": initialUrl,
             "webProfile": root.webProfile,
             "isServiceDisabled": root.isDisabled(serviceData.id),
             "onTitleUpdated": root.onTitleUpdated,
@@ -162,6 +171,11 @@ Item {
 
     // Sync views when services list changes
     onServicesChanged: {
+        // Don't process if profile is not ready or services is empty/null
+        if (!root.webProfile || !services || services.length === 0) {
+            return;
+        }
+
         var currentServiceIds = [];
 
         // PRE-LOAD: Create or update views for ALL services immediately
@@ -187,6 +201,19 @@ Item {
             if (currentServiceIds.indexOf(cachedId) === -1) {
                 destroyWebViewForService(cachedId);
             }
+        }
+
+        root.isInitialized = true;
+    }
+
+    // Monitor webProfile changes to initialize services when profile becomes available
+    onWebProfileChanged: {
+        if (root.webProfile && services && services.length > 0 && !root.isInitialized) {
+            console.log("WebProfile now available, initializing services...");
+            // Trigger services reload
+            var svcCopy = services;
+            services = [];
+            services = svcCopy;
         }
     }
 
