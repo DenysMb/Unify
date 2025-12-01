@@ -149,8 +149,11 @@ int main(int argc, char *argv[])
 {
     // Set Chromium command line arguments for better OAuth/Google compatibility
     // These flags help avoid detection as an automated/embedded browser
+    // Chromium flags with GPU acceleration disabled to prevent freezing on some systems
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
             "--disable-blink-features=AutomationControlled "
+            "--disable-gpu "
+            "--disable-gpu-compositing "
             "--disable-features=VizDisplayCompositor "
             "--disable-web-security=false "
             "--enable-features=NetworkService,NetworkServiceInProcess "
