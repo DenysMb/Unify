@@ -198,14 +198,11 @@ int main(int argc, char *argv[])
     };
 
     // Configure the default profile BEFORE any QML is loaded
-    // This is critical to avoid the "Storage name is empty" warning
+    // Note: The default profile is already disk-based (not off-the-record)
+    // In Qt 6, profile type is determined by constructor, not setter methods
     auto *defaultProf = QWebEngineProfile::defaultProfile();
     
-    // Set storage name first - this enables disk-based storage
-    defaultProf->setStorageName(QStringLiteral("unify-default-profile"));
-    
     // Configure persistence settings
-    defaultProf->setOffTheRecord(false);
     defaultProf->setHttpCacheType(QWebEngineProfile::DiskHttpCache);
     defaultProf->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
     
