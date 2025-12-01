@@ -30,6 +30,9 @@ Kirigami.ApplicationWindow {
     // Current selected service ID (empty string means no service selected)
     property string currentServiceId: ""
 
+    // Flag to track if the app is fully initialized
+    property bool appInitialized: false
+
     // Update configManager when currentWorkspace changes
     onCurrentWorkspaceChanged: {
         if (configManager && configManager.currentWorkspace !== currentWorkspace) {
@@ -199,11 +202,20 @@ Kirigami.ApplicationWindow {
     }
 
     // Shared persistent WebEngine profile for all web views (ensures cookies/storage persist)
+    // IMPORTANT: storageName must be set BEFORE the profile is used
     WebEngineProfile {
         id: persistentProfile
-        storageName: "unify-default"
+        
+        // Set storageName first - this is critical for persistence
+        storageName: "unify-storage"
+        
+        // Explicitly set to NOT be off-the-record (enables persistence)
         offTheRecord: false
+        
+        // Set user agent
         httpUserAgent: root.chromeUserAgent
+        
+        // Cache and cookie settings
         httpCacheType: WebEngineProfile.DiskHttpCache
         persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
 
@@ -571,7 +583,7 @@ Kirigami.ApplicationWindow {
                     id: webViewStack
                     anchors.fill: parent
                     // Keep all services instantiated to preserve background activity across workspaces
-                    services: root.services
+                    services: root.appInitialized ? root.services : []
                     // Drive empty state off the filtered (current workspace) count
                     filteredCount: root.filteredServices.length
                     disabledServices: root.disabledServices
@@ -582,18 +594,32 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    // Initialize with the first workspace on startup
+    // Initialize with the first workspace on startup - delayed to ensure profile is ready
     Component.onCompleted: {
         // Initialize disabled services from configManager
         if (configManager && configManager.disabledServices) {
             root.disabledServices = configManager.disabledServices;
         }
 
-        // Use persisted current workspace
-        var ws = root.currentWorkspace;
-        if (!ws || ws === "")
-            ws = workspaces[0];
-        switchToWorkspace(ws);
+        // Delay initialization to ensure WebEngineProfile is fully set up
+        initTimer.start();
+    }
+
+    // Timer to delay service loading until profile is ready
+    Timer {
+        id: initTimer
+        interval: 100  // Small delay to ensure profile initialization
+        repeat: false
+        onTriggered: {
+            console.log("Initializing app after profile setup...");
+            root.appInitialized = true;
+            
+            // Use persisted current workspace
+            var ws = root.currentWorkspace;
+            if (!ws || ws === "")
+                ws = workspaces[0];
+            root.switchToWorkspace(ws);
+        }
     }
 
     // Toggle fullscreen on F11 (StandardKey.FullScreen)
