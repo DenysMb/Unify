@@ -184,9 +184,9 @@ Kirigami.ApplicationWindow {
     // Workspaces are now managed by configManager
     property var workspaces: configManager ? configManager.workspaces : ["Personal"]
 
-    // Modern Chrome User-Agent string for compatibility with web services (WhatsApp Web, Google, etc.)
-    // Using latest stable Chrome version to avoid "browser not secure" errors with Google OAuth
-    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    // Firefox User-Agent string to simulate Firefox browser for compatibility with web services
+    // Using latest stable Firefox version to avoid detection issues
+    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/121.0"
 
     // Services configuration array
     // Services are now managed by configManager
