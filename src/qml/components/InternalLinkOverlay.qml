@@ -114,48 +114,37 @@ Rectangle {
 
                     QQC2.ToolButton {
                         icon.name: "debug-run"
-                        text: i18n("Open in Service View")
-                        display: QQC2.AbstractButton.IconOnly
+                        text: i18n("Open in Service")
+                        display: QQC2.AbstractButton.TextBesideIcon
                         onClicked: {
                             var urlToOpen = overlayWebView.url;
                             overlay.close();
                             overlay.openInServiceView(urlToOpen);
                         }
-                        QQC2.ToolTip.visible: hovered
-                        QQC2.ToolTip.text: text
-                        QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
                     }
 
                     QQC2.ToolButton {
                         icon.name: "window-new"
                         text: i18n("Open in Browser")
-                        display: QQC2.AbstractButton.IconOnly
+                        display: QQC2.AbstractButton.TextBesideIcon
                         onClicked: {
                             Qt.openUrlExternally(overlayWebView.url);
+                            overlay.close();
                         }
-                        QQC2.ToolTip.visible: hovered
-                        QQC2.ToolTip.text: text
-                        QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
                     }
 
                     QQC2.ToolButton {
                         icon.name: "view-refresh"
                         text: i18n("Refresh")
-                        display: QQC2.AbstractButton.IconOnly
+                        display: QQC2.AbstractButton.TextBesideIcon
                         onClicked: overlayWebView.reload()
-                        QQC2.ToolTip.visible: hovered
-                        QQC2.ToolTip.text: text
-                        QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
                     }
 
                     QQC2.ToolButton {
                         icon.name: "window-close"
                         text: i18n("Close")
-                        display: QQC2.AbstractButton.IconOnly
+                        display: QQC2.AbstractButton.TextBesideIcon
                         onClicked: overlay.close()
-                        QQC2.ToolTip.visible: hovered
-                        QQC2.ToolTip.text: text
-                        QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
                     }
                 }
             }
