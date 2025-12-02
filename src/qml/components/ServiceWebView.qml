@@ -280,6 +280,11 @@ Item {
         parentService: view.serviceTitle
         webProfile: view.webProfile
         z: 50
+
+        onOpenInServiceView: function (urlToOpen) {
+            console.log("🔗 Opening in service view:", urlToOpen);
+            webView.url = urlToOpen;
+        }
     }
 
     // Loading overlay - shows while page is loading
