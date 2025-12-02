@@ -124,6 +124,26 @@ var script = `
         });
     } catch (e) {}
 
+    // 13. Track Ctrl key state for link opening behavior
+    window.__unifyCtrlPressed = false;
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Control' || e.ctrlKey) {
+            window.__unifyCtrlPressed = true;
+        }
+    }, true);
+
+    document.addEventListener('keyup', function(e) {
+        if (e.key === 'Control') {
+            window.__unifyCtrlPressed = false;
+        }
+    }, true);
+
+    // Reset on window blur (in case key is released while window not focused)
+    window.addEventListener('blur', function() {
+        window.__unifyCtrlPressed = false;
+    });
+
     console.log('🛡️ Anti-detection script loaded successfully (Firefox mode)');
 })();
 `;

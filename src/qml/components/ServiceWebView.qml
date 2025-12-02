@@ -164,11 +164,20 @@ Item {
             }
         }
 
-        // Handle popup windows - all links open in overlay for user choice
+        // Handle popup windows - Ctrl+Click opens directly in browser, otherwise overlay
         onNewWindowRequested: function (request) {
             console.log("🪟 Link requested:", request.requestedUrl, "from service:", view.serviceTitle);
-            console.log("🔗 Opening link in overlay for user choice");
-            internalLinkOverlay.open(request.requestedUrl);
+
+            var requestedUrl = request.requestedUrl;
+            webView.runJavaScript("window.__unifyCtrlPressed || false", function (ctrlPressed) {
+                if (ctrlPressed) {
+                    console.log("🌐 Ctrl+Click - opening directly in browser");
+                    Qt.openUrlExternally(requestedUrl);
+                } else {
+                    console.log("🔗 Opening link in overlay for user choice");
+                    internalLinkOverlay.open(requestedUrl);
+                }
+            });
         }
 
         // Handle page-initiated fullscreen requests (e.g., video players)
