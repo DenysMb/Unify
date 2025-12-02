@@ -142,8 +142,11 @@ Kirigami.ApplicationWindow {
             var isInternal = isSameDomainOrSubdomain(requestedDomain, currentDomain);
             var isOAuth = isOAuthDomain(requestedDomain);
 
-            if (isInternal || isOAuth) {
-                console.log("🔐 Nested popup - navigating in same window:", requestedDomain);
+            if (isOAuth) {
+                console.log("🔐 Nested OAuth popup - navigating in same window:", requestedDomain);
+                webEngineView.url = request.requestedUrl;
+            } else if (isInternal) {
+                console.log("🔗 Nested internal link - navigating in same window:", requestedDomain);
                 webEngineView.url = request.requestedUrl;
             } else {
                 console.log("🌐 Opening external link in system browser:", requestedUrl);

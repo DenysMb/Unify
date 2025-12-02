@@ -207,8 +207,8 @@ Item {
             var isInternal = isSameDomainOrSubdomain(requestedDomain, currentDomain);
             var isOAuth = isOAuthDomain(requestedDomain);
 
-            if (isInternal || isOAuth) {
-                console.log("🔐 Opening in popup (internal/OAuth):", requestedDomain);
+            if (isOAuth) {
+                console.log("🔐 Opening OAuth in popup:", requestedDomain);
                 var popupComponent = Qt.createComponent("PopupWindow.qml");
                 if (popupComponent.status === Component.Ready) {
                     var popup = popupComponent.createObject(view, {
@@ -227,6 +227,9 @@ Item {
                 } else {
                     console.log("⛔ Failed to load popup component:", popupComponent.errorString());
                 }
+            } else if (isInternal) {
+                console.log("🔗 Opening internal link in overlay:", requestedDomain);
+                internalLinkOverlay.open(request.requestedUrl);
             } else {
                 console.log("🌐 Opening external link in system browser:", requestedUrl);
                 Qt.openUrlExternally(request.requestedUrl);
@@ -269,6 +272,14 @@ Item {
         text: i18n("Service Disabled")
         explanation: i18n("This service is currently disabled. Enable it to use this web service.")
         icon.name: "offline"
+    }
+
+    InternalLinkOverlay {
+        id: internalLinkOverlay
+        anchors.fill: parent
+        parentService: view.serviceTitle
+        webProfile: view.webProfile
+        z: 50
     }
 
     // Loading overlay - shows while page is loading
