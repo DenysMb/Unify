@@ -28,6 +28,7 @@ ecm_target_qml_sources(unify
     qml/components/DetachedServiceWindow.qml
     qml/components/PopupWindow.qml
     qml/components/WebViewStack.qml
+    qml/components/InternalLinkOverlay.qml
     qml/dialogs/ServiceDialog.qml
     qml/dialogs/PermissionDialog.qml
     qml/dialogs/WorkspaceDialog.qml
