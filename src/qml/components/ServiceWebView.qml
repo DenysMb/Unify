@@ -164,76 +164,11 @@ Item {
             }
         }
 
-        // Handle popup windows (required for OAuth authentication flows)
+        // Handle popup windows - all links open in overlay for user choice
         onNewWindowRequested: function (request) {
-            console.log("🪟 Popup window requested for:", request.requestedUrl, "from service:", view.serviceTitle);
-
-            var requestedUrl = request.requestedUrl.toString();
-            var currentUrl = webView.url.toString();
-
-            function extractDomain(url) {
-                try {
-                    var matches = url.match(/^https?:\/\/([^\/]+)/i);
-                    return matches ? matches[1].toLowerCase() : "";
-                } catch (e) {
-                    return "";
-                }
-            }
-
-            var requestedDomain = extractDomain(requestedUrl);
-            var currentDomain = extractDomain(currentUrl);
-
-            var oauthDomains = ["accounts.google.com", "login.microsoftonline.com", "login.live.com", "appleid.apple.com", "facebook.com", "www.facebook.com", "github.com", "api.twitter.com", "discord.com", "id.twitch.tv", "login.yahoo.com", "auth.atlassian.com", "slack.com", "login.salesforce.com", "accounts.spotify.com", "oauth.telegram.org", "web.telegram.org", "web.whatsapp.com"];
-
-            function isOAuthDomain(domain) {
-                for (var i = 0; i < oauthDomains.length; i++) {
-                    if (domain === oauthDomains[i] || domain.endsWith("." + oauthDomains[i])) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            function isSameDomainOrSubdomain(domain1, domain2) {
-                if (!domain1 || !domain2)
-                    return false;
-                if (domain1 === domain2)
-                    return true;
-                var rootDomain1 = domain1.split('.').slice(-2).join('.');
-                var rootDomain2 = domain2.split('.').slice(-2).join('.');
-                return rootDomain1 === rootDomain2;
-            }
-
-            var isInternal = isSameDomainOrSubdomain(requestedDomain, currentDomain);
-            var isOAuth = isOAuthDomain(requestedDomain);
-
-            if (isOAuth) {
-                console.log("🔐 Opening OAuth in popup:", requestedDomain);
-                var popupComponent = Qt.createComponent("PopupWindow.qml");
-                if (popupComponent.status === Component.Ready) {
-                    var popup = popupComponent.createObject(view, {
-                        "requestedUrl": request.requestedUrl,
-                        "parentService": view.serviceTitle,
-                        "webProfile": view.webProfile
-                    });
-
-                    if (popup) {
-                        request.openIn(popup.webView);
-                        popup.show();
-                        console.log("✅ Popup window created and shown");
-                    } else {
-                        console.log("⛔ Failed to create popup window object");
-                    }
-                } else {
-                    console.log("⛔ Failed to load popup component:", popupComponent.errorString());
-                }
-            } else if (isInternal) {
-                console.log("🔗 Opening internal link in overlay:", requestedDomain);
-                internalLinkOverlay.open(request.requestedUrl);
-            } else {
-                console.log("🌐 Opening external link in system browser:", requestedUrl);
-                Qt.openUrlExternally(request.requestedUrl);
-            }
+            console.log("🪟 Link requested:", request.requestedUrl, "from service:", view.serviceTitle);
+            console.log("🔗 Opening link in overlay for user choice");
+            internalLinkOverlay.open(request.requestedUrl);
         }
 
         // Handle page-initiated fullscreen requests (e.g., video players)
