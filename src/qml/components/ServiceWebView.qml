@@ -38,7 +38,7 @@ Item {
             console.warn("Cannot load URL - profile not ready for:", serviceTitle);
             return;
         }
-        
+
         if (webView.url.toString() === "about:blank" && initialUrl.toString() !== "about:blank") {
             urlLoadTimer.start();
         }
@@ -91,10 +91,10 @@ Item {
         anchors.fill: parent
         visible: !view.isServiceDisabled
         z: 0
-        
+
         // Use provided persistent profile
         profile: view.webProfile
-        
+
         // Start with about:blank, URL will be set when profile is ready
         url: "about:blank"
 
@@ -168,25 +168,68 @@ Item {
         onNewWindowRequested: function (request) {
             console.log("🪟 Popup window requested for:", request.requestedUrl, "from service:", view.serviceTitle);
 
-            // Create a new popup window
-            var popupComponent = Qt.createComponent("PopupWindow.qml");
-            if (popupComponent.status === Component.Ready) {
-                var popup = popupComponent.createObject(view, {
-                    "requestedUrl": request.requestedUrl,
-                    "parentService": view.serviceTitle,
-                    "webProfile": view.webProfile
-                });
+            var requestedUrl = request.requestedUrl.toString();
+            var currentUrl = webView.url.toString();
 
-                if (popup) {
-                    // Accept the request and assign the new view
-                    request.openIn(popup.webView);
-                    popup.show();
-                    console.log("✅ Popup window created and shown");
+            function extractDomain(url) {
+                try {
+                    var matches = url.match(/^https?:\/\/([^\/]+)/i);
+                    return matches ? matches[1].toLowerCase() : "";
+                } catch (e) {
+                    return "";
+                }
+            }
+
+            var requestedDomain = extractDomain(requestedUrl);
+            var currentDomain = extractDomain(currentUrl);
+
+            var oauthDomains = ["accounts.google.com", "login.microsoftonline.com", "login.live.com", "appleid.apple.com", "facebook.com", "www.facebook.com", "github.com", "api.twitter.com", "discord.com", "id.twitch.tv", "login.yahoo.com", "auth.atlassian.com", "slack.com", "login.salesforce.com", "accounts.spotify.com", "oauth.telegram.org", "web.telegram.org", "web.whatsapp.com"];
+
+            function isOAuthDomain(domain) {
+                for (var i = 0; i < oauthDomains.length; i++) {
+                    if (domain === oauthDomains[i] || domain.endsWith("." + oauthDomains[i])) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            function isSameDomainOrSubdomain(domain1, domain2) {
+                if (!domain1 || !domain2)
+                    return false;
+                if (domain1 === domain2)
+                    return true;
+                var rootDomain1 = domain1.split('.').slice(-2).join('.');
+                var rootDomain2 = domain2.split('.').slice(-2).join('.');
+                return rootDomain1 === rootDomain2;
+            }
+
+            var isInternal = isSameDomainOrSubdomain(requestedDomain, currentDomain);
+            var isOAuth = isOAuthDomain(requestedDomain);
+
+            if (isInternal || isOAuth) {
+                console.log("🔐 Opening in popup (internal/OAuth):", requestedDomain);
+                var popupComponent = Qt.createComponent("PopupWindow.qml");
+                if (popupComponent.status === Component.Ready) {
+                    var popup = popupComponent.createObject(view, {
+                        "requestedUrl": request.requestedUrl,
+                        "parentService": view.serviceTitle,
+                        "webProfile": view.webProfile
+                    });
+
+                    if (popup) {
+                        request.openIn(popup.webView);
+                        popup.show();
+                        console.log("✅ Popup window created and shown");
+                    } else {
+                        console.log("⛔ Failed to create popup window object");
+                    }
                 } else {
-                    console.log("⛔ Failed to create popup window object");
+                    console.log("⛔ Failed to load popup component:", popupComponent.errorString());
                 }
             } else {
-                console.log("⛔ Failed to load popup component:", popupComponent.errorString());
+                console.log("🌐 Opening external link in system browser:", requestedUrl);
+                Qt.openUrlExternally(request.requestedUrl);
             }
         }
 
