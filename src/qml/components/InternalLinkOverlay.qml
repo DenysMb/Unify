@@ -201,54 +201,8 @@ Rectangle {
                     }
 
                     onNewWindowRequested: function (request) {
-                        var requestedUrl = request.requestedUrl.toString();
-
-                        function extractDomain(url) {
-                            try {
-                                var matches = url.match(/^https?:\/\/([^\/]+)/i);
-                                return matches ? matches[1].toLowerCase() : "";
-                            } catch (e) {
-                                return "";
-                            }
-                        }
-
-                        var requestedDomain = extractDomain(requestedUrl);
-                        var currentDomain = extractDomain(overlayWebView.url.toString());
-
-                        var oauthDomains = ["accounts.google.com", "login.microsoftonline.com", "login.live.com", "appleid.apple.com", "facebook.com", "www.facebook.com", "github.com", "api.twitter.com", "discord.com", "id.twitch.tv", "login.yahoo.com", "auth.atlassian.com", "slack.com", "login.salesforce.com", "accounts.spotify.com", "oauth.telegram.org", "web.telegram.org", "web.whatsapp.com"];
-
-                        function isOAuthDomain(domain) {
-                            for (var i = 0; i < oauthDomains.length; i++) {
-                                if (domain === oauthDomains[i] || domain.endsWith("." + oauthDomains[i])) {
-                                    return true;
-                                }
-                            }
-                            return false;
-                        }
-
-                        function isSameDomainOrSubdomain(domain1, domain2) {
-                            if (!domain1 || !domain2)
-                                return false;
-                            if (domain1 === domain2)
-                                return true;
-                            var rootDomain1 = domain1.split('.').slice(-2).join('.');
-                            var rootDomain2 = domain2.split('.').slice(-2).join('.');
-                            return rootDomain1 === rootDomain2;
-                        }
-
-                        var isInternal = isSameDomainOrSubdomain(requestedDomain, currentDomain);
-                        var isOAuth = isOAuthDomain(requestedDomain);
-
-                        if (isOAuth) {
-                            console.log("🔐 Overlay: OAuth link, navigating in overlay:", requestedDomain);
-                            overlayWebView.url = request.requestedUrl;
-                        } else if (isInternal) {
-                            console.log("🔗 Overlay: Internal link, navigating in overlay:", requestedDomain);
-                            overlayWebView.url = request.requestedUrl;
-                        } else {
-                            console.log("🌐 Overlay: External link, opening in browser:", requestedUrl);
-                            Qt.openUrlExternally(request.requestedUrl);
-                        }
+                        console.log("🔗 Overlay: Navigating to:", request.requestedUrl);
+                        overlayWebView.url = request.requestedUrl;
                     }
 
                     onWindowCloseRequested: {
