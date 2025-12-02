@@ -101,9 +101,54 @@ Kirigami.ApplicationWindow {
 
         // Handle nested popups (just in case)
         onNewWindowRequested: function (request) {
-            console.log("🪟 Nested popup requested, opening in same window");
-            // For nested popups in auth flows, replace current URL
-            webEngineView.url = request.requestedUrl;
+            console.log("🪟 Nested popup requested:", request.requestedUrl);
+
+            var requestedUrl = request.requestedUrl.toString();
+            var currentUrl = webEngineView.url.toString();
+
+            function extractDomain(url) {
+                try {
+                    var matches = url.match(/^https?:\/\/([^\/]+)/i);
+                    return matches ? matches[1].toLowerCase() : "";
+                } catch (e) {
+                    return "";
+                }
+            }
+
+            var requestedDomain = extractDomain(requestedUrl);
+            var currentDomain = extractDomain(currentUrl);
+
+            var oauthDomains = ["accounts.google.com", "login.microsoftonline.com", "login.live.com", "appleid.apple.com", "facebook.com", "www.facebook.com", "github.com", "api.twitter.com", "discord.com", "id.twitch.tv", "login.yahoo.com", "auth.atlassian.com", "slack.com", "login.salesforce.com", "accounts.spotify.com", "oauth.telegram.org", "web.telegram.org", "web.whatsapp.com"];
+
+            function isOAuthDomain(domain) {
+                for (var i = 0; i < oauthDomains.length; i++) {
+                    if (domain === oauthDomains[i] || domain.endsWith("." + oauthDomains[i])) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            function isSameDomainOrSubdomain(domain1, domain2) {
+                if (!domain1 || !domain2)
+                    return false;
+                if (domain1 === domain2)
+                    return true;
+                var rootDomain1 = domain1.split('.').slice(-2).join('.');
+                var rootDomain2 = domain2.split('.').slice(-2).join('.');
+                return rootDomain1 === rootDomain2;
+            }
+
+            var isInternal = isSameDomainOrSubdomain(requestedDomain, currentDomain);
+            var isOAuth = isOAuthDomain(requestedDomain);
+
+            if (isInternal || isOAuth) {
+                console.log("🔐 Nested popup - navigating in same window:", requestedDomain);
+                webEngineView.url = request.requestedUrl;
+            } else {
+                console.log("🌐 Opening external link in system browser:", requestedUrl);
+                Qt.openUrlExternally(request.requestedUrl);
+            }
         }
 
         // Handle fullscreen requests inside the auth popup if any
