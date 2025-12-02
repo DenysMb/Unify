@@ -13,6 +13,7 @@ Rectangle {
     property WebEngineProfile webProfile
 
     signal closed
+    signal openInServiceView(url urlToOpen)
 
     anchors.fill: parent
     color: Qt.rgba(0, 0, 0, 0.6)
@@ -109,6 +110,20 @@ Rectangle {
                         text: overlayWebView.title || overlay.requestedUrl.toString()
                         elide: Text.ElideMiddle
                         font.weight: Font.Medium
+                    }
+
+                    QQC2.ToolButton {
+                        icon.name: "debug-run"
+                        text: i18n("Open in Service View")
+                        display: QQC2.AbstractButton.IconOnly
+                        onClicked: {
+                            var urlToOpen = overlayWebView.url;
+                            overlay.close();
+                            overlay.openInServiceView(urlToOpen);
+                        }
+                        QQC2.ToolTip.visible: hovered
+                        QQC2.ToolTip.text: text
+                        QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
                     }
 
                     QQC2.ToolButton {
