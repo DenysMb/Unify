@@ -41,20 +41,22 @@ Rectangle {
 
     Controls.ScrollView {
         anchors.fill: parent
-        anchors.margins: Kirigami.Units.smallSpacing
+        anchors.topMargin: Kirigami.Units.smallSpacing
 
         Controls.ScrollBar.vertical.policy: Controls.ScrollBar.AlwaysOff
         Controls.ScrollBar.horizontal.policy: Controls.ScrollBar.AlwaysOff
+        contentWidth: root.sidebarWidth
 
         ColumnLayout {
-            width: parent.width
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: root.sidebarWidth
             spacing: Kirigami.Units.smallSpacing
 
             Repeater {
                 model: root.services
 
                 Item {
-                    Layout.preferredWidth: root.sidebarWidth
+                    Layout.preferredWidth: root.buttonSize
                     Layout.preferredHeight: {
                         if (modelData.itemType === "separator") {
                             return 1 + Kirigami.Units.smallSpacing * 4
