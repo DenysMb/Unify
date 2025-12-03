@@ -112,13 +112,9 @@ Kirigami.ApplicationWindow {
 
     // Function to toggle favorite status of a service
     function handleToggleFavorite(id) {
-        console.log("Main.qml handleToggleFavorite called for service:", id);
-        if (!configManager) {
-            console.log("ERROR: configManager not available!");
+        if (!configManager)
             return;
-        }
         var isFavorite = configManager.isServiceFavorite(id);
-        console.log("Current favorite status:", isFavorite, "- Setting to:", !isFavorite);
         configManager.setServiceFavorite(id, !isFavorite);
     }
 
@@ -566,7 +562,6 @@ Kirigami.ApplicationWindow {
                 sidebarWidth: root.sidebarWidth
                 buttonSize: root.buttonSize
                 iconSize: root.iconSize
-                configManager: root.configManager
                 onServiceSelected: function (id) {
                     root.switchToService(id);
                     var svc = root.findServiceById(id);

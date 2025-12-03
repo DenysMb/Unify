@@ -20,6 +20,7 @@ Controls.Button {
     property bool isDisabled: false
     property bool isDetached: false
     property bool isFavorite: false
+    property string serviceId: "" // Add serviceId property to track service
 
     signal editServiceRequested
     signal toggleFavoriteRequested
@@ -60,6 +61,16 @@ Controls.Button {
     Layout.preferredWidth: buttonSize
     Layout.preferredHeight: buttonSize
     Layout.alignment: Qt.AlignHCenter
+
+    Rectangle {
+        visible: root.isFavorite
+        anchors.fill: parent
+        color: "transparent"
+        opacity: 0.5
+        radius: Kirigami.Units.largeSpacing
+        border.width: 1
+        border.color: Kirigami.Theme.neutralTextColor
+    }
 
     // Handle right click - show context menu
     MouseArea {
@@ -187,7 +198,7 @@ Controls.Button {
             height: Kirigami.Units.gridUnit
             width: Math.max(height, badgeText.implicitWidth + Kirigami.Units.smallSpacing)
             radius: height / 2
-            color: Kirigami.Theme.highlightColor
+            color: root.isFavorite ? Kirigami.Theme.neutralTextColor : Kirigami.Theme.highlightColor
             // border.color: Kirigami.Theme.backgroundColor
             // border.width: visible ? 1 : 0
 

@@ -8,8 +8,7 @@ import "./" as Components
 Rectangle {
     id: root
 
-    // Public API
-    property var services: [] // array of service objects with { id, title, image, url }
+    property var services: []
     property var disabledServices: ({})
     property var detachedServices: ({})
     property var notificationCounts: ({})
@@ -17,7 +16,8 @@ Rectangle {
     property int sidebarWidth: 80
     property int buttonSize: 64
     property int iconSize: 48
-    property var configManager: null
+
+    property int favoriteVersion: 0
 
     signal serviceSelected(string id)
     signal editServiceRequested(string id)
@@ -26,6 +26,13 @@ Rectangle {
     signal disableService(string id)
     signal detachService(string id)
     signal toggleFavoriteRequested(string id)
+
+    Connections {
+        target: typeof configManager !== "undefined" ? configManager : null
+        function onServicesChanged() {
+            root.favoriteVersion++;
+        }
+    }
 
     Layout.preferredWidth: sidebarWidth
     Layout.fillHeight: true
@@ -54,7 +61,12 @@ Rectangle {
                     notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
                     isDisabled: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
                     isDetached: root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id)
-                    isFavorite: root.configManager ? root.configManager.isServiceFavorite(modelData.id) : false
+                    isFavorite: {
+                        var v = root.favoriteVersion;
+                        if (typeof configManager === "undefined" || configManager === null)
+                            return false;
+                        return configManager.isServiceFavorite(modelData.id);
+                    }
                     onClicked: root.serviceSelected(modelData.id)
                     onEditServiceRequested: root.editServiceRequested(modelData.id)
                     onMoveUpRequested: root.moveServiceUp(modelData.id)
@@ -62,20 +74,17 @@ Rectangle {
                     onDisableServiceRequested: root.disableService(modelData.id)
                     onDetachServiceRequested: root.detachService(modelData.id)
                     onToggleFavoriteRequested: {
-                        console.log("ServicesSidebar: Propagating favorite toggle for", modelData.id);
                         root.toggleFavoriteRequested(modelData.id);
                     }
                 }
             }
 
-            // Spacer to push content to top
             Item {
                 Layout.fillHeight: true
             }
         }
     }
 
-    // Right border only
     Rectangle {
         anchors.right: parent.right
         anchors.top: parent.top
