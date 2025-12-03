@@ -22,6 +22,7 @@ Controls.Button {
     property bool isFavorite: false
     property bool isInFavoritesTab: false
     property string serviceId: ""
+    property string currentWorkspace: ""
 
     signal editServiceRequested
     signal toggleFavoriteRequested
@@ -91,17 +92,33 @@ Controls.Button {
             onTriggered: root.editServiceRequested()
         }
 
-        Controls.MenuSeparator {}
+        Controls.MenuSeparator {
+            visible: {
+                if (typeof configManager === "undefined" || configManager === null)
+                    return true
+                return !configManager.isSpecialWorkspace(root.currentWorkspace)
+            }
+        }
 
         Controls.MenuItem {
             text: i18n("Move Service Up")
             icon.name: "go-up"
+            visible: {
+                if (typeof configManager === "undefined" || configManager === null)
+                    return true
+                return !configManager.isSpecialWorkspace(root.currentWorkspace)
+            }
             onTriggered: root.moveUpRequested()
         }
 
         Controls.MenuItem {
             text: i18n("Move Service Down")
             icon.name: "go-down"
+            visible: {
+                if (typeof configManager === "undefined" || configManager === null)
+                    return true
+                return !configManager.isSpecialWorkspace(root.currentWorkspace)
+            }
             onTriggered: root.moveDownRequested()
         }
 
