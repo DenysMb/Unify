@@ -17,6 +17,7 @@ Rectangle {
     property int sidebarWidth: 80
     property int buttonSize: 64
     property int iconSize: 48
+    property var configManager: null
 
     signal serviceSelected(string id)
     signal editServiceRequested(string id)
@@ -24,6 +25,7 @@ Rectangle {
     signal moveServiceDown(string id)
     signal disableService(string id)
     signal detachService(string id)
+    signal toggleFavoriteRequested(string id)
 
     Layout.preferredWidth: sidebarWidth
     Layout.fillHeight: true
@@ -52,12 +54,17 @@ Rectangle {
                     notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
                     isDisabled: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
                     isDetached: root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id)
+                    isFavorite: root.configManager ? root.configManager.isServiceFavorite(modelData.id) : false
                     onClicked: root.serviceSelected(modelData.id)
                     onEditServiceRequested: root.editServiceRequested(modelData.id)
                     onMoveUpRequested: root.moveServiceUp(modelData.id)
                     onMoveDownRequested: root.moveServiceDown(modelData.id)
                     onDisableServiceRequested: root.disableService(modelData.id)
                     onDetachServiceRequested: root.detachService(modelData.id)
+                    onToggleFavoriteRequested: {
+                        console.log("ServicesSidebar: Propagating favorite toggle for", modelData.id);
+                        root.toggleFavoriteRequested(modelData.id);
+                    }
                 }
             }
 

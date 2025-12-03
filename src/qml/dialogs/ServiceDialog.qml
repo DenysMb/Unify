@@ -34,7 +34,15 @@ Kirigami.Dialog {
         serviceNameField.text = service.title || "";
         iconUrlField.text = service.image || "";
         serviceUrlField.text = service.url || "";
-        workspaceComboBox.currentIndex = Math.max(0, workspaces.indexOf(service.workspace || workspaces[0]));
+
+        // Filter out special workspaces when finding the index
+        var filteredWorkspaces = [];
+        for (var i = 0; i < workspaces.length; i++) {
+            if (workspaces[i] !== "__favorites__" && workspaces[i] !== "__all_services__") {
+                filteredWorkspaces.push(workspaces[i]);
+            }
+        }
+        workspaceComboBox.currentIndex = Math.max(0, filteredWorkspaces.indexOf(service.workspace || filteredWorkspaces[0]));
         root.selectedIconName = service.image || "internet-web-browser-symbolic";
         root.useFavicon = service.useFavicon || false;
     }
@@ -44,18 +52,33 @@ Kirigami.Dialog {
         iconUrlField.text = "";
         serviceUrlField.text = "";
         // Set to current workspace if available, otherwise default to first
-        var wsIndex = root.currentWorkspace ? Math.max(0, workspaces.indexOf(root.currentWorkspace)) : 0;
+        // Filter out special workspaces
+        var filteredWorkspaces = [];
+        for (var i = 0; i < workspaces.length; i++) {
+            if (workspaces[i] !== "__favorites__" && workspaces[i] !== "__all_services__") {
+                filteredWorkspaces.push(workspaces[i]);
+            }
+        }
+        var wsIndex = root.currentWorkspace ? Math.max(0, filteredWorkspaces.indexOf(root.currentWorkspace)) : 0;
         workspaceComboBox.currentIndex = wsIndex;
         root.selectedIconName = "internet-web-browser-symbolic";
         root.useFavicon = true;
     }
 
     onAccepted: {
+        // Filter out special workspaces to get the correct workspace from ComboBox
+        var filteredWorkspaces = [];
+        for (var i = 0; i < workspaces.length; i++) {
+            if (workspaces[i] !== "__favorites__" && workspaces[i] !== "__all_services__") {
+                filteredWorkspaces.push(workspaces[i]);
+            }
+        }
+
         var data = {
             title: serviceNameField.text,
             url: serviceUrlField.text,
             image: iconUrlField.text.trim() || "internet-web-browser-symbolic",
-            workspace: workspaces[workspaceComboBox.currentIndex],
+            workspace: filteredWorkspaces[workspaceComboBox.currentIndex],
             useFavicon: root.useFavicon
         };
         acceptedData(data);
@@ -123,7 +146,17 @@ Kirigami.Dialog {
         Controls.ComboBox {
             id: workspaceComboBox
             Kirigami.FormData.label: i18n("Workspace:")
-            model: root.workspaces
+            model: {
+                // Filter out special workspaces
+                var filtered = [];
+                for (var i = 0; i < root.workspaces.length; i++) {
+                    var ws = root.workspaces[i];
+                    if (ws !== "__favorites__" && ws !== "__all_services__") {
+                        filtered.push(ws);
+                    }
+                }
+                return filtered;
+            }
             Layout.fillWidth: true
         }
 

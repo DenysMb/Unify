@@ -55,6 +55,17 @@ public:
     Q_INVOKABLE void setLastUsedService(const QString &workspace, const QString &serviceId);
     Q_INVOKABLE QString lastUsedService(const QString &workspace) const;
 
+    // Favorites management
+    Q_INVOKABLE void setServiceFavorite(const QString &serviceId, bool favorite);
+    Q_INVOKABLE bool isServiceFavorite(const QString &serviceId) const;
+
+    // Special workspaces
+    Q_INVOKABLE bool isSpecialWorkspace(const QString &workspaceName) const;
+
+    // Constants for special workspaces
+    static const QString FAVORITES_WORKSPACE;
+    static const QString ALL_SERVICES_WORKSPACE;
+
 Q_SIGNALS:
     void servicesChanged();
     void workspacesChanged();

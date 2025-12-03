@@ -18,6 +18,24 @@ function indexById(services, id) {
 
 function filterByWorkspace(services, workspace) {
     if (!services) return []
+
+    // Special workspace: Favorites - show only favorited services
+    if (workspace === "__favorites__") {
+        var favorites = []
+        for (var i = 0; i < services.length; i++) {
+            if (services[i].favorite === true) {
+                favorites.push(services[i])
+            }
+        }
+        return favorites
+    }
+
+    // Special workspace: All Services - show all services
+    if (workspace === "__all_services__") {
+        return services.slice() // Return a copy of all services
+    }
+
+    // Normal workspace: filter by workspace property
     var out = []
     for (var i = 0; i < services.length; i++) {
         if (services[i].workspace === workspace) out.push(services[i])
