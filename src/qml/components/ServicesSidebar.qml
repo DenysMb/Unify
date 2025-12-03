@@ -50,33 +50,63 @@ Rectangle {
             Repeater {
                 model: root.services
 
-                Components.ServiceIconButton {
-                    title: modelData.title
-                    image: modelData.image
-                    serviceUrl: modelData.url || ""
-                    useFavicon: modelData.useFavicon || false
-                    buttonSize: root.buttonSize
-                    iconSize: root.iconSize
-                    active: modelData.id === root.currentServiceId
-                    disabledVisual: (root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)) || (root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id))
-                    notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
-                    isDisabled: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
-                    isDetached: root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id)
-                    isFavorite: {
-                        var v = root.favoriteVersion;
-                        if (typeof configManager === "undefined" || configManager === null)
-                            return false;
-                        return configManager.isServiceFavorite(modelData.id);
+                Item {
+                    Layout.preferredWidth: root.sidebarWidth
+                    Layout.preferredHeight: {
+                        if (modelData.itemType === "separator") {
+                            return 1 + Kirigami.Units.smallSpacing * 4
+                        }
+                        return root.buttonSize
                     }
-                    isInFavoritesTab: root.currentWorkspace === "__favorites__"
-                    onClicked: root.serviceSelected(modelData.id)
-                    onEditServiceRequested: root.editServiceRequested(modelData.id)
-                    onMoveUpRequested: root.moveServiceUp(modelData.id)
-                    onMoveDownRequested: root.moveServiceDown(modelData.id)
-                    onDisableServiceRequested: root.disableService(modelData.id)
-                    onDetachServiceRequested: root.detachService(modelData.id)
-                    onToggleFavoriteRequested: {
-                        root.toggleFavoriteRequested(modelData.id);
+                    Layout.alignment: Qt.AlignHCenter
+
+                    // Separator component
+                    Rectangle {
+                        visible: modelData.itemType === "separator"
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: root.sidebarWidth - Kirigami.Units.smallSpacing * 2
+                        height: 1
+                        color: {
+                            const textColor = Kirigami.Theme.textColor
+                            Qt.rgba(textColor.r, textColor.g, textColor.b, 0.2)
+                        }
+                    }
+
+                    // Service button component
+                    Components.ServiceIconButton {
+                        visible: modelData.itemType === "service" || !modelData.itemType
+                        width: root.buttonSize
+                        height: root.buttonSize
+
+                        title: modelData.title || ""
+                        image: modelData.image || ""
+                        serviceUrl: modelData.url || ""
+                        useFavicon: modelData.useFavicon || false
+                        buttonSize: root.buttonSize
+                        iconSize: root.iconSize
+                        active: modelData.id === root.currentServiceId
+                        disabledVisual: (root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)) || (root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id))
+                        notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
+                        isDisabled: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
+                        isDetached: root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id)
+                        isFavorite: {
+                            var v = root.favoriteVersion
+                            if (typeof configManager === "undefined" || configManager === null)
+                                return false
+                            return configManager.isServiceFavorite(modelData.id)
+                        }
+                        isInFavoritesTab: root.currentWorkspace === "__favorites__"
+                        currentWorkspace: root.currentWorkspace
+
+                        onClicked: root.serviceSelected(modelData.id)
+                        onEditServiceRequested: root.editServiceRequested(modelData.id)
+                        onMoveUpRequested: root.moveServiceUp(modelData.id)
+                        onMoveDownRequested: root.moveServiceDown(modelData.id)
+                        onDisableServiceRequested: root.disableService(modelData.id)
+                        onDetachServiceRequested: root.detachService(modelData.id)
+                        onToggleFavoriteRequested: {
+                            root.toggleFavoriteRequested(modelData.id)
+                        }
                     }
                 }
             }

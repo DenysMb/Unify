@@ -16,31 +16,65 @@ function indexById(services, id) {
     return -1
 }
 
+function addSeparatorsForSpecialWorkspace(services) {
+    if (!services || services.length === 0) return []
+
+    var result = []
+    var lastWorkspace = null
+
+    for (var i = 0; i < services.length; i++) {
+        var service = services[i]
+        var currentWs = service.workspace || ""
+
+        // Insert separator if workspace changed (and not the first item)
+        if (lastWorkspace !== null && currentWs !== lastWorkspace) {
+            result.push({
+                itemType: "separator",
+                id: "sep_" + i + "_" + Date.now()
+            })
+        }
+
+        // Add service with type marker
+        result.push(Object.assign({itemType: "service"}, service))
+
+        lastWorkspace = currentWs
+    }
+
+    return result
+}
+
 function filterByWorkspace(services, workspace) {
     if (!services) return []
 
+    var filtered = []
+
     // Special workspace: Favorites - show only favorited services
     if (workspace === "__favorites__") {
-        var favorites = []
         for (var i = 0; i < services.length; i++) {
             if (services[i].favorite === true) {
-                favorites.push(services[i])
+                filtered.push(services[i])
             }
         }
-        return favorites
+        return addSeparatorsForSpecialWorkspace(filtered)
     }
 
     // Special workspace: All Services - show all services
     if (workspace === "__all_services__") {
-        return services.slice() // Return a copy of all services
+        return addSeparatorsForSpecialWorkspace(services.slice())
     }
 
     // Normal workspace: filter by workspace property
-    var out = []
     for (var i = 0; i < services.length; i++) {
-        if (services[i].workspace === workspace) out.push(services[i])
+        if (services[i].workspace === workspace) {
+            filtered.push(services[i])
+        }
     }
-    return out
+
+    // Mark all items as services for regular workspaces
+    for (var i = 0; i < filtered.length; i++) {
+        filtered[i] = Object.assign({itemType: "service"}, filtered[i])
+    }
+    return filtered
 }
 
 function generateUUID() {
@@ -55,5 +89,5 @@ function generateUUID() {
 
 // Export names for QML
 var _ = {
-    findById, indexById, filterByWorkspace, generateUUID
+    findById, indexById, filterByWorkspace, addSeparatorsForSpecialWorkspace, generateUUID
 }
