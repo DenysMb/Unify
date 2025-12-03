@@ -2,6 +2,10 @@
 #include <QDebug>
 #include <QUuid>
 
+// Define special workspace constants
+const QString ConfigManager::FAVORITES_WORKSPACE = QStringLiteral("__favorites__");
+const QString ConfigManager::ALL_SERVICES_WORKSPACE = QStringLiteral("__all_services__");
+
 ConfigManager::ConfigManager(QObject *parent)
     : QObject(parent)
     , m_settings(QStringLiteral("io.github.denysmb"), QStringLiteral("unify"))
@@ -61,6 +65,12 @@ QString ConfigManager::workspaceIcon(const QString &workspace) const
 void ConfigManager::setWorkspaceIcon(const QString &workspace, const QString &iconName)
 {
     if (workspace.isEmpty()) {
+        return;
+    }
+
+    // Protect special workspaces from icon changes
+    if (isSpecialWorkspace(workspace)) {
+        qDebug() << "Cannot change icon for special workspace:" << workspace;
         return;
     }
     const QString value = iconName; // allow empty to clear
@@ -210,6 +220,12 @@ void ConfigManager::addWorkspace(const QString &workspaceName)
 
 void ConfigManager::removeWorkspace(const QString &workspaceName)
 {
+    // Protect special workspaces from deletion
+    if (isSpecialWorkspace(workspaceName)) {
+        qDebug() << "Cannot remove special workspace:" << workspaceName;
+        return;
+    }
+
     if (m_workspaces.contains(workspaceName)) {
         // Remove all services in this workspace
         for (int i = m_services.size() - 1; i >= 0; --i) {
@@ -247,6 +263,12 @@ void ConfigManager::removeWorkspace(const QString &workspaceName)
 
 void ConfigManager::renameWorkspace(const QString &oldName, const QString &newName)
 {
+    // Protect special workspaces from renaming
+    if (isSpecialWorkspace(oldName) || isSpecialWorkspace(newName)) {
+        qDebug() << "Cannot rename special workspace:" << oldName << "to" << newName;
+        return;
+    }
+
     if (oldName != newName && m_workspaces.contains(oldName) && !m_workspaces.contains(newName)) {
         // Update workspace name in all services
         for (int i = 0; i < m_services.size(); ++i) {
@@ -414,4 +436,36 @@ void ConfigManager::updateWorkspacesList()
         m_workspaces = newWorkspaces;
         Q_EMIT workspacesChanged();
     }
+}
+
+bool ConfigManager::isSpecialWorkspace(const QString &workspaceName) const
+{
+    return workspaceName == FAVORITES_WORKSPACE || workspaceName == ALL_SERVICES_WORKSPACE;
+}
+
+void ConfigManager::setServiceFavorite(const QString &serviceId, bool favorite)
+{
+    for (int i = 0; i < m_services.size(); ++i) {
+        QVariantMap service = m_services[i].toMap();
+        if (service[QStringLiteral("id")].toString() == serviceId) {
+            service[QStringLiteral("favorite")] = favorite;
+            m_services[i] = service;
+            Q_EMIT servicesChanged();
+            saveSettings();
+            qDebug() << "Service" << serviceId << (favorite ? "added to" : "removed from") << "favorites";
+            return;
+        }
+    }
+    qDebug() << "Service not found for favorite toggle:" << serviceId;
+}
+
+bool ConfigManager::isServiceFavorite(const QString &serviceId) const
+{
+    for (const QVariant &varService : m_services) {
+        QVariantMap service = varService.toMap();
+        if (service[QStringLiteral("id")].toString() == serviceId) {
+            return service.value(QStringLiteral("favorite"), false).toBool();
+        }
+    }
+    return false;
 }

@@ -17,6 +17,37 @@ Kirigami.GlobalDrawer {
 
     function buildActions() {
         var acts = [];
+
+        // Special workspaces at the top
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+                text: i18n("Favorites (Ctrl+B)")
+                icon.name: "starred-symbolic"
+                checkable: true
+                checked: drawer.currentWorkspace === "__favorites__"
+                onTriggered: drawer.switchToWorkspace("__favorites__")
+            }
+        `, drawer));
+
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+                text: i18n("All Services")
+                icon.name: "folder-symbolic"
+                checkable: true
+                checked: drawer.currentWorkspace === "__all_services__"
+                onTriggered: drawer.switchToWorkspace("__all_services__")
+            }
+        `, drawer));
+
+        // Separator between special and regular workspaces
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action { separator: true }
+        `, drawer));
+
+        // Regular workspaces
         for (var i = 0; i < workspaces.length; i++) {
             var ws = workspaces[i];
             acts.push(Qt.createQmlObject(`
@@ -24,6 +55,8 @@ Kirigami.GlobalDrawer {
                 Kirigami.Action {
                     text: i18n("${ws}") + " (Ctrl+Shift+${i + 1})"
                     icon.name: (configManager && configManager.workspaceIcons && configManager.workspaceIcons["${ws}"]) ? configManager.workspaceIcons["${ws}"] : "folder"
+                    checkable: true
+                    checked: drawer.currentWorkspace === "${ws}"
                     onTriggered: drawer.switchToWorkspace("${ws}")
                 }
             `, drawer));
@@ -34,13 +67,13 @@ Kirigami.GlobalDrawer {
 Kirigami.Action { separator: true }
 `, drawer));
 
-        // Edit Workspace
+        // Edit Workspace (disabled for special workspaces)
         acts.push(Qt.createQmlObject(`
             import org.kde.kirigami as Kirigami
             Kirigami.Action {
               text: i18n("Edit Workspace")
               icon.name: "document-edit"
-              enabled: drawer.currentWorkspace !== ""
+              enabled: drawer.currentWorkspace !== "" && configManager && !configManager.isSpecialWorkspace(drawer.currentWorkspace)
               onTriggered: drawer.editWorkspaceRequested(drawer.workspaces.indexOf(drawer.currentWorkspace))
             }
         `, drawer));
@@ -95,7 +128,7 @@ Kirigami.Action { separator: true }
                 Layout.fillWidth: true
                 wrapMode: QQC2.Label.WordWrap
                 textFormat: QQC2.Label.RichText
-                text: i18n("<b>Ctrl + 1, 2, 3...</b> — Switch between services in the current workspace<br>" + "<b>Ctrl + Shift + 1, 2, 3...</b> — Switch between workspaces<br>" + "<b>Ctrl + Tab</b> — Go to the next service<br>" + "<b>Ctrl + Shift + Tab</b> — Go to the next workspace<br>" + "<b>Escape</b> — Close overlay/dialog")
+                text: i18n("<b>Ctrl + 1, 2, 3...</b> — Switch between services in the current workspace<br>" + "<b>Ctrl + Shift + 1, 2, 3...</b> — Switch between workspaces<br>" + "<b>Ctrl + B</b> — Go to Favorites workspace<br>" + "<b>Ctrl + Tab</b> — Go to the next service<br>" + "<b>Ctrl + Shift + Tab</b> — Go to the next workspace<br>" + "<b>Escape</b> — Close overlay/dialog")
             }
 
             Kirigami.Separator {

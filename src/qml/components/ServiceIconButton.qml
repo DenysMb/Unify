@@ -19,8 +19,10 @@ Controls.Button {
     property int notificationCount: 0
     property bool isDisabled: false
     property bool isDetached: false
+    property bool isFavorite: false
 
     signal editServiceRequested
+    signal toggleFavoriteRequested
     signal moveUpRequested
     signal moveDownRequested
     signal disableServiceRequested
@@ -69,6 +71,17 @@ Controls.Button {
     // Context menu
     Controls.Menu {
         id: contextMenu
+
+        Controls.MenuItem {
+            text: root.isFavorite ? i18n("Remove from Favorites") : i18n("Add to Favorites")
+            icon.name: root.isFavorite ? "starred-symbolic" : "non-starred-symbolic"
+            onTriggered: {
+                console.log("ServiceIconButton: Favorite menu item clicked for", root.title);
+                root.toggleFavoriteRequested();
+            }
+        }
+
+        Controls.MenuSeparator {}
 
         Controls.MenuItem {
             text: i18n("Edit Service")

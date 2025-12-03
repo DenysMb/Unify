@@ -110,6 +110,18 @@ Kirigami.ApplicationWindow {
         return Services.indexById(services, id);
     }
 
+    // Function to toggle favorite status of a service
+    function handleToggleFavorite(id) {
+        console.log("Main.qml handleToggleFavorite called for service:", id);
+        if (!configManager) {
+            console.log("ERROR: configManager not available!");
+            return;
+        }
+        var isFavorite = configManager.isServiceFavorite(id);
+        console.log("Current favorite status:", isFavorite, "- Setting to:", !isFavorite);
+        configManager.setServiceFavorite(id, !isFavorite);
+    }
+
     // Function to switch workspace and select first service
     function switchToWorkspace(workspaceName) {
         currentWorkspace = workspaceName;
@@ -166,7 +178,24 @@ Kirigami.ApplicationWindow {
     // Function to switch to a specific service by ID
     function switchToService(serviceId) {
         var service = findServiceById(serviceId);
-        if (service && service.workspace === currentWorkspace) {
+
+        // Check if service belongs to current workspace
+        // For special workspaces (__favorites__, __all_services__), allow switching to any service in filteredServices
+        var isInCurrentWorkspace = false;
+        if (configManager && configManager.isSpecialWorkspace(currentWorkspace)) {
+            // For special workspaces, check if service is in filteredServices
+            for (var i = 0; i < filteredServices.length; i++) {
+                if (filteredServices[i].id === serviceId) {
+                    isInCurrentWorkspace = true;
+                    break;
+                }
+            }
+        } else {
+            // For regular workspaces, check workspace property
+            isInCurrentWorkspace = service && service.workspace === currentWorkspace;
+        }
+
+        if (isInCurrentWorkspace) {
             currentServiceName = service.title;
             currentServiceId = service.id;
 
@@ -205,16 +234,16 @@ Kirigami.ApplicationWindow {
     // IMPORTANT: storageName must be set BEFORE the profile is used
     WebEngineProfile {
         id: persistentProfile
-        
+
         // Set storageName first - this is critical for persistence
         storageName: "unify-storage"
-        
+
         // Explicitly set to NOT be off-the-record (enables persistence)
         offTheRecord: false
-        
+
         // Set user agent
         httpUserAgent: root.chromeUserAgent
-        
+
         // Cache and cookie settings
         httpCacheType: WebEngineProfile.DiskHttpCache
         persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
@@ -537,6 +566,7 @@ Kirigami.ApplicationWindow {
                 sidebarWidth: root.sidebarWidth
                 buttonSize: root.buttonSize
                 iconSize: root.iconSize
+                configManager: root.configManager
                 onServiceSelected: function (id) {
                     root.switchToService(id);
                     var svc = root.findServiceById(id);
@@ -571,6 +601,9 @@ Kirigami.ApplicationWindow {
                     } else {
                         root.detachService(id);
                     }
+                }
+                onToggleFavoriteRequested: function (id) {
+                    root.handleToggleFavorite(id);
                 }
             }
 
@@ -613,7 +646,7 @@ Kirigami.ApplicationWindow {
         onTriggered: {
             console.log("Initializing app after profile setup...");
             root.appInitialized = true;
-            
+
             // Use persisted current workspace
             var ws = root.currentWorkspace;
             if (!ws || ws === "")
@@ -788,6 +821,13 @@ Kirigami.ApplicationWindow {
         onActivated: switchToWorkspaceByPosition(9)
     }
 
+    // Ctrl+B => Favorites workspace
+    Shortcut {
+        sequences: ["Ctrl+B"]
+        context: Qt.ApplicationShortcut
+        onActivated: switchToWorkspace("__favorites__")
+    }
+
     // Function to detach a service (open in separate window)
     function detachService(serviceId) {
         var service = findServiceById(serviceId);
@@ -930,6 +970,12 @@ Kirigami.ApplicationWindow {
 
     // Function to move a service up in the list
     function moveServiceUp(serviceId) {
+        // Prevent moving services in special workspaces
+        if (configManager && configManager.isSpecialWorkspace(currentWorkspace)) {
+            console.log("Cannot move services in special workspace:", currentWorkspace);
+            return false;
+        }
+
         if (!configManager || !configManager.moveService) {
             console.log("ConfigManager moveService not available");
             return false;
@@ -967,6 +1013,12 @@ Kirigami.ApplicationWindow {
 
     // Function to move a service down in the list
     function moveServiceDown(serviceId) {
+        // Prevent moving services in special workspaces
+        if (configManager && configManager.isSpecialWorkspace(currentWorkspace)) {
+            console.log("Cannot move services in special workspace:", currentWorkspace);
+            return false;
+        }
+
         if (!configManager || !configManager.moveService) {
             console.log("ConfigManager moveService not available");
             return false;
