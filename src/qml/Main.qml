@@ -559,6 +559,7 @@ Kirigami.ApplicationWindow {
                 detachedServices: root.detachedServices
                 notificationCounts: root.serviceNotificationCounts
                 currentServiceId: root.currentServiceId
+                currentWorkspace: root.currentWorkspace
                 sidebarWidth: root.sidebarWidth
                 buttonSize: root.buttonSize
                 iconSize: root.iconSize

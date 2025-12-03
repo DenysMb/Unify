@@ -16,6 +16,7 @@ Rectangle {
     property int sidebarWidth: 80
     property int buttonSize: 64
     property int iconSize: 48
+    property string currentWorkspace: ""
 
     property int favoriteVersion: 0
 
@@ -67,6 +68,7 @@ Rectangle {
                             return false;
                         return configManager.isServiceFavorite(modelData.id);
                     }
+                    isInFavoritesTab: root.currentWorkspace === "__favorites__"
                     onClicked: root.serviceSelected(modelData.id)
                     onEditServiceRequested: root.editServiceRequested(modelData.id)
                     onMoveUpRequested: root.moveServiceUp(modelData.id)
