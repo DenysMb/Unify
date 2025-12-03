@@ -39,9 +39,12 @@ Rectangle {
     Layout.fillHeight: true
     color: Kirigami.Theme.backgroundColor
 
-    Kirigami.ScrollablePage {
+    Controls.ScrollView {
         anchors.fill: parent
-        padding: Kirigami.Units.smallSpacing
+        anchors.margins: Kirigami.Units.smallSpacing
+
+        Controls.ScrollBar.vertical.policy: Controls.ScrollBar.AlwaysOff
+        Controls.ScrollBar.horizontal.policy: Controls.ScrollBar.AlwaysOff
 
         ColumnLayout {
             width: parent.width
