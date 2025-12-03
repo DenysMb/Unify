@@ -62,16 +62,6 @@ Controls.Button {
     Layout.preferredHeight: buttonSize
     Layout.alignment: Qt.AlignHCenter
 
-    Rectangle {
-        visible: root.isFavorite
-        anchors.fill: parent
-        color: "transparent"
-        opacity: 0.5
-        radius: Kirigami.Units.largeSpacing
-        border.width: 1
-        border.color: Kirigami.Theme.neutralTextColor
-    }
-
     // Handle right click - show context menu
     MouseArea {
         anchors.fill: parent
@@ -188,6 +178,19 @@ Controls.Button {
             visible: shouldShowFallback
         }
 
+        // Favorite indicator
+        Kirigami.Icon {
+            id: favoriteIndicator
+            visible: root.isFavorite
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.margins: -Kirigami.Units.smallSpacing
+            width: Kirigami.Units.iconSizes.small
+            height: Kirigami.Units.iconSizes.small
+            source: "starred-symbolic"
+            color: Kirigami.Theme.neutralTextColor
+        }
+
         // Notification badge
         Rectangle {
             id: badge
@@ -198,7 +201,7 @@ Controls.Button {
             height: Kirigami.Units.gridUnit
             width: Math.max(height, badgeText.implicitWidth + Kirigami.Units.smallSpacing)
             radius: height / 2
-            color: root.isFavorite ? Kirigami.Theme.neutralTextColor : Kirigami.Theme.highlightColor
+            color: Kirigami.Theme.highlightColor
             // border.color: Kirigami.Theme.backgroundColor
             // border.width: visible ? 1 : 0
 
