@@ -20,7 +20,8 @@ Controls.Button {
     property bool isDisabled: false
     property bool isDetached: false
     property bool isFavorite: false
-    property string serviceId: "" // Add serviceId property to track service
+    property bool isInFavoritesTab: false
+    property string serviceId: ""
 
     signal editServiceRequested
     signal toggleFavoriteRequested
@@ -178,10 +179,9 @@ Controls.Button {
             visible: shouldShowFallback
         }
 
-        // Favorite indicator
         Kirigami.Icon {
             id: favoriteIndicator
-            visible: root.isFavorite
+            visible: root.isFavorite && !root.isInFavoritesTab
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.margins: -Kirigami.Units.smallSpacing
