@@ -17,38 +17,47 @@ Kirigami.Dialog {
     preferredWidth: Kirigami.Units.gridUnit * 25
 
     onAccepted: {
-        if (pendingPermission) pendingPermission.grant()
+        if (pendingPermission)
+            pendingPermission.grant();
     }
     onRejected: {
-        if (pendingPermission) pendingPermission.deny()
+        if (pendingPermission)
+            pendingPermission.deny();
     }
 
     function showPermissionRequest(permission, serviceTitle) {
-        pendingPermission = permission
-        serviceName = serviceTitle
-        permissionText.text = questionForPermissionType(permission, serviceTitle)
-        open()
+        pendingPermission = permission;
+        serviceName = serviceTitle;
+        permissionText.text = questionForPermissionType(permission, serviceTitle);
+        open();
     }
 
     function questionForPermissionType(permission, serviceTitle) {
-        var question = i18n("Allow %1 to ", serviceTitle)
+        var question = i18n("Allow %1 to ", serviceTitle);
         switch (permission.permissionType) {
         case WebEnginePermission.PermissionType.Geolocation:
-            question += i18n("access your location information?"); break
+            question += i18n("access your location information?");
+            break;
         case WebEnginePermission.PermissionType.MediaAudioCapture:
-            question += i18n("access your microphone?"); break
+            question += i18n("access your microphone?");
+            break;
         case WebEnginePermission.PermissionType.MediaVideoCapture:
-            question += i18n("access your webcam?"); break
+            question += i18n("access your webcam?");
+            break;
         case WebEnginePermission.PermissionType.MediaAudioVideoCapture:
-            question += i18n("access your microphone and webcam?"); break
+            question += i18n("access your microphone and webcam?");
+            break;
         case WebEnginePermission.PermissionType.Notifications:
-            question += i18n("show notifications on your desktop?"); break
+            question += i18n("show notifications on your desktop?");
+            break;
         case WebEnginePermission.PermissionType.DesktopAudioVideoCapture:
-            question += i18n("capture audio and video of your desktop?"); break
+            question += i18n("capture audio and video of your desktop?");
+            break;
         default:
-            question += i18n("access unknown or unsupported permission type [%1]?", permission.permissionType); break
+            question += i18n("access unknown or unsupported permission type [%1]?", permission.permissionType);
+            break;
         }
-        return question
+        return question;
     }
 
     Controls.Label {
