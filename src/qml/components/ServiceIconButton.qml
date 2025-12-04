@@ -95,8 +95,8 @@ Controls.Button {
         Controls.MenuSeparator {
             visible: {
                 if (typeof configManager === "undefined" || configManager === null)
-                    return true
-                return !configManager.isSpecialWorkspace(root.currentWorkspace)
+                    return true;
+                return !configManager.isSpecialWorkspace(root.currentWorkspace);
             }
         }
 
@@ -105,8 +105,8 @@ Controls.Button {
             icon.name: "go-up"
             visible: {
                 if (typeof configManager === "undefined" || configManager === null)
-                    return true
-                return !configManager.isSpecialWorkspace(root.currentWorkspace)
+                    return true;
+                return !configManager.isSpecialWorkspace(root.currentWorkspace);
             }
             onTriggered: root.moveUpRequested()
         }
@@ -116,8 +116,8 @@ Controls.Button {
             icon.name: "go-down"
             visible: {
                 if (typeof configManager === "undefined" || configManager === null)
-                    return true
-                return !configManager.isSpecialWorkspace(root.currentWorkspace)
+                    return true;
+                return !configManager.isSpecialWorkspace(root.currentWorkspace);
             }
             onTriggered: root.moveDownRequested()
         }

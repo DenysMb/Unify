@@ -117,7 +117,7 @@ Item {
 
         // Create the instance with delayed URL loading for disabled services
         var initialUrl = root.isDisabled(serviceData.id) ? "about:blank" : serviceData.url;
-        
+
         var instance = component.createObject(stackLayout, {
             "serviceTitle": serviceData.title,
             "serviceId": serviceData.id,

@@ -59,9 +59,9 @@ Rectangle {
                     Layout.preferredWidth: root.buttonSize
                     Layout.preferredHeight: {
                         if (modelData.itemType === "separator") {
-                            return 1 + Kirigami.Units.smallSpacing * 4
+                            return 1 + Kirigami.Units.smallSpacing * 4;
                         }
-                        return root.buttonSize
+                        return root.buttonSize;
                     }
                     Layout.alignment: Qt.AlignHCenter
 
@@ -72,8 +72,8 @@ Rectangle {
                         width: root.sidebarWidth - Kirigami.Units.smallSpacing * 2
                         height: 1
                         color: {
-                            const textColor = Kirigami.Theme.textColor
-                            Qt.rgba(textColor.r, textColor.g, textColor.b, 0.2)
+                            const textColor = Kirigami.Theme.textColor;
+                            Qt.rgba(textColor.r, textColor.g, textColor.b, 0.2);
                         }
                     }
 
@@ -95,10 +95,10 @@ Rectangle {
                         isDisabled: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
                         isDetached: root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id)
                         isFavorite: {
-                            var v = root.favoriteVersion
+                            var v = root.favoriteVersion;
                             if (typeof configManager === "undefined" || configManager === null)
-                                return false
-                            return configManager.isServiceFavorite(modelData.id)
+                                return false;
+                            return configManager.isServiceFavorite(modelData.id);
                         }
                         isInFavoritesTab: root.currentWorkspace === "__favorites__"
                         currentWorkspace: root.currentWorkspace
@@ -110,7 +110,7 @@ Rectangle {
                         onDisableServiceRequested: root.disableService(modelData.id)
                         onDetachServiceRequested: root.detachService(modelData.id)
                         onToggleFavoriteRequested: {
-                            root.toggleFavoriteRequested(modelData.id)
+                            root.toggleFavoriteRequested(modelData.id);
                         }
                     }
                 }
