@@ -38,7 +38,7 @@ Rectangle {
     // Hide sidebar when there are no services
     Layout.preferredWidth: services.length > 0 ? sidebarWidth : 0
     Layout.fillHeight: true
-    color: Kirigami.Theme.backgroundColor
+    color: Kirigami.Theme.alternateBackgroundColor
     visible: services.length > 0
 
     Controls.ScrollView {
