@@ -6,4 +6,4 @@ Exec=Unify
 Icon=io.github.denysmb.unify
 Type=Application
 Terminal=false
-Categories=Qt;KDE;
+Categories=Internet;
