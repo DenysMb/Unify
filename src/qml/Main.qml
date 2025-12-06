@@ -616,6 +616,7 @@ Kirigami.ApplicationWindow {
                     services: root.appInitialized ? root.services : []
                     // Drive empty state off the filtered (current workspace) count
                     filteredCount: root.filteredServices.length
+                    currentWorkspace: root.currentWorkspace
                     disabledServices: root.disabledServices
                     webProfile: persistentProfile
                     onTitleUpdated: root.updateBadgeFromTitle
