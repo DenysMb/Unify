@@ -67,7 +67,7 @@ add_subdirectory(src)
 install(FILES io.github.denysmb.unify.metainfo.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
 
 # Install icon
-install(FILES src/assets/io.github.denysmb.unify.svg DESTINATION ${KDE_INSTALL_ICONDIR}/hicolor/scalable/apps)
+install(FILES src/assets/unify.svg DESTINATION ${KDE_INSTALL_ICONDIR}/hicolor/scalable/apps RENAME io.github.denysmb.unify.svg)
 
 set(TRANSLATION_TARGET_NAME ${PROJECT_NAME})
 add_subdirectory(po)

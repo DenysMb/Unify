@@ -1,0 +1,40 @@
+{
+  "app-id": "io.github.denysmb.unify",
+  "runtime": "org.kde.Platform",
+  "runtime-version": "6.9",
+  "base": "io.qt.qtwebengine.BaseApp",
+  "base-version": "6.9",
+  "sdk": "org.kde.Sdk",
+  "command": "unify",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=fallback-x11",
+    "--socket=wayland",
+    "--share=network",
+    "--socket=pulseaudio",
+    "--device=all",
+    "--talk-name=org.freedesktop.Notifications",
+    "--talk-name=org.kde.StatusNotifierWatcher",
+    "--own-name=org.mpris.MediaPlayer2.unify",
+    "--filesystem=home:ro",
+    "--filesystem=xdg-download",
+    "--env=QTWEBENGINEPROCESS_PATH=/app/bin/QtWebEngineProcess"
+  ],
+  "modules": [
+    {
+      "name": "unify",
+      "buildsystem": "cmake-ninja",
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_PREFIX=/app"
+      ],
+      "builddir": true,
+      "sources": [
+        {
+          "type": "dir",
+          "path": "."
+        }
+      ]
+    }
+  ]
+}
