@@ -212,7 +212,7 @@ Kirigami.ApplicationWindow {
 
     // Firefox User-Agent string to simulate Firefox browser for compatibility with web services
     // Using latest stable Firefox version to avoid detection issues
-    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0"
+    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0"
 
     // Services configuration array
     // Services are now managed by configManager
