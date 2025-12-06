@@ -61,7 +61,7 @@ Rectangle {
                     Layout.preferredWidth: root.buttonSize
                     Layout.preferredHeight: {
                         if (modelData.itemType === "separator") {
-                            return 1 + Kirigami.Units.smallSpacing * 2;
+                            return 1 + Kirigami.Units.smallSpacing;
                         }
                         return root.buttonSize;
                     }
