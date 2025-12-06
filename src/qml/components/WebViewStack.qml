@@ -13,6 +13,8 @@ Item {
     property var disabledServices: ({})
     // Number of services visible in the current workspace (for empty state logic)
     property int filteredCount: 0
+    // Current workspace name (for customizing empty state message)
+    property string currentWorkspace: ""
     // Profile provided by Main.qml (persistent)
     property WebEngineProfile webProfile
     // Callback to update badge from title
@@ -230,8 +232,9 @@ Item {
             Components.EmptyState {
                 anchors.centerIn: parent
                 width: parent.width
-                text: i18n("No services in workspace")
-                explanation: i18n("Add your first web service to get started")
+                iconName: root.currentWorkspace === "__favorites__" ? "favorite" : ""
+                text: root.currentWorkspace === "__favorites__" ? i18n("No favorite services yet") : i18n("No services in workspace")
+                explanation: root.currentWorkspace === "__favorites__" ? i18n("Right-click on any service and select 'Add to Favorites' to see it here") : i18n("Add your first web service to get started")
             }
         }
 
