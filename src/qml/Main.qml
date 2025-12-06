@@ -167,7 +167,8 @@ Kirigami.ApplicationWindow {
             // No services in this workspace
             currentServiceName = i18n("Unify - Web app aggregator");
             currentServiceId = "";
-            webViewStack.currentIndex = 0; // Show empty state
+            // Call setCurrentByServiceId with empty string to show empty state
+            webViewStack.setCurrentByServiceId("");
         }
     }
 
@@ -383,7 +384,7 @@ Kirigami.ApplicationWindow {
                         // No services left in workspace; show empty state
                         root.currentServiceName = i18n("Unify - Web app aggregator");
                         root.currentServiceId = "";
-                        webViewStack.currentIndex = 0;
+                        webViewStack.setCurrentByServiceId("");
                     }
                 });
             }

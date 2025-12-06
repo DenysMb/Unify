@@ -23,6 +23,9 @@ Item {
     property var webViewCache: ({}) // serviceId -> WebView component instance
     property bool isInitialized: false
 
+    // Expose currentIndex property to allow external control
+    property alias currentIndex: stackLayout.currentIndex
+
     function isDisabled(id) {
         return disabledServices && disabledServices.hasOwnProperty(id);
     }
@@ -42,8 +45,8 @@ Item {
     function setCurrentByServiceId(serviceId) {
         root.currentServiceId = serviceId;
 
-        // Show empty state if no services in workspace
-        if (filteredCount === 0) {
+        // Show empty state if no services in workspace or serviceId is empty
+        if (filteredCount === 0 || !serviceId || serviceId === "") {
             stackLayout.currentIndex = 0;
             return;
         }
