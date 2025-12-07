@@ -147,7 +147,23 @@ void ConfigManager::addService(const QVariantMap &service)
         newService[QStringLiteral("workspace")] = m_currentWorkspace.isEmpty() ? QStringLiteral("Personal") : m_currentWorkspace;
     }
 
-    m_services.append(newService);
+    // Find the correct position to insert - after the last service of the same workspace
+    const QString targetWorkspace = newService[QStringLiteral("workspace")].toString();
+    int insertPosition = -1;
+    
+    for (int i = 0; i < m_services.size(); ++i) {
+        QVariantMap existingService = m_services[i].toMap();
+        if (existingService[QStringLiteral("workspace")].toString() == targetWorkspace) {
+            insertPosition = i + 1;
+        }
+    }
+    
+    if (insertPosition >= 0 && insertPosition <= m_services.size()) {
+        m_services.insert(insertPosition, newService);
+    } else {
+        m_services.append(newService);
+    }
+    
     updateWorkspacesList();
     Q_EMIT servicesChanged();
     saveSettings();
