@@ -127,6 +127,7 @@ Item {
             "serviceTitle": serviceData.title,
             "serviceId": serviceData.id,
             "initialUrl": initialUrl,
+            "configuredUrl": serviceData.url,
             "webProfile": root.webProfile,
             "isServiceDisabled": root.isDisabled(serviceData.id),
             "onTitleUpdated": root.onTitleUpdated,
@@ -156,11 +157,14 @@ Item {
         view.serviceTitle = serviceData.title;
         view.isServiceDisabled = root.isDisabled(serviceData.id);
 
-        // If URL changed, reload the WebView
+        // Only reload the WebView if the configured URL changed
         var newUrl = root.isDisabled(serviceData.id) ? "about:blank" : serviceData.url;
-        if (view.contents && view.contents.url.toString() !== newUrl) {
-            view.contents.url = newUrl;
-            console.log("URL changed for service:", serviceId, "reloading to:", newUrl);
+        if (view.configuredUrl.toString() !== serviceData.url) {
+            view.configuredUrl = serviceData.url;
+            if (view.contents) {
+                view.contents.url = newUrl;
+                console.log("URL changed for service:", serviceId, "reloading to:", newUrl);
+            }
         }
     }
 
