@@ -11,6 +11,7 @@ Item {
     property string serviceTitle: ""
     property string serviceId: ""
     property url initialUrl: "about:blank"
+    property url configuredUrl: "about:blank"
     property WebEngineProfile webProfile
     property bool isServiceDisabled: false
     property alias contents: webView
