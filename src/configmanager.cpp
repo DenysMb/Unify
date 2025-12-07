@@ -444,13 +444,13 @@ void ConfigManager::updateWorkspacesList()
     for (const QVariant &serviceVariant : m_services) {
         QVariantMap service = serviceVariant.toMap();
         QString workspace = service[QStringLiteral("workspace")].toString();
-        if (!workspace.isEmpty() && !newWorkspaces.contains(workspace)) {
+        if (!workspace.isEmpty() && !newWorkspaces.contains(workspace) && !isSpecialWorkspace(workspace)) {
             newWorkspaces.append(workspace);
         }
     }
 
-    // Ensure current workspace is in the list
-    if (!m_currentWorkspace.isEmpty() && !newWorkspaces.contains(m_currentWorkspace)) {
+    // Ensure current workspace is in the list (but not special workspaces)
+    if (!m_currentWorkspace.isEmpty() && !newWorkspaces.contains(m_currentWorkspace) && !isSpecialWorkspace(m_currentWorkspace)) {
         newWorkspaces.append(m_currentWorkspace);
     }
 
