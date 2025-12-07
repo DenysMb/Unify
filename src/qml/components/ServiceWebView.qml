@@ -21,6 +21,7 @@ Item {
     // Internal state tracking
     property bool profileReady: webProfile !== null
     property bool urlLoaded: false
+    property bool hasLoadedOnce: false  // Track if service has completed loading at least once
 
     // Anti-detection script for Google OAuth compatibility
     // Injected via runJavaScript on each page load
@@ -93,6 +94,9 @@ Item {
         visible: !view.isServiceDisabled
         z: 0
 
+        // Set background color to match theme, preventing white flash
+        backgroundColor: Kirigami.Theme.backgroundColor
+
         // Use provided persistent profile
         profile: view.webProfile
 
@@ -144,6 +148,7 @@ Item {
             }
             if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
                 loadTimeoutTimer.stop();
+                view.hasLoadedOnce = true;
                 console.log("Service loaded: " + view.serviceTitle + " - " + webView.url);
                 // Re-inject after load to ensure it's applied
                 webView.runJavaScript(AntiDetection.getScript());
@@ -232,10 +237,11 @@ Item {
         }
     }
 
-    // Loading overlay - shows while page is loading
+    // Loading overlay - only shows on initial load, not on subsequent navigations
+    // This prevents the white flash when switching to a service that already loaded in background
     Rectangle {
         anchors.fill: parent
-        visible: !view.isServiceDisabled && webView.loading && webView.loadProgress < 100
+        visible: !view.isServiceDisabled && !view.hasLoadedOnce && webView.loading
         z: 2
         color: Kirigami.Theme.backgroundColor
 
