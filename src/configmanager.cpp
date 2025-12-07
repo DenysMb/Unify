@@ -162,6 +162,12 @@ void ConfigManager::updateService(const QString &serviceId, const QVariantMap &s
         if (existingService[QStringLiteral("id")].toString() == serviceId) {
             QVariantMap updatedService = service;
             updatedService[QStringLiteral("id")] = serviceId; // Preserve the ID
+            
+            // Preserve the favorite status if it exists in the original service
+            if (existingService.contains(QStringLiteral("favorite"))) {
+                updatedService[QStringLiteral("favorite")] = existingService[QStringLiteral("favorite")];
+            }
+            
             m_services[i] = updatedService;
             updateWorkspacesList();
             Q_EMIT servicesChanged();
