@@ -25,10 +25,30 @@ Kirigami.Dialog {
     property string selectedIconName: "internet-web-browser-symbolic"
     property bool useFavicon: true
 
+    // Validation properties
+    readonly property bool isNameValid: serviceNameField.text.trim().length > 0
+    readonly property bool isUrlValid: {
+        var url = serviceUrlField.text.trim();
+        if (url.length === 0)
+            return false;
+
+        // Check if URL starts with http://, https://, or is a valid domain
+        var urlPattern = /^(https?:\/\/)|([\w-]+\.[\w-]+)/;
+        return urlPattern.test(url);
+    }
+    readonly property bool isFormValid: isNameValid && isUrlValid
+
     title: isEditMode ? i18n("Edit Service") : i18n("Add Service")
     standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
     padding: Kirigami.Units.largeSpacing
     preferredWidth: Kirigami.Units.gridUnit * 20
+
+    // Disable OK button when form is invalid
+    Component.onCompleted: {
+        standardButton(Kirigami.Dialog.Ok).enabled = Qt.binding(function () {
+            return root.isFormValid;
+        });
+    }
 
     function populateFields(service) {
         serviceNameField.text = service.title || "";
@@ -101,6 +121,9 @@ Kirigami.Dialog {
             Kirigami.FormData.label: i18n("Service URL:")
             placeholderText: i18n("Enter service URL")
             Layout.fillWidth: true
+
+            Controls.ToolTip.visible: text.trim().length > 0 && !root.isUrlValid && hovered
+            Controls.ToolTip.text: i18n("URL must start with http://, https://, or be a valid domain (e.g., example.com)")
         }
 
         Controls.CheckBox {
