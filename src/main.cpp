@@ -5,20 +5,12 @@
 #include <KLocalizedString>
 #include <KNotification>
 #include <QApplication>
-#include <QDBusInterface>
-#include <QDBusReply>
 #include <QDebug>
-#include <QDir>
-#include <QProcess>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
-#include <QStandardPaths>
-#include <QSystemTrayIcon>
-#include <QTimer>
 #include <QUrl>
 #include <QWebEngineNotification>
 #include <QWebEngineProfile>
-#include <QWebEngineSettings>
 #include <QtQml>
 #include <QtWebEngineQuick>
 
@@ -26,58 +18,21 @@ class NotificationPresenter : public QObject
 {
     Q_OBJECT
 public:
-    explicit NotificationPresenter(QObject *parent = nullptr, TrayIconManager *trayManager = nullptr)
+    explicit NotificationPresenter(QObject *parent = nullptr)
         : QObject(parent)
-        , m_trayManager(trayManager)
     {
     }
     Q_INVOKABLE void presentFromQml(const QString &titleIn, const QString &messageIn, const QUrl &originUrl)
     {
         QString title = titleIn.isEmpty() ? QStringLiteral("Web Notification") : titleIn;
         QString message = messageIn;
-        QString origin = originUrl.host();
 
         qDebug() << "📢 QML-present notification:";
         qDebug() << "   Title:" << title;
         qDebug() << "   Message:" << message;
-        qDebug() << "   Origin:" << origin;
-        qDebug() << "   URL:" << originUrl.toString();
+        qDebug() << "   Origin:" << originUrl.host();
 
-        KNotification *knotification = new KNotification(QStringLiteral("notification"));
-        knotification->setTitle(title);
-        knotification->setText(message);
-        knotification->setIconName(QStringLiteral("dialog-information"));
-        knotification->setComponentName(QStringLiteral("unify"));
-        knotification->setFlags(KNotification::Persistent);
-        knotification->sendEvent();
-        qDebug() << "📢 KNotification sent (QML)";
-
-        QDBusInterface interface(QStringLiteral("org.freedesktop.Notifications"),
-                                 QStringLiteral("/org/freedesktop/Notifications"),
-                                 QStringLiteral("org.freedesktop.Notifications"));
-        if (interface.isValid()) {
-            QDBusReply<uint> reply = interface.call(QStringLiteral("Notify"),
-                                                    QStringLiteral("Unify"),
-                                                    uint(0),
-                                                    QStringLiteral("dialog-information"),
-                                                    title,
-                                                    message,
-                                                    QStringList(),
-                                                    QVariantMap(),
-                                                    int(5000));
-            if (reply.isValid()) {
-                qDebug() << "📢 DBus notification sent with ID (QML):" << reply.value();
-            } else {
-                qDebug() << "❌ DBus notification failed (QML):" << reply.error().message();
-            }
-        }
-
-        // Use the existing tray icon manager to show notification
-        if (m_trayManager) {
-            m_trayManager->showNotification(title, message);
-        }
-
-        QTimer::singleShot(5000, knotification, &KNotification::deleteLater);
+        KNotification::event(KNotification::Notification, title, message, QStringLiteral("dialog-information"));
     }
 
     void present(std::unique_ptr<QWebEngineNotification> notification)
@@ -89,61 +44,16 @@ public:
 
         QString title = notification->title().isEmpty() ? QStringLiteral("Web Notification") : notification->title();
         QString message = notification->message();
-        QString origin = notification->origin().host();
 
         qDebug() << "📢 Notification presenter called:";
         qDebug() << "   Title:" << title;
         qDebug() << "   Message:" << message;
-        qDebug() << "   Origin:" << origin;
-        qDebug() << "   URL:" << notification->origin().toString();
+        qDebug() << "   Origin:" << notification->origin().host();
 
-        // Try KNotification first
-        KNotification *knotification = new KNotification(QStringLiteral("notification"));
-        knotification->setTitle(title);
-        knotification->setText(message);
-        knotification->setIconName(QStringLiteral("dialog-information"));
-        knotification->setComponentName(QStringLiteral("unify"));
-        knotification->setFlags(KNotification::Persistent);
-        knotification->sendEvent();
-        qDebug() << "📢 KNotification sent";
+        KNotification::event(KNotification::Notification, title, message, QStringLiteral("dialog-information"));
 
-        // Try DBus notification
-        QDBusInterface interface(QStringLiteral("org.freedesktop.Notifications"),
-                                 QStringLiteral("/org/freedesktop/Notifications"),
-                                 QStringLiteral("org.freedesktop.Notifications"));
-        if (interface.isValid()) {
-            QDBusReply<uint> reply = interface.call(QStringLiteral("Notify"),
-                                                    QStringLiteral("Unify"), // app name
-                                                    uint(0), // replaces id
-                                                    QStringLiteral("dialog-information"), // icon
-                                                    title, // summary
-                                                    message, // body
-                                                    QStringList(), // actions
-                                                    QVariantMap(), // hints
-                                                    int(5000)); // timeout
-            if (reply.isValid()) {
-                qDebug() << "📢 DBus notification sent with ID:" << reply.value();
-            } else {
-                qDebug() << "❌ DBus notification failed:" << reply.error().message();
-            }
-        } else {
-            qDebug() << "❌ DBus notification interface not available";
-        }
-
-        // Use the existing tray icon manager to show notification
-        if (m_trayManager) {
-            m_trayManager->showNotification(title, message);
-        }
-
-        // Keep the notification object alive for a reasonable time
-        QTimer::singleShot(5000, knotification, &KNotification::deleteLater);
-
-        // Close the WebEngine notification since we're handling it ourselves
         notification->close();
     }
-
-private:
-    TrayIconManager *m_trayManager;
 };
 
 int main(int argc, char *argv[])
@@ -192,8 +102,8 @@ int main(int argc, char *argv[])
     // Create tray icon manager instance
     TrayIconManager *trayIconManager = new TrayIconManager(&app);
 
-    // Create notification presenter instance with tray manager reference
-    NotificationPresenter *notificationPresenter = new NotificationPresenter(&app, trayIconManager);
+    // Create notification presenter instance
+    NotificationPresenter *notificationPresenter = new NotificationPresenter(&app);
 
     // Set up a global notification presenter function that can be used by all profiles
     auto globalNotificationPresenter = [notificationPresenter](std::unique_ptr<QWebEngineNotification> notification) {
