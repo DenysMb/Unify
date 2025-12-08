@@ -133,6 +133,34 @@ bool ConfigManager::isServiceDisabled(const QString &serviceId) const
     return m_disabledServices.contains(serviceId) && m_disabledServices.value(serviceId).toBool();
 }
 
+bool ConfigManager::horizontalSidebar() const
+{
+    return m_horizontalSidebar;
+}
+
+void ConfigManager::setHorizontalSidebar(bool enabled)
+{
+    if (m_horizontalSidebar != enabled) {
+        m_horizontalSidebar = enabled;
+        Q_EMIT horizontalSidebarChanged();
+        saveSettings();
+    }
+}
+
+bool ConfigManager::alwaysShowWorkspacesBar() const
+{
+    return m_alwaysShowWorkspacesBar;
+}
+
+void ConfigManager::setAlwaysShowWorkspacesBar(bool enabled)
+{
+    if (m_alwaysShowWorkspacesBar != enabled) {
+        m_alwaysShowWorkspacesBar = enabled;
+        Q_EMIT alwaysShowWorkspacesBarChanged();
+        saveSettings();
+    }
+}
+
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
@@ -390,6 +418,12 @@ void ConfigManager::saveSettings()
     m_settings.setValue(QStringLiteral("list"), m_disabledServices);
     m_settings.endGroup();
 
+    // Persist display settings
+    m_settings.beginGroup(QStringLiteral("Display"));
+    m_settings.setValue(QStringLiteral("horizontalSidebar"), m_horizontalSidebar);
+    m_settings.setValue(QStringLiteral("alwaysShowWorkspacesBar"), m_alwaysShowWorkspacesBar);
+    m_settings.endGroup();
+
     m_settings.sync();
     qDebug() << "Settings saved. Services count:" << m_services.size() << "Current workspace:" << m_currentWorkspace
              << "Disabled services count:" << m_disabledServices.size();
@@ -427,6 +461,12 @@ void ConfigManager::loadSettings()
     // Load disabled services
     m_settings.beginGroup(QStringLiteral("DisabledServices"));
     m_disabledServices = m_settings.value(QStringLiteral("list"), QVariantMap()).toMap();
+    m_settings.endGroup();
+
+    // Load display settings
+    m_settings.beginGroup(QStringLiteral("Display"));
+    m_horizontalSidebar = m_settings.value(QStringLiteral("horizontalSidebar"), false).toBool();
+    m_alwaysShowWorkspacesBar = m_settings.value(QStringLiteral("alwaysShowWorkspacesBar"), false).toBool();
     m_settings.endGroup();
 
     // Only update workspaces list if it's empty (first run)

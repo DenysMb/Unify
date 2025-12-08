@@ -16,6 +16,8 @@ class ConfigManager : public QObject
     Q_PROPERTY(QString currentWorkspace READ currentWorkspace WRITE setCurrentWorkspace NOTIFY currentWorkspaceChanged)
     Q_PROPERTY(QVariantMap workspaceIcons READ workspaceIcons NOTIFY workspaceIconsChanged)
     Q_PROPERTY(QVariantMap disabledServices READ disabledServices WRITE setDisabledServices NOTIFY disabledServicesChanged)
+    Q_PROPERTY(bool horizontalSidebar READ horizontalSidebar WRITE setHorizontalSidebar NOTIFY horizontalSidebarChanged)
+    Q_PROPERTY(bool alwaysShowWorkspacesBar READ alwaysShowWorkspacesBar WRITE setAlwaysShowWorkspacesBar NOTIFY alwaysShowWorkspacesBarChanged)
 
 public:
     explicit ConfigManager(QObject *parent = nullptr);
@@ -49,6 +51,14 @@ public:
     Q_INVOKABLE void setServiceDisabled(const QString &serviceId, bool disabled);
     Q_INVOKABLE bool isServiceDisabled(const QString &serviceId) const;
 
+    // Horizontal sidebar mode
+    bool horizontalSidebar() const;
+    void setHorizontalSidebar(bool enabled);
+
+    // Always show workspaces bar at bottom
+    bool alwaysShowWorkspacesBar() const;
+    void setAlwaysShowWorkspacesBar(bool enabled);
+
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
 
@@ -73,6 +83,8 @@ Q_SIGNALS:
     void currentWorkspaceChanged();
     void workspaceIconsChanged();
     void disabledServicesChanged();
+    void horizontalSidebarChanged();
+    void alwaysShowWorkspacesBarChanged();
 
 private:
     void updateWorkspacesList();
@@ -84,6 +96,8 @@ private:
     QHash<QString, QString> m_lastServiceByWorkspace; // workspace -> serviceId
     QHash<QString, QString> m_workspaceIcons; // workspace -> icon name
     QVariantMap m_disabledServices; // serviceId -> bool (true if disabled)
+    bool m_horizontalSidebar = false;
+    bool m_alwaysShowWorkspacesBar = false;
 };
 
 #endif // CONFIGMANAGER_H
