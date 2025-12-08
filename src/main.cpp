@@ -1,4 +1,5 @@
 #include "configmanager.h"
+#include "faviconcache.h"
 #include "trayiconmanager.h"
 #include <KIconTheme>
 #include <KLocalizedContext>
@@ -102,6 +103,9 @@ int main(int argc, char *argv[])
     // Create tray icon manager instance
     TrayIconManager *trayIconManager = new TrayIconManager(&app);
 
+    // Create favicon cache instance
+    FaviconCache *faviconCache = new FaviconCache(&app);
+
     // Create notification presenter instance
     NotificationPresenter *notificationPresenter = new NotificationPresenter(&app);
 
@@ -133,10 +137,11 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
 
-    // Register the notification presenter, config manager and tray icon manager with QML context
+    // Register the notification presenter, config manager, tray icon manager and favicon cache with QML context
     engine.rootContext()->setContextProperty(QStringLiteral("notificationPresenter"), notificationPresenter);
     engine.rootContext()->setContextProperty(QStringLiteral("configManager"), configManager);
     engine.rootContext()->setContextProperty(QStringLiteral("trayIconManager"), trayIconManager);
+    engine.rootContext()->setContextProperty(QStringLiteral("faviconCache"), faviconCache);
 
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
     engine.loadFromModule("io.github.denysmb.unify", "Main");

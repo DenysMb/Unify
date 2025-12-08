@@ -32,17 +32,14 @@ Controls.Button {
     signal disableServiceRequested
     signal detachServiceRequested
 
-    readonly property string faviconUrl: {
-        if (!root.useFavicon || !root.serviceUrl)
-            return "";
-        // Extract domain from service URL and use Google's favicon service
-        try {
-            var url = new URL(root.serviceUrl);
-            return "https://www.google.com/s2/favicons?domain=" + url.hostname + "&sz=128";
-        } catch (e) {
-            return "";
-        }
-    }
+    // Cached favicon URL from FaviconCache
+    property string cachedFaviconUrl: ""
+    // Cached image URL from FaviconCache
+    property string cachedImageUrl: ""
+    // Loading state for favicon
+    property bool faviconLoading: false
+    // Loading state for image
+    property bool imageLoading: false
 
     readonly property bool isUrl: {
         if (!root.image)
@@ -51,12 +48,76 @@ Controls.Button {
     }
 
     readonly property bool hasImage: root.image && root.image.trim() !== ""
-    readonly property bool shouldShowFavicon: root.useFavicon && root.faviconUrl !== ""
-    readonly property bool shouldShowImage: !shouldShowFavicon && hasImage && isUrl
-    readonly property bool shouldShowIcon: !shouldShowFavicon && hasImage && !isUrl
-    readonly property bool shouldShowFallback: !shouldShowFavicon && !hasImage
+    readonly property bool shouldShowFavicon: root.useFavicon && (root.cachedFaviconUrl !== "" || root.faviconLoading)
+    readonly property bool shouldShowImage: !root.useFavicon && hasImage && isUrl && (root.cachedImageUrl !== "" || root.imageLoading)
+    readonly property bool shouldShowIcon: !root.useFavicon && hasImage && !isUrl
+    readonly property bool shouldShowFallback: (!root.useFavicon && !hasImage) || (root.useFavicon && !root.faviconLoading && root.cachedFaviconUrl === "")
 
-    text: i18n(title)
+    // Request favicon/image from cache when component loads or properties change
+    Component.onCompleted: {
+        requestCachedAssets();
+    }
+
+    onServiceUrlChanged: {
+        if (root.useFavicon) {
+            root.cachedFaviconUrl = "";
+            requestCachedAssets();
+        }
+    }
+
+    onUseFaviconChanged: {
+        root.cachedFaviconUrl = "";
+        requestCachedAssets();
+    }
+
+    onImageChanged: {
+        if (!root.useFavicon && root.isUrl) {
+            root.cachedImageUrl = "";
+            requestCachedAssets();
+        }
+    }
+
+    function requestCachedAssets() {
+        if (typeof faviconCache === "undefined" || faviconCache === null) {
+            return;
+        }
+
+        if (root.useFavicon && root.serviceUrl) {
+            root.faviconLoading = true;
+            var cached = faviconCache.getFavicon(root.serviceUrl, true);
+            if (cached && cached !== "") {
+                root.cachedFaviconUrl = cached;
+                root.faviconLoading = false;
+            }
+        } else if (!root.useFavicon && root.hasImage && root.isUrl) {
+            root.imageLoading = true;
+            var cachedImg = faviconCache.getImageUrl(root.image);
+            if (cachedImg && cachedImg !== "") {
+                root.cachedImageUrl = cachedImg;
+                root.imageLoading = false;
+            }
+        }
+    }
+
+    Connections {
+        target: typeof faviconCache !== "undefined" ? faviconCache : null
+
+        function onFaviconReady(serviceUrl, localPath) {
+            if (root.useFavicon && root.serviceUrl === serviceUrl) {
+                root.cachedFaviconUrl = localPath;
+                root.faviconLoading = false;
+            }
+        }
+
+        function onImageReady(imageUrl, localPath) {
+            if (!root.useFavicon && root.image === imageUrl) {
+                root.cachedImageUrl = localPath;
+                root.imageLoading = false;
+            }
+        }
+    }
+
+    text: title
     display: Controls.AbstractButton.IconOnly
     checkable: true
     checked: active
@@ -152,18 +213,19 @@ Controls.Button {
             anchors.centerIn: parent
             width: iconSize
             height: iconSize
-            visible: shouldShowFavicon
+            visible: shouldShowFavicon && root.cachedFaviconUrl !== ""
 
             Image {
                 id: faviconItem
                 anchors.fill: parent
-                source: shouldShowFavicon ? root.faviconUrl : ""
+                source: root.cachedFaviconUrl
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 mipmap: true
                 cache: true
                 sourceSize: Qt.size(Math.ceil(iconSize * Screen.devicePixelRatio), Math.ceil(iconSize * Screen.devicePixelRatio))
                 visible: false
+                asynchronous: true
             }
 
             MultiEffect {
@@ -184,18 +246,19 @@ Controls.Button {
             anchors.centerIn: parent
             width: iconSize
             height: iconSize
-            visible: shouldShowImage
+            visible: shouldShowImage && root.cachedImageUrl !== ""
 
             Image {
                 id: imageItem
                 anchors.fill: parent
-                source: shouldShowImage ? root.image : ""
+                source: root.cachedImageUrl
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 mipmap: true
                 cache: true
                 sourceSize: Qt.size(Math.ceil(iconSize * Screen.devicePixelRatio), Math.ceil(iconSize * Screen.devicePixelRatio))
                 visible: false
+                asynchronous: true
             }
 
             MultiEffect {
@@ -209,6 +272,17 @@ Controls.Button {
                 maskThresholdMax: 1.0
                 opacity: root.disabledVisual ? 0.3 : 1.0
             }
+        }
+
+        // Loading indicator for favicon/image
+        Kirigami.Icon {
+            id: loadingIcon
+            anchors.centerIn: parent
+            width: iconSize
+            height: iconSize
+            source: "internet-web-browser-symbolic"
+            opacity: root.disabledVisual ? 0.15 : 0.5
+            visible: (root.faviconLoading && root.cachedFaviconUrl === "") || (root.imageLoading && root.cachedImageUrl === "")
         }
 
         Rectangle {
