@@ -128,7 +128,7 @@ Kirigami.Action { separator: true }
                 Layout.fillWidth: true
                 wrapMode: QQC2.Label.WordWrap
                 textFormat: QQC2.Label.RichText
-                text: i18n("<b>Ctrl + 1, 2, 3...</b> — Switch between services in the current workspace<br>" + "<b>Ctrl + Shift + 1, 2, 3...</b> — Switch between workspaces<br>" + "<b>Ctrl + B</b> — Go to Favorites workspace<br>" + "<b>Ctrl + Tab</b> — Go to the next service<br>" + "<b>Ctrl + Shift + Tab</b> — Go to the next workspace<br>" + "<b>Escape</b> — Close overlay/dialog")
+                text: i18n("<b>Ctrl + 1, 2, 3...</b> — Switch between services in the current workspace<br>" + "<b>Ctrl + Shift + 1, 2, 3...</b> — Switch between workspaces<br>" + "<b>Ctrl + B</b> — Go to Favorites workspace<br>" + "<b>Ctrl + Tab</b> — Go to the next service<br>" + "<b>Ctrl + Shift + Tab</b> — Go to the next workspace<br>" + "<b>Double-tap Ctrl</b> — Toggle between the last two services<br>" + "<b>Escape</b> — Close overlay/dialog")
             }
 
             Kirigami.Separator {
