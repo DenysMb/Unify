@@ -15,6 +15,8 @@ target_sources(unify
     configmanager.h
     trayiconmanager.cpp
     trayiconmanager.h
+    faviconcache.cpp
+    faviconcache.h
     resources.qrc
 )
 
@@ -46,6 +48,7 @@ target_link_libraries(unify
     Qt6::Widgets
     Qt6::WebEngineQuick
     Qt6::DBus
+    Qt6::Network
     KF6::I18n
     KF6::CoreAddons
     KF6::IconThemes
