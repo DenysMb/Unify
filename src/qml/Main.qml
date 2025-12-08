@@ -30,6 +30,10 @@ Kirigami.ApplicationWindow {
     // Current selected service ID (empty string means no service selected)
     property string currentServiceId: ""
 
+    // Track last two services for quick switching with double Ctrl
+    property string previousServiceId: ""
+    property string previousServiceWorkspace: ""
+
     // Flag to track if the app is fully initialized
     property bool appInitialized: false
 
@@ -173,7 +177,7 @@ Kirigami.ApplicationWindow {
     }
 
     // Function to switch to a specific service by ID
-    function switchToService(serviceId) {
+    function switchToService(serviceId, skipHistory) {
         var service = findServiceById(serviceId);
 
         // Check if service belongs to current workspace
@@ -193,6 +197,12 @@ Kirigami.ApplicationWindow {
         }
 
         if (isInCurrentWorkspace) {
+            // Track previous service for quick switching (only if not skipping history)
+            if (!skipHistory && currentServiceId !== "" && currentServiceId !== serviceId) {
+                previousServiceId = currentServiceId;
+                previousServiceWorkspace = currentWorkspace;
+            }
+
             currentServiceName = service.title;
             currentServiceId = service.id;
 
@@ -204,6 +214,41 @@ Kirigami.ApplicationWindow {
             return true;
         }
         return false;
+    }
+
+    // Function to switch to previous service (for double Ctrl)
+    function switchToPreviousService() {
+        if (previousServiceId === "" || previousServiceId === currentServiceId) {
+            return false;
+        }
+
+        var prevService = findServiceById(previousServiceId);
+        if (!prevService) {
+            return false;
+        }
+
+        // Store current service as the new "previous" before switching
+        var tempCurrentId = currentServiceId;
+        var tempCurrentWorkspace = currentWorkspace;
+
+        // Switch to the previous service's workspace if needed
+        if (previousServiceWorkspace !== "" && previousServiceWorkspace !== currentWorkspace) {
+            currentWorkspace = previousServiceWorkspace;
+            if (configManager && configManager.currentWorkspace !== previousServiceWorkspace) {
+                configManager.currentWorkspace = previousServiceWorkspace;
+            }
+        }
+
+        // Switch to service without updating history (skipHistory = true)
+        var success = switchToService(previousServiceId, true);
+
+        if (success) {
+            // Now set the previous service to what was current
+            previousServiceId = tempCurrentId;
+            previousServiceWorkspace = tempCurrentWorkspace;
+        }
+
+        return success;
     }
 
     // Workspaces configuration array
@@ -650,6 +695,24 @@ Kirigami.ApplicationWindow {
             if (!ws || ws === "")
                 ws = workspaces[0];
             root.switchToWorkspace(ws);
+        }
+    }
+
+    // Quick switch to previous service using double Ctrl or Ctrl+` (backtick/grave)
+    // Similar to Alt+Tab behavior for switching between last two services
+    Connections {
+        target: keyEventFilter
+        function onDoubleCtrlPressed() {
+            root.switchToPreviousService();
+        }
+    }
+
+    // Alternative: Ctrl+` shortcut for quick switching
+    Shortcut {
+        sequences: ["Ctrl+`"]
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            root.switchToPreviousService();
         }
     }
 
