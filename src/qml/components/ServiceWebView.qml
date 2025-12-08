@@ -20,6 +20,9 @@ Item {
     property var onTitleUpdated: null
     property int stackIndex: 0
 
+    // Signal to request updating service URL
+    signal updateServiceUrlRequested(string serviceId, string newUrl)
+
     // Internal state tracking
     property bool profileReady: webProfile !== null
     property bool urlLoaded: false
@@ -294,6 +297,13 @@ Item {
                 icon.name: "go-home"
                 onTriggered: {
                     webView.url = view.configuredUrl;
+                }
+            },
+            Kirigami.Action {
+                text: i18n("Set as New URL")
+                icon.name: "document-save"
+                onTriggered: {
+                    view.updateServiceUrlRequested(view.serviceId, webView.url.toString());
                 }
             }
         ]

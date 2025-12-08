@@ -20,6 +20,9 @@ Item {
     // Callback to update badge from title
     property var onTitleUpdated: null
 
+    // Signal to propagate service URL update requests
+    signal updateServiceUrlRequested(string serviceId, string newUrl)
+
     // Internal properties
     property string currentServiceId: ""
     property var webViewCache: ({}) // serviceId -> WebView component instance
@@ -138,6 +141,11 @@ Item {
             console.error("Failed to create ServiceWebView instance");
             return;
         }
+
+        // Connect the updateServiceUrlRequested signal
+        instance.updateServiceUrlRequested.connect(function (svcId, newUrl) {
+            root.updateServiceUrlRequested(svcId, newUrl);
+        });
 
         // Store in cache
         var cache = root.webViewCache;
