@@ -24,7 +24,8 @@ public:
         : QObject(parent)
     {
     }
-    Q_INVOKABLE void presentFromQml(const QString &titleIn, const QString &messageIn, const QUrl &originUrl)
+
+    Q_INVOKABLE void presentFromQml(const QString &titleIn, const QString &messageIn, const QUrl &originUrl, const QString &serviceId)
     {
         QString title = titleIn.isEmpty() ? QStringLiteral("Web Notification") : titleIn;
         QString message = messageIn;
@@ -33,11 +34,30 @@ public:
         qDebug() << "   Title:" << title;
         qDebug() << "   Message:" << message;
         qDebug() << "   Origin:" << originUrl.host();
+        qDebug() << "   Service ID:" << serviceId;
 
-        KNotification::event(KNotification::Notification, title, message, QStringLiteral("dialog-information"));
+        auto *notification = new KNotification(QStringLiteral("notification"), KNotification::CloseOnTimeout, this);
+        notification->setComponentName(QStringLiteral("unify"));
+        notification->setTitle(title);
+        notification->setText(message);
+        notification->setIconName(QStringLiteral("dialog-information"));
+
+        // Add a default action that will be triggered when the notification is clicked
+        // addDefaultAction returns the created action, which we can connect to
+        KNotificationAction *defaultAction = notification->addDefaultAction(QStringLiteral("Open"));
+
+        // Connect the action's activated signal to emit our notificationClicked signal
+        connect(defaultAction, &KNotificationAction::activated, this, [this, serviceId]() {
+            qDebug() << "📢 Notification clicked for service:" << serviceId;
+            if (!serviceId.isEmpty()) {
+                Q_EMIT notificationClicked(serviceId);
+            }
+        });
+
+        notification->sendEvent();
     }
 
-    void present(std::unique_ptr<QWebEngineNotification> notification)
+    void present(std::unique_ptr<QWebEngineNotification> notification, const QString &serviceId = QString())
     {
         if (!notification) {
             qDebug() << "❌ Notification presenter called with null notification";
@@ -51,11 +71,32 @@ public:
         qDebug() << "   Title:" << title;
         qDebug() << "   Message:" << message;
         qDebug() << "   Origin:" << notification->origin().host();
+        qDebug() << "   Service ID:" << serviceId;
 
-        KNotification::event(KNotification::Notification, title, message, QStringLiteral("dialog-information"));
+        auto *knotification = new KNotification(QStringLiteral("notification"), KNotification::CloseOnTimeout, this);
+        knotification->setComponentName(QStringLiteral("unify"));
+        knotification->setTitle(title);
+        knotification->setText(message);
+        knotification->setIconName(QStringLiteral("dialog-information"));
+
+        // Add a default action that will be triggered when the notification is clicked
+        KNotificationAction *defaultAction = knotification->addDefaultAction(QStringLiteral("Open"));
+
+        // Connect the action's activated signal to emit our notificationClicked signal
+        connect(defaultAction, &KNotificationAction::activated, this, [this, serviceId]() {
+            qDebug() << "📢 Notification clicked for service:" << serviceId;
+            if (!serviceId.isEmpty()) {
+                Q_EMIT notificationClicked(serviceId);
+            }
+        });
+
+        knotification->sendEvent();
 
         notification->close();
     }
+
+Q_SIGNALS:
+    void notificationClicked(const QString &serviceId);
 };
 
 int main(int argc, char *argv[])
@@ -115,6 +156,7 @@ int main(int argc, char *argv[])
     NotificationPresenter *notificationPresenter = new NotificationPresenter(&app);
 
     // Set up a global notification presenter function that can be used by all profiles
+    // Note: This is used by the default profile, but QML profiles use presentFromQml instead
     auto globalNotificationPresenter = [notificationPresenter](std::unique_ptr<QWebEngineNotification> notification) {
         notificationPresenter->present(std::move(notification));
     };

@@ -109,6 +109,50 @@ Kirigami.ApplicationWindow {
         return Services.findById(services, id);
     }
 
+    // Function to find serviceId by URL origin
+    function findServiceIdByOrigin(originUrl) {
+        if (!services || !originUrl)
+            return "";
+        var originStr = originUrl.toString().toLowerCase();
+        // Extract host from origin URL
+        var originHost = "";
+        try {
+            originHost = originUrl.host ? originUrl.host.toLowerCase() : "";
+            if (!originHost) {
+                // Try to extract from string
+                var match = originStr.match(/^https?:\/\/([^\/]+)/);
+                if (match)
+                    originHost = match[1].toLowerCase();
+            }
+        } catch (e) {
+            console.warn("Error extracting host from origin:", e);
+        }
+
+        if (!originHost)
+            return "";
+
+        // Search through all services to find matching URL
+        for (var i = 0; i < services.length; i++) {
+            var service = services[i];
+            if (service && service.url) {
+                var serviceUrl = service.url.toString().toLowerCase();
+                try {
+                    var serviceMatch = serviceUrl.match(/^https?:\/\/([^\/]+)/);
+                    if (serviceMatch) {
+                        var serviceHost = serviceMatch[1].toLowerCase();
+                        // Check if hosts match (including subdomains)
+                        if (serviceHost === originHost || originHost.endsWith("." + serviceHost) || serviceHost.endsWith("." + originHost)) {
+                            return service.id;
+                        }
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+        }
+        return "";
+    }
+
     // Function to find service index by ID
     function findServiceIndexById(id) {
         return Services.indexById(services, id);
@@ -292,7 +336,10 @@ Kirigami.ApplicationWindow {
 
         onPresentNotification: function (notification) {
             if (notificationPresenter && notificationPresenter.presentFromQml) {
-                notificationPresenter.presentFromQml(notification.title, notification.message, notification.origin);
+                // Find the serviceId based on the notification origin
+                var serviceId = root.findServiceIdByOrigin(notification.origin);
+                console.log("📢 Notification from origin:", notification.origin.toString(), "-> serviceId:", serviceId);
+                notificationPresenter.presentFromQml(notification.title, notification.message, notification.origin, serviceId);
             }
             if (notification && notification.close)
                 notification.close();
@@ -514,6 +561,38 @@ Kirigami.ApplicationWindow {
         }
         function onQuitRequested() {
             Qt.quit();
+        }
+    }
+
+    // Handle notification click events
+    Connections {
+        target: notificationPresenter
+        function onNotificationClicked(serviceId) {
+            console.log("📢 Notification clicked, switching to service:", serviceId);
+            if (!serviceId)
+                return;
+
+            // Find the service to get its workspace
+            var service = root.findServiceById(serviceId);
+            if (!service) {
+                console.warn("Service not found for notification click:", serviceId);
+                return;
+            }
+
+            // Show and raise the window first
+            root.show();
+            root.raise();
+            root.requestActivate();
+            if (trayIconManager)
+                trayIconManager.windowVisible = true;
+
+            // Switch to the service's workspace if needed
+            if (service.workspace && service.workspace !== root.currentWorkspace) {
+                root.switchToWorkspace(service.workspace);
+            }
+
+            // Switch to the service
+            root.switchToService(serviceId);
         }
     }
 
