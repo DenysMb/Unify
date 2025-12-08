@@ -28,14 +28,34 @@ Window {
     modality: Qt.ApplicationModal
     flags: Qt.Dialog
 
+    // Timer to delay closing, allowing final scripts (like postMessage) to execute
+    Timer {
+        id: closeTimer
+        interval: 2000
+        repeat: false
+        onTriggered: {
+            console.log("⏰ Auth complete timer triggered - closing popup now");
+            popupWindow.close();
+        }
+    }
+
     // Close when authentication is complete (detect common success patterns)
     function checkForAuthComplete() {
         var url = webEngineView.url.toString();
+        
+        // Ignore initial empty/blank states
+        if (url === "about:blank" || url === "") return;
 
-        // Common patterns that indicate successful authentication
-        if (url.includes("code=") || url.includes("access_token=") || url.includes("auth_success") || url.includes("login_success") || url.includes("/success") || url.includes("close") || url.includes("callback")) {
-            console.log("🎉 Authentication appears complete, closing popup");
-            popupWindow.close();
+        // Strict check for OAuth response parameters
+        var hasAuthToken = url.includes("code=") || 
+                          url.includes("access_token=") || 
+                          url.includes("id_token=");
+
+        if (hasAuthToken) {
+            if (!closeTimer.running) {
+                console.log("🎉 Authentication appears complete (token detected). Waiting for scripts to finalize before closing... URL:", url);
+                closeTimer.start();
+            }
         }
     }
 
