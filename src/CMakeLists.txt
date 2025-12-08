@@ -11,14 +11,16 @@ ecm_add_qml_module(unify
 target_sources(unify
     PRIVATE
     main.cpp
-    configmanager.cpp
-    configmanager.h
-    trayiconmanager.cpp
-    trayiconmanager.h
-    faviconcache.cpp
-    faviconcache.h
-    keyeventfilter.cpp
-    keyeventfilter.h
+    core/configmanager.cpp
+    core/configmanager.h
+    core/notificationpresenter.cpp
+    core/notificationpresenter.h
+    ui/trayiconmanager.cpp
+    ui/trayiconmanager.h
+    utils/faviconcache.cpp
+    utils/faviconcache.h
+    utils/keyeventfilter.cpp
+    utils/keyeventfilter.h
     resources.qrc
 )
 
