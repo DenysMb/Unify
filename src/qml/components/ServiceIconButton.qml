@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Window
 import QtQuick.Controls as Controls
+import QtQuick.Effects
 import org.kde.kirigami as Kirigami
 
 Controls.Button {
@@ -146,34 +147,70 @@ Controls.Button {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
 
-        Image {
-            id: faviconItem
+        Item {
+            id: faviconContainer
             anchors.centerIn: parent
             width: iconSize
             height: iconSize
-            source: shouldShowFavicon ? root.faviconUrl : ""
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            mipmap: true
-            cache: true
-            sourceSize: Qt.size(Math.ceil(iconSize * Screen.devicePixelRatio), Math.ceil(iconSize * Screen.devicePixelRatio))
-            opacity: root.disabledVisual ? 0.3 : 1.0
             visible: shouldShowFavicon
+
+            Image {
+                id: faviconItem
+                anchors.fill: parent
+                source: shouldShowFavicon ? root.faviconUrl : ""
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                mipmap: true
+                cache: true
+                sourceSize: Qt.size(Math.ceil(iconSize * Screen.devicePixelRatio), Math.ceil(iconSize * Screen.devicePixelRatio))
+                visible: false
+            }
+
+            MultiEffect {
+                anchors.fill: faviconItem
+                source: faviconItem
+                maskEnabled: true
+                maskSource: roundedMask
+                opacity: root.disabledVisual ? 0.3 : 1.0
+            }
         }
 
-        Image {
-            id: imageItem
+        Item {
+            id: imageContainer
             anchors.centerIn: parent
             width: iconSize
             height: iconSize
-            source: shouldShowImage ? root.image : ""
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            mipmap: true
-            cache: true
-            sourceSize: Qt.size(Math.ceil(iconSize * Screen.devicePixelRatio), Math.ceil(iconSize * Screen.devicePixelRatio))
-            opacity: root.disabledVisual ? 0.3 : 1.0
             visible: shouldShowImage
+
+            Image {
+                id: imageItem
+                anchors.fill: parent
+                source: shouldShowImage ? root.image : ""
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                mipmap: true
+                cache: true
+                sourceSize: Qt.size(Math.ceil(iconSize * Screen.devicePixelRatio), Math.ceil(iconSize * Screen.devicePixelRatio))
+                visible: false
+            }
+
+            MultiEffect {
+                anchors.fill: imageItem
+                source: imageItem
+                maskEnabled: true
+                maskSource: roundedMask
+                opacity: root.disabledVisual ? 0.3 : 1.0
+            }
+        }
+
+        Rectangle {
+            id: roundedMask
+            anchors.centerIn: parent
+            width: iconSize
+            height: iconSize
+            radius: Kirigami.Units.mediumSpacing
+            visible: false
+            layer.enabled: true
         }
 
         Kirigami.Icon {
