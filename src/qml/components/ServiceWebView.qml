@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Window
+import QtQuick.Controls as QQC2
 import QtWebEngine
 import org.kde.kirigami as Kirigami
 import "AntiDetection.js" as AntiDetection
@@ -23,6 +24,24 @@ Item {
     property bool profileReady: webProfile !== null
     property bool urlLoaded: false
     property bool hasLoadedOnce: false  // Track if service has completed loading at least once
+
+    // Check if current URL is outside the service's base URL
+    property bool isNavigatedAway: {
+        if (!hasLoadedOnce || isServiceDisabled)
+            return false;
+        var currentUrl = webView.url.toString();
+        var baseUrl = configuredUrl.toString();
+        if (currentUrl === "about:blank" || baseUrl === "about:blank")
+            return false;
+        // Extract origin (protocol + host) from both URLs
+        try {
+            var currentOrigin = currentUrl.replace(/^(https?:\/\/[^\/]+).*$/, "$1");
+            var baseOrigin = baseUrl.replace(/^(https?:\/\/[^\/]+).*$/, "$1");
+            return currentOrigin !== baseOrigin;
+        } catch (e) {
+            return false;
+        }
+    }
 
     // Anti-detection script for Google OAuth compatibility
     // Injected via runJavaScript on each page load
@@ -180,7 +199,7 @@ Item {
             // Check for OAuth/Auth popup
             if (Services.isOAuthUrl(requestedUrl)) {
                 console.log("🔐 Auth popup detected - opening in separate window");
-                
+
                 // Create a new window instance for this popup request
                 var popup = popupComponent.createObject(null, {
                     "parentService": view.serviceTitle,
@@ -190,7 +209,7 @@ Item {
 
                 if (popup) {
                     // Destroy the popup when it closes to free resources
-                    popup.closing.connect(function() {
+                    popup.closing.connect(function () {
                         popup.destroy();
                     });
 
@@ -198,10 +217,10 @@ Item {
                     popup.show();
 
                     if (popup.webView) {
-                         console.log("🔐 calling request.openIn(popup.webView)");
-                         request.openIn(popup.webView);
+                        console.log("🔐 calling request.openIn(popup.webView)");
+                        request.openIn(popup.webView);
                     } else {
-                         console.warn("🔐 popup.webView is null!");
+                        console.warn("🔐 popup.webView is null!");
                     }
                     return;
                 } else {
@@ -256,6 +275,28 @@ Item {
         text: i18n("Service Disabled")
         explanation: i18n("This service is currently disabled. Enable it to use this web service.")
         icon.name: "offline"
+    }
+
+    // Inline message shown when navigated away from service URL
+    Kirigami.InlineMessage {
+        id: navigatedAwayMessage
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.margins: Kirigami.Units.smallSpacing
+        z: 10
+        visible: view.isNavigatedAway
+        type: Kirigami.MessageType.Information
+        text: i18n("You are browsing outside of %1", view.serviceTitle)
+        actions: [
+            Kirigami.Action {
+                text: i18n("Return to %1", view.serviceTitle)
+                icon.name: "go-home"
+                onTriggered: {
+                    webView.url = view.configuredUrl;
+                }
+            }
+        ]
     }
 
     Component {
