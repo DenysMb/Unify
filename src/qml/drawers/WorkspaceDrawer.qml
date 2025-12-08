@@ -34,7 +34,7 @@ Kirigami.GlobalDrawer {
             import org.kde.kirigami as Kirigami
             Kirigami.Action {
                 text: i18n("All Services")
-                icon.name: "folder-symbolic"
+                icon.name: "applications-all-symbolic"
                 checkable: true
                 checked: drawer.currentWorkspace === "__all_services__"
                 onTriggered: drawer.switchToWorkspace("__all_services__")
