@@ -1,10 +1,9 @@
 import QtQuick
 import QtQuick.Window
 import QtWebEngine
-import org.kde.kirigami as Kirigami
 import "AntiDetection.js" as AntiDetection
 
-Kirigami.ApplicationWindow {
+Window {
     id: popupWindow
 
     // Properties
@@ -21,8 +20,9 @@ Kirigami.ApplicationWindow {
     height: 600
     minimumWidth: 400
     minimumHeight: 300
+    visible: false
 
-    title: webEngineView.title || i18n("Authentication - %1", parentService)
+    title: webEngineView.title || qsTr("Authentication - %1").arg(parentService)
 
     // Make it a popup-style window
     modality: Qt.ApplicationModal
@@ -43,7 +43,8 @@ Kirigami.ApplicationWindow {
         id: webEngineView
         anchors.fill: parent
 
-        url: popupWindow.requestedUrl
+        // url property is NOT bound here to avoid conflict with openIn()
+        // It will be set either by request.openIn() or manually via property update if needed
         profile: popupWindow.webProfile
 
         // Enable necessary settings for authentication and OAuth compatibility
