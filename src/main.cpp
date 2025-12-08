@@ -1,5 +1,6 @@
 #include "configmanager.h"
 #include "faviconcache.h"
+#include "keyeventfilter.h"
 #include "trayiconmanager.h"
 #include <KIconTheme>
 #include <KLocalizedContext>
@@ -106,6 +107,10 @@ int main(int argc, char *argv[])
     // Create favicon cache instance
     FaviconCache *faviconCache = new FaviconCache(&app);
 
+    // Create key event filter for double Ctrl detection
+    KeyEventFilter *keyEventFilter = new KeyEventFilter(&app);
+    app.installEventFilter(keyEventFilter);
+
     // Create notification presenter instance
     NotificationPresenter *notificationPresenter = new NotificationPresenter(&app);
 
@@ -137,11 +142,12 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
 
-    // Register the notification presenter, config manager, tray icon manager and favicon cache with QML context
+    // Register the notification presenter, config manager, tray icon manager, favicon cache and key event filter with QML context
     engine.rootContext()->setContextProperty(QStringLiteral("notificationPresenter"), notificationPresenter);
     engine.rootContext()->setContextProperty(QStringLiteral("configManager"), configManager);
     engine.rootContext()->setContextProperty(QStringLiteral("trayIconManager"), trayIconManager);
     engine.rootContext()->setContextProperty(QStringLiteral("faviconCache"), faviconCache);
+    engine.rootContext()->setContextProperty(QStringLiteral("keyEventFilter"), keyEventFilter);
 
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
     engine.loadFromModule("io.github.denysmb.unify", "Main");

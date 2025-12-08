@@ -17,6 +17,8 @@ target_sources(unify
     trayiconmanager.h
     faviconcache.cpp
     faviconcache.h
+    keyeventfilter.cpp
+    keyeventfilter.h
     resources.qrc
 )
 
