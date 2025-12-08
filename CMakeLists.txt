@@ -79,6 +79,14 @@ install_i18n_desktop_file(${CMAKE_SOURCE_DIR}/io.github.denysmb.unify.desktop ${
 # Install notification configuration
 install(FILES unify.notifyrc DESTINATION ${KDE_INSTALL_KNOTIFYRCDIR})
 
+# Copy notifyrc to local user directory for development (so notifications work without install)
+set(LOCAL_KNOTIFY_DIR "$ENV{HOME}/.local/share/knotifications6")
+add_custom_target(install-notifyrc-dev ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${LOCAL_KNOTIFY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/unify.notifyrc ${LOCAL_KNOTIFY_DIR}/unify.notifyrc
+    COMMENT "Installing notifyrc to local user directory for development"
+)
+
 file(GLOB_RECURSE ALL_CLANG_FORMAT_SOURCE_FILES src/*.cpp src/*.h)
 kde_clang_format(${ALL_CLANG_FORMAT_SOURCE_FILES})
 kde_configure_git_pre_commit_hook(CHECKS CLANG_FORMAT)
