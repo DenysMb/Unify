@@ -20,9 +20,18 @@ Kirigami.Dialog {
     signal deleteRequested
 
     title: isEditMode ? i18n("Edit Workspace") : i18n("Add Workspace")
-    standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+    standardButtons: Kirigami.Dialog.Cancel
     padding: Kirigami.Units.largeSpacing
     preferredWidth: Kirigami.Units.gridUnit * 20
+
+    customFooterActions: [
+        Kirigami.Action {
+            text: root.isEditMode ? i18n("Save") : i18n("Add")
+            icon.name: root.isEditMode ? "document-save" : "list-add"
+            enabled: workspaceNameField.text.trim().length > 0
+            onTriggered: root.accept()
+        }
+    ]
 
     function populateFields(name) {
         workspaceNameField.text = name || "";
