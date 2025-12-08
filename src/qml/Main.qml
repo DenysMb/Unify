@@ -335,14 +335,13 @@ Kirigami.ApplicationWindow {
         persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
 
         onPresentNotification: function (notification) {
-            if (notificationPresenter && notificationPresenter.presentFromQml) {
+            if (notificationPresenter) {
                 // Find the serviceId based on the notification origin
                 var serviceId = root.findServiceIdByOrigin(notification.origin);
                 console.log("📢 Notification from origin:", notification.origin.toString(), "-> serviceId:", serviceId);
-                notificationPresenter.presentFromQml(notification.title, notification.message, notification.origin, serviceId);
+                // Use the new method that passes the full notification object (includes icon)
+                notificationPresenter.presentFromQmlWithNotification(notification, serviceId);
             }
-            if (notification && notification.close)
-                notification.close();
         }
     }
 
