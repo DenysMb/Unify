@@ -85,9 +85,57 @@ function generateUUID() {
     })
 }
 
+function isOAuthUrl(url) {
+    if (!url) return false
+    var urlStr = url.toString().toLowerCase()
+
+    // Known OAuth/Auth domains
+    var oauthDomains = [
+        "accounts.google.com",
+        "login.microsoftonline.com",
+        "login.live.com",
+        "appleid.apple.com",
+        "facebook.com",
+        "www.facebook.com",
+        "github.com",
+        "api.twitter.com",
+        "discord.com",
+        "id.twitch.tv",
+        "login.yahoo.com",
+        "auth.atlassian.com",
+        "slack.com",
+        "login.salesforce.com",
+        "accounts.spotify.com",
+        "oauth.telegram.org",
+        "web.telegram.org",
+        "web.whatsapp.com",
+        "firebaseapp.com"
+    ]
+
+    // Check domains
+    for (var i = 0; i < oauthDomains.length; i++) {
+        if (urlStr.indexOf(oauthDomains[i]) !== -1) {
+            return true
+        }
+    }
+
+    // Check patterns
+    // We look for specific auth-related patterns in the URL
+    // This catches generic OAuth flows and login popups
+    if (urlStr.indexOf("oauth") !== -1 ||
+        urlStr.indexOf("/auth") !== -1 ||
+        (urlStr.indexOf("signin") !== -1 && urlStr.indexOf("google") !== -1) || // narrowing down generic terms
+        urlStr.indexOf("response_type=code") !== -1 ||
+        urlStr.indexOf("response_type=token") !== -1) {
+            return true
+    }
+
+    return false
+}
+
 // Keep evaluated once in QML engine
 
 // Export names for QML
 var _ = {
-    findById, indexById, filterByWorkspace, addSeparatorsForSpecialWorkspace, generateUUID
+    findById, indexById, filterByWorkspace, addSeparatorsForSpecialWorkspace, generateUUID, isOAuthUrl
 }

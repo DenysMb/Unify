@@ -3,6 +3,7 @@ import QtQuick.Window
 import QtWebEngine
 import org.kde.kirigami as Kirigami
 import "AntiDetection.js" as AntiDetection
+import "Services.js" as Services
 
 Item {
     id: view
@@ -175,6 +176,39 @@ Item {
             console.log("🪟 Link requested:", request.requestedUrl, "from service:", view.serviceTitle);
 
             var requestedUrl = request.requestedUrl;
+
+            // Check for OAuth/Auth popup
+            if (Services.isOAuthUrl(requestedUrl)) {
+                console.log("🔐 Auth popup detected - opening in separate window");
+                
+                // Create a new window instance for this popup request
+                var popup = popupComponent.createObject(null, {
+                    "parentService": view.serviceTitle,
+                    "webProfile": view.webProfile
+                    // Do NOT set requestedUrl here, let openIn handle it
+                });
+
+                if (popup) {
+                    // Destroy the popup when it closes to free resources
+                    popup.closing.connect(function() {
+                        popup.destroy();
+                    });
+
+                    // Ensure window is visible before attaching
+                    popup.show();
+
+                    if (popup.webView) {
+                         console.log("🔐 calling request.openIn(popup.webView)");
+                         request.openIn(popup.webView);
+                    } else {
+                         console.warn("🔐 popup.webView is null!");
+                    }
+                    return;
+                } else {
+                    console.error("❌ Failed to create auth popup window");
+                }
+            }
+
             webView.runJavaScript("window.__unifyCtrlPressed || false", function (ctrlPressed) {
                 if (ctrlPressed) {
                     console.log("🌐 Ctrl+Click - opening directly in browser");
@@ -222,6 +256,11 @@ Item {
         text: i18n("Service Disabled")
         explanation: i18n("This service is currently disabled. Enable it to use this web service.")
         icon.name: "offline"
+    }
+
+    Component {
+        id: popupComponent
+        PopupWindow {}
     }
 
     InternalLinkOverlay {
