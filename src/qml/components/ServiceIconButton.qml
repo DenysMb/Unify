@@ -171,6 +171,10 @@ Controls.Button {
                 source: faviconItem
                 maskEnabled: true
                 maskSource: roundedMask
+                maskSpreadAtMin: 1.0
+                maskSpreadAtMax: 1.0
+                maskThresholdMin: 0.5
+                maskThresholdMax: 1.0
                 opacity: root.disabledVisual ? 0.3 : 1.0
             }
         }
@@ -199,6 +203,10 @@ Controls.Button {
                 source: imageItem
                 maskEnabled: true
                 maskSource: roundedMask
+                maskSpreadAtMin: 1.0
+                maskSpreadAtMax: 1.0
+                maskThresholdMin: 0.5
+                maskThresholdMax: 1.0
                 opacity: root.disabledVisual ? 0.3 : 1.0
             }
         }
@@ -211,6 +219,9 @@ Controls.Button {
             radius: Kirigami.Units.mediumSpacing
             visible: false
             layer.enabled: true
+            layer.smooth: true
+            layer.samples: 4
+            antialiasing: true
         }
 
         Kirigami.Icon {
