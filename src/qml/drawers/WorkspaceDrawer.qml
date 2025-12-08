@@ -110,6 +110,43 @@ Kirigami.Action { separator: true }
 Kirigami.Action { separator: true }
 `, drawer));
 
+        // Horizontal Sidebar toggle
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+              text: i18n("Horizontal Sidebar")
+              icon.name: "object-rows"
+              checkable: true
+              checked: configManager && configManager.horizontalSidebar
+              onTriggered: {
+                  if (configManager) {
+                      configManager.horizontalSidebar = !configManager.horizontalSidebar
+                  }
+              }
+            }
+        `, drawer));
+
+        // Always Show Workspaces Bar toggle
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+              text: i18n("Always Show Workspaces Bar")
+              icon.name: "view-file-columns"
+              checkable: true
+              checked: configManager && configManager.alwaysShowWorkspacesBar
+              onTriggered: {
+                  if (configManager) {
+                      configManager.alwaysShowWorkspacesBar = !configManager.alwaysShowWorkspacesBar
+                  }
+              }
+            }
+        `, drawer));
+
+        // separator
+        acts.push(Qt.createQmlObject(`import org.kde.kirigami as Kirigami
+Kirigami.Action { separator: true }
+`, drawer));
+
         // Tips
         acts.push(Qt.createQmlObject(`
             import org.kde.kirigami as Kirigami

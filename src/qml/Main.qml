@@ -650,6 +650,12 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Helper property to track horizontal sidebar setting
+    property bool isHorizontalSidebar: configManager ? configManager.horizontalSidebar : false
+
+    // Reference to the current WebViewStack (updated when layout changes)
+    property var webViewStack: null
+
     // Set the first page that will be loaded when the app opens
     // This can also be set to an id of a Kirigami.Page
     pageStack.initialPage: Kirigami.Page {
@@ -720,105 +726,239 @@ Kirigami.ApplicationWindow {
             }
         ]
 
-        RowLayout {
+        // Dynamic layout loader based on horizontal sidebar setting
+        Loader {
             anchors.fill: parent
-            spacing: 0
+            sourceComponent: root.isHorizontalSidebar ? horizontalLayoutComponent : verticalLayoutComponent
+        }
 
-            // Left sidebar
-            ServicesSidebar {
-                services: root.filteredServices
-                disabledServices: root.disabledServices
-                detachedServices: root.detachedServices
-                notificationCounts: root.serviceNotificationCounts
-                currentServiceId: root.currentServiceId
-                currentWorkspace: root.currentWorkspace
-                sidebarWidth: root.sidebarWidth
-                buttonSize: root.buttonSize
-                iconSize: root.iconSize
-                onServiceSelected: function (id) {
-                    root.switchToService(id);
-                    var svc = root.findServiceById(id);
-                    if (svc)
-                        console.log(svc.title + " clicked - loading " + svc.url);
-                }
-                onEditServiceRequested: function (id) {
-                    var svc = root.findServiceById(id);
-                    if (svc) {
-                        // Store which service is being edited without changing the active service
-                        root.editingServiceId = id;
-                        // Open edit dialog for this service
-                        addServiceDialog.isEditMode = true;
-                        addServiceDialog.populateFields(svc);
-                        addServiceDialog.open();
+        // Vertical layout component (sidebar on left - default)
+        Component {
+            id: verticalLayoutComponent
+            ColumnLayout {
+                spacing: 0
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 0
+
+                    ServicesSidebar {
+                        id: sidebarVertical
+                        horizontal: false
+                        services: root.filteredServices
+                        disabledServices: root.disabledServices
+                        detachedServices: root.detachedServices
+                        notificationCounts: root.serviceNotificationCounts
+                        currentServiceId: root.currentServiceId
+                        currentWorkspace: root.currentWorkspace
+                        sidebarWidth: root.sidebarWidth
+                        buttonSize: root.buttonSize
+                        iconSize: root.iconSize
+                        onServiceSelected: function (id) {
+                            root.switchToService(id);
+                            var svc = root.findServiceById(id);
+                            if (svc)
+                                console.log(svc.title + " clicked - loading " + svc.url);
+                        }
+                        onEditServiceRequested: function (id) {
+                            var svc = root.findServiceById(id);
+                            if (svc) {
+                                root.editingServiceId = id;
+                                addServiceDialog.isEditMode = true;
+                                addServiceDialog.populateFields(svc);
+                                addServiceDialog.open();
+                            }
+                        }
+                        onMoveServiceUp: function (id) {
+                            root.moveServiceUp(id);
+                        }
+                        onMoveServiceDown: function (id) {
+                            root.moveServiceDown(id);
+                        }
+                        onDisableService: function (id) {
+                            root.setServiceEnabled(id, root.isServiceDisabled(id));
+                        }
+                        onDetachService: function (id) {
+                            if (root.isServiceDetached(id)) {
+                                root.reattachService(id);
+                            } else {
+                                root.detachService(id);
+                            }
+                        }
+                        onToggleFavoriteRequested: function (id) {
+                            root.handleToggleFavorite(id);
+                        }
+                        onShortcutClicked: function (desktopFileName) {
+                            if (typeof applicationShortcutManager !== "undefined") {
+                                applicationShortcutManager.launchApplication(desktopFileName);
+                            }
+                        }
+                        onEditShortcutRequested: function (id) {
+                            var shortcut = root.findServiceById(id);
+                            if (shortcut) {
+                                root.editingServiceId = id;
+                                applicationShortcutDialog.isEditMode = true;
+                                applicationShortcutDialog.populateFields(shortcut);
+                                applicationShortcutDialog.open();
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        color: Kirigami.Theme.backgroundColor
+                        WebViewStack {
+                            id: webViewStackVertical
+                            anchors.fill: parent
+                            services: root.appInitialized ? root.services : []
+                            filteredCount: root.filteredServices.length
+                            currentWorkspace: root.currentWorkspace
+                            disabledServices: root.disabledServices
+                            webProfile: persistentProfile
+                            onTitleUpdated: root.updateBadgeFromTitle
+                            onUpdateServiceUrlRequested: function (serviceId, newUrl) {
+                                var service = root.findServiceById(serviceId);
+                                if (service && configManager) {
+                                    var updatedService = {
+                                        id: service.id,
+                                        title: service.title,
+                                        url: newUrl,
+                                        image: service.image,
+                                        workspace: service.workspace,
+                                        useFavicon: service.useFavicon,
+                                        favorite: service.favorite
+                                    };
+                                    configManager.updateService(serviceId, updatedService);
+                                }
+                            }
+                            Component.onCompleted: {
+                                root.webViewStack = webViewStackVertical;
+                            }
+                        }
                     }
                 }
-                onMoveServiceUp: function (id) {
-                    root.moveServiceUp(id);
-                }
-                onMoveServiceDown: function (id) {
-                    root.moveServiceDown(id);
-                }
-                onDisableService: function (id) {
-                    // Toggle the disable state
-                    root.setServiceEnabled(id, root.isServiceDisabled(id));
-                }
-                onDetachService: function (id) {
-                    // Toggle the detach state
-                    if (root.isServiceDetached(id)) {
-                        root.reattachService(id);
-                    } else {
-                        root.detachService(id);
-                    }
-                }
-                onToggleFavoriteRequested: function (id) {
-                    root.handleToggleFavorite(id);
-                }
-                onShortcutClicked: function (desktopFileName) {
-                    if (typeof applicationShortcutManager !== "undefined") {
-                        applicationShortcutManager.launchApplication(desktopFileName);
-                    }
-                }
-                onEditShortcutRequested: function (id) {
-                    var shortcut = root.findServiceById(id);
-                    if (shortcut) {
-                        root.editingServiceId = id;
-                        applicationShortcutDialog.isEditMode = true;
-                        applicationShortcutDialog.populateFields(shortcut);
-                        applicationShortcutDialog.open();
+
+                WorkspacesBar {
+                    showBar: configManager && configManager.alwaysShowWorkspacesBar
+                    workspaces: root.workspaces
+                    currentWorkspace: root.currentWorkspace
+                    onSwitchToWorkspace: function (name) {
+                        root.switchToWorkspace(name);
                     }
                 }
             }
+        }
 
-            // Main content area
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                color: Kirigami.Theme.backgroundColor
-                WebViewStack {
-                    id: webViewStack
-                    anchors.fill: parent
-                    // Keep all services instantiated to preserve background activity across workspaces
-                    services: root.appInitialized ? root.services : []
-                    // Drive empty state off the filtered (current workspace) count
-                    filteredCount: root.filteredServices.length
-                    currentWorkspace: root.currentWorkspace
+        // Horizontal layout component (sidebar on top)
+        Component {
+            id: horizontalLayoutComponent
+            ColumnLayout {
+                spacing: 0
+
+                ServicesSidebar {
+                    id: sidebarHorizontal
+                    horizontal: true
+                    services: root.filteredServices
                     disabledServices: root.disabledServices
-                    webProfile: persistentProfile
-                    onTitleUpdated: root.updateBadgeFromTitle
-                    onUpdateServiceUrlRequested: function (serviceId, newUrl) {
-                        var service = root.findServiceById(serviceId);
-                        if (service && configManager) {
-                            var updatedService = {
-                                id: service.id,
-                                title: service.title,
-                                url: newUrl,
-                                image: service.image,
-                                workspace: service.workspace,
-                                useFavicon: service.useFavicon,
-                                favorite: service.favorite
-                            };
-                            configManager.updateService(serviceId, updatedService);
+                    detachedServices: root.detachedServices
+                    notificationCounts: root.serviceNotificationCounts
+                    currentServiceId: root.currentServiceId
+                    currentWorkspace: root.currentWorkspace
+                    sidebarWidth: root.sidebarWidth
+                    buttonSize: root.buttonSize
+                    iconSize: root.iconSize
+                    onServiceSelected: function (id) {
+                        root.switchToService(id);
+                        var svc = root.findServiceById(id);
+                        if (svc)
+                            console.log(svc.title + " clicked - loading " + svc.url);
+                    }
+                    onEditServiceRequested: function (id) {
+                        var svc = root.findServiceById(id);
+                        if (svc) {
+                            root.editingServiceId = id;
+                            addServiceDialog.isEditMode = true;
+                            addServiceDialog.populateFields(svc);
+                            addServiceDialog.open();
                         }
+                    }
+                    onMoveServiceUp: function (id) {
+                        root.moveServiceUp(id);
+                    }
+                    onMoveServiceDown: function (id) {
+                        root.moveServiceDown(id);
+                    }
+                    onDisableService: function (id) {
+                        root.setServiceEnabled(id, root.isServiceDisabled(id));
+                    }
+                    onDetachService: function (id) {
+                        if (root.isServiceDetached(id)) {
+                            root.reattachService(id);
+                        } else {
+                            root.detachService(id);
+                        }
+                    }
+                    onToggleFavoriteRequested: function (id) {
+                        root.handleToggleFavorite(id);
+                    }
+                    onShortcutClicked: function (desktopFileName) {
+                        if (typeof applicationShortcutManager !== "undefined") {
+                            applicationShortcutManager.launchApplication(desktopFileName);
+                        }
+                    }
+                    onEditShortcutRequested: function (id) {
+                        var shortcut = root.findServiceById(id);
+                        if (shortcut) {
+                            root.editingServiceId = id;
+                            applicationShortcutDialog.isEditMode = true;
+                            applicationShortcutDialog.populateFields(shortcut);
+                            applicationShortcutDialog.open();
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    color: Kirigami.Theme.backgroundColor
+                    WebViewStack {
+                        id: webViewStackHorizontal
+                        anchors.fill: parent
+                        services: root.appInitialized ? root.services : []
+                        filteredCount: root.filteredServices.length
+                        currentWorkspace: root.currentWorkspace
+                        disabledServices: root.disabledServices
+                        webProfile: persistentProfile
+                        onTitleUpdated: root.updateBadgeFromTitle
+                        onUpdateServiceUrlRequested: function (serviceId, newUrl) {
+                            var service = root.findServiceById(serviceId);
+                            if (service && configManager) {
+                                var updatedService = {
+                                    id: service.id,
+                                    title: service.title,
+                                    url: newUrl,
+                                    image: service.image,
+                                    workspace: service.workspace,
+                                    useFavicon: service.useFavicon,
+                                    favorite: service.favorite
+                                };
+                                configManager.updateService(serviceId, updatedService);
+                            }
+                        }
+                        Component.onCompleted: {
+                            root.webViewStack = webViewStackHorizontal;
+                        }
+                    }
+                }
+
+                WorkspacesBar {
+                    showBar: configManager && configManager.alwaysShowWorkspacesBar
+                    workspaces: root.workspaces
+                    currentWorkspace: root.currentWorkspace
+                    onSwitchToWorkspace: function (name) {
+                        root.switchToWorkspace(name);
                     }
                 }
             }
