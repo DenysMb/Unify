@@ -27,6 +27,8 @@ Rectangle {
     signal disableService(string id)
     signal detachService(string id)
     signal toggleFavoriteRequested(string id)
+    signal shortcutClicked(string desktopFileName)
+    signal editShortcutRequested(string id)
 
     Connections {
         target: typeof configManager !== "undefined" ? configManager : null
@@ -114,6 +116,22 @@ Rectangle {
                         onToggleFavoriteRequested: {
                             root.toggleFavoriteRequested(modelData.id);
                         }
+                    }
+
+                    // Shortcut button component
+                    Components.ShortcutIconButton {
+                        visible: modelData.itemType === "shortcut"
+                        width: root.buttonSize
+                        height: root.buttonSize
+
+                        title: modelData.title || ""
+                        iconName: modelData.customIcon || modelData.icon || "application-x-executable"
+                        desktopFileName: modelData.desktopFileName || ""
+                        buttonSize: root.buttonSize
+                        iconSize: root.iconSize
+
+                        onClicked: root.shortcutClicked(modelData.desktopFileName)
+                        onEditRequested: root.editShortcutRequested(modelData.id)
                     }
                 }
             }

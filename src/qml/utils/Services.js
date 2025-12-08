@@ -48,32 +48,59 @@ function filterByWorkspace(services, workspace) {
 
     var filtered = []
 
-    // Special workspace: Favorites - show only favorited services
+    // Special workspace: Favorites - show only favorited services (no shortcuts in favorites)
     if (workspace === "__favorites__") {
         for (var i = 0; i < services.length; i++) {
-            if (services[i].favorite === true) {
+            if (services[i].favorite === true && services[i].itemType !== "shortcut") {
                 filtered.push(services[i])
             }
         }
         return addSeparatorsForSpecialWorkspace(filtered)
     }
 
-    // Special workspace: All Services - show all services
+    // Special workspace: All Services - show all services (no shortcuts)
     if (workspace === "__all_services__") {
-        return addSeparatorsForSpecialWorkspace(services.slice())
+        var allServices = []
+        for (var i = 0; i < services.length; i++) {
+            if (services[i].itemType !== "shortcut") {
+                allServices.push(services[i])
+            }
+        }
+        return addSeparatorsForSpecialWorkspace(allServices)
     }
 
     // Normal workspace: filter by workspace property
+    var webServices = []
+    var shortcuts = []
+
     for (var i = 0; i < services.length; i++) {
         if (services[i].workspace === workspace) {
-            filtered.push(services[i])
+            if (services[i].itemType === "shortcut") {
+                shortcuts.push(services[i])
+            } else {
+                webServices.push(services[i])
+            }
         }
     }
 
-    // Mark all items as services for regular workspaces
-    for (var i = 0; i < filtered.length; i++) {
-        filtered[i] = Object.assign({itemType: "service"}, filtered[i])
+    // Add web services first
+    for (var i = 0; i < webServices.length; i++) {
+        filtered.push(Object.assign({itemType: "service"}, webServices[i]))
     }
+
+    // Add separator before shortcuts if both exist
+    if (webServices.length > 0 && shortcuts.length > 0) {
+        filtered.push({
+            itemType: "separator",
+            id: "sep_shortcuts_" + Date.now()
+        })
+    }
+
+    // Add shortcuts
+    for (var i = 0; i < shortcuts.length; i++) {
+        filtered.push(Object.assign({}, shortcuts[i]))
+    }
+
     return filtered
 }
 

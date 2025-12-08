@@ -1,3 +1,4 @@
+#include "core/applicationshortcutmanager.h"
 #include "core/configmanager.h"
 #include "core/notificationpresenter.h"
 #include "ui/trayiconmanager.h"
@@ -72,6 +73,9 @@ int main(int argc, char *argv[])
     // Create notification presenter instance
     NotificationPresenter *notificationPresenter = new NotificationPresenter(&app);
 
+    // Create application shortcut manager instance
+    ApplicationShortcutManager *applicationShortcutManager = new ApplicationShortcutManager(&app);
+
     // Set up a global notification presenter function that can be used by all profiles
     // Note: This is used by the default profile, but QML profiles use presentFromQml instead
     auto globalNotificationPresenter = [notificationPresenter](std::unique_ptr<QWebEngineNotification> notification) {
@@ -101,12 +105,13 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
 
-    // Register the notification presenter, config manager, tray icon manager, favicon cache and key event filter with QML context
+    // Register the notification presenter, config manager, tray icon manager, favicon cache, key event filter and application shortcut manager with QML context
     engine.rootContext()->setContextProperty(QStringLiteral("notificationPresenter"), notificationPresenter);
     engine.rootContext()->setContextProperty(QStringLiteral("configManager"), configManager);
     engine.rootContext()->setContextProperty(QStringLiteral("trayIconManager"), trayIconManager);
     engine.rootContext()->setContextProperty(QStringLiteral("faviconCache"), faviconCache);
     engine.rootContext()->setContextProperty(QStringLiteral("keyEventFilter"), keyEventFilter);
+    engine.rootContext()->setContextProperty(QStringLiteral("applicationShortcutManager"), applicationShortcutManager);
 
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
     engine.loadFromModule("io.github.denysmb.unify", "Main");
