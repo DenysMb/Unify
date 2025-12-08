@@ -665,6 +665,21 @@ Kirigami.ApplicationWindow {
                     disabledServices: root.disabledServices
                     webProfile: persistentProfile
                     onTitleUpdated: root.updateBadgeFromTitle
+                    onUpdateServiceUrlRequested: function (serviceId, newUrl) {
+                        var service = root.findServiceById(serviceId);
+                        if (service && configManager) {
+                            var updatedService = {
+                                id: service.id,
+                                title: service.title,
+                                url: newUrl,
+                                image: service.image,
+                                workspace: service.workspace,
+                                useFavicon: service.useFavicon,
+                                favorite: service.favorite
+                            };
+                            configManager.updateService(serviceId, updatedService);
+                        }
+                    }
                 }
             }
         }
