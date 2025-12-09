@@ -52,7 +52,7 @@ Rectangle {
         Controls.ToolButton {
             Layout.preferredWidth: implicitWidth
             icon.name: "applications-all-symbolic"
-            text: i18n("All")
+            text: i18n("All Services")
             display: Controls.AbstractButton.TextBesideIcon
             checked: root.currentWorkspace === "__all_services__"
             checkable: true
