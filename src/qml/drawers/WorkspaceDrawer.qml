@@ -126,11 +126,11 @@ Kirigami.Action { separator: true }
             }
         `, drawer));
 
-        // Always Show Workspaces Bar toggle
+        // Show Workspaces Bar toggle
         acts.push(Qt.createQmlObject(`
             import org.kde.kirigami as Kirigami
             Kirigami.Action {
-              text: i18n("Always Show Workspaces Bar")
+              text: i18n("Show Workspaces Bar")
               icon.name: "view-file-columns"
               checkable: true
               checked: configManager && configManager.alwaysShowWorkspacesBar
