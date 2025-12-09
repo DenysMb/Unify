@@ -47,6 +47,7 @@ Rectangle {
     visible: services.length > 0
 
     Controls.ScrollView {
+        id: scrollView
         anchors.fill: parent
         anchors.topMargin: horizontal ? 0 : Kirigami.Units.smallSpacing
         anchors.leftMargin: horizontal ? Kirigami.Units.smallSpacing : 0
@@ -59,6 +60,35 @@ Rectangle {
         Loader {
             id: contentLoader
             sourceComponent: horizontal ? horizontalLayout : verticalLayout
+        }
+
+        MouseArea {
+            enabled: root.horizontal
+            anchors.fill: parent
+            propagateComposedEvents: true
+
+            onWheel: function (wheel) {
+                if (wheel.angleDelta.y !== 0) {
+                    const delta = wheel.angleDelta.y;
+                    const scrollAmount = delta * 0.5;
+                    scrollView.contentItem.contentX = Math.max(0, Math.min(scrollView.contentItem.contentWidth - scrollView.width, scrollView.contentItem.contentX - scrollAmount));
+                    wheel.accepted = true;
+                } else {
+                    wheel.accepted = false;
+                }
+            }
+
+            onPressed: function (mouse) {
+                mouse.accepted = false;
+            }
+
+            onReleased: function (mouse) {
+                mouse.accepted = false;
+            }
+
+            onClicked: function (mouse) {
+                mouse.accepted = false;
+            }
         }
     }
 
