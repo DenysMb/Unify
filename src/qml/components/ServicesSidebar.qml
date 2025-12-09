@@ -62,6 +62,14 @@ Rectangle {
             sourceComponent: horizontal ? horizontalLayout : verticalLayout
         }
 
+        NumberAnimation {
+            id: scrollAnimation
+            target: scrollView.contentItem
+            property: "contentX"
+            duration: 100
+            easing.type: Easing.OutQuad
+        }
+
         MouseArea {
             enabled: root.horizontal
             anchors.fill: parent
@@ -70,8 +78,14 @@ Rectangle {
             onWheel: function (wheel) {
                 if (wheel.angleDelta.y !== 0) {
                     const delta = wheel.angleDelta.y;
-                    const scrollAmount = delta * 0.5;
-                    scrollView.contentItem.contentX = Math.max(0, Math.min(scrollView.contentItem.contentWidth - scrollView.width, scrollView.contentItem.contentX - scrollAmount));
+                    const scrollAmount = delta;
+                    const newX = scrollView.contentItem.contentX - scrollAmount;
+                    const clampedX = Math.max(0, Math.min(scrollView.contentItem.contentWidth - scrollView.width, newX));
+
+                    scrollAnimation.stop();
+                    scrollAnimation.to = clampedX;
+                    scrollAnimation.start();
+
                     wheel.accepted = true;
                 } else {
                     wheel.accepted = false;
