@@ -39,7 +39,6 @@ Rectangle {
 
         // Favorites button
         Controls.ToolButton {
-            Layout.preferredHeight: root.barHeight - Kirigami.Units.smallSpacing
             Layout.preferredWidth: implicitWidth
             icon.name: "starred-symbolic"
             text: i18n("Favorites")
@@ -47,16 +46,10 @@ Rectangle {
             checked: root.currentWorkspace === "__favorites__"
             checkable: true
             onClicked: root.switchToWorkspace("__favorites__")
-
-            background: Rectangle {
-                color: parent.checked ? Kirigami.Theme.highlightColor : (parent.hovered ? Kirigami.Theme.hoverColor : "transparent")
-                radius: Kirigami.Units.smallSpacing
-            }
         }
 
         // All Services button
         Controls.ToolButton {
-            Layout.preferredHeight: root.barHeight - Kirigami.Units.smallSpacing
             Layout.preferredWidth: implicitWidth
             icon.name: "applications-all-symbolic"
             text: i18n("All")
@@ -64,11 +57,6 @@ Rectangle {
             checked: root.currentWorkspace === "__all_services__"
             checkable: true
             onClicked: root.switchToWorkspace("__all_services__")
-
-            background: Rectangle {
-                color: parent.checked ? Kirigami.Theme.highlightColor : (parent.hovered ? Kirigami.Theme.hoverColor : "transparent")
-                radius: Kirigami.Units.smallSpacing
-            }
         }
 
         // Separator
@@ -87,7 +75,6 @@ Rectangle {
             model: root.workspaces
 
             Controls.ToolButton {
-                Layout.preferredHeight: root.barHeight - Kirigami.Units.smallSpacing
                 Layout.preferredWidth: implicitWidth
                 icon.name: {
                     if (typeof configManager !== "undefined" && configManager && configManager.workspaceIcons) {
@@ -100,11 +87,6 @@ Rectangle {
                 checked: root.currentWorkspace === modelData
                 checkable: true
                 onClicked: root.switchToWorkspace(modelData)
-
-                background: Rectangle {
-                    color: parent.checked ? Kirigami.Theme.highlightColor : (parent.hovered ? Kirigami.Theme.hoverColor : "transparent")
-                    radius: Kirigami.Units.smallSpacing
-                }
             }
         }
 
