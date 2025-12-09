@@ -18,6 +18,7 @@ Rectangle {
     property int iconSize: 48
     property string currentWorkspace: ""
     property bool horizontal: false
+    property int minButtonWidth: 64
 
     property int favoriteVersion: 0
 
@@ -50,7 +51,9 @@ Rectangle {
         id: scrollView
         anchors.fill: parent
         anchors.topMargin: horizontal ? 0 : Kirigami.Units.smallSpacing
+        anchors.bottomMargin: horizontal ? 0 : Kirigami.Units.smallSpacing
         anchors.leftMargin: horizontal ? Kirigami.Units.smallSpacing : 0
+        anchors.rightMargin: horizontal ? Kirigami.Units.smallSpacing : 0
 
         Controls.ScrollBar.vertical.policy: Controls.ScrollBar.AlwaysOff
         Controls.ScrollBar.horizontal.policy: Controls.ScrollBar.AlwaysOff
@@ -139,7 +142,7 @@ Rectangle {
 
                     Components.ServiceIconButton {
                         visible: modelData.itemType === "service" || !modelData.itemType
-                        width: root.buttonSize
+                        width: parent.width
                         height: root.buttonSize
                         title: modelData.title || ""
                         image: modelData.image || ""
@@ -173,7 +176,7 @@ Rectangle {
 
                     Components.ShortcutIconButton {
                         visible: modelData.itemType === "shortcut"
-                        width: root.buttonSize
+                        width: parent.width
                         height: root.buttonSize
                         title: modelData.title || ""
                         iconName: modelData.customIcon || modelData.icon || "application-x-executable"
@@ -199,6 +202,33 @@ Rectangle {
             height: root.sidebarWidth
             spacing: Kirigami.Units.smallSpacing
 
+            readonly property int serviceCount: {
+                let count = 0;
+                for (let i = 0; i < root.services.length; i++) {
+                    if (root.services[i].itemType !== "separator") {
+                        count++;
+                    }
+                }
+                return count;
+            }
+
+            readonly property int separatorCount: {
+                let count = 0;
+                for (let i = 0; i < root.services.length; i++) {
+                    if (root.services[i].itemType === "separator") {
+                        count++;
+                    }
+                }
+                return count;
+            }
+
+            readonly property real separatorWidth: 1
+            readonly property real totalSpacing: spacing * (root.services.length - 1)
+            readonly property real totalSeparatorsWidth: separatorCount * (separatorWidth + Kirigami.Units.smallSpacing)
+            readonly property real availableWidth: scrollView.width - totalSpacing - totalSeparatorsWidth
+            readonly property real calculatedButtonWidth: serviceCount > 0 ? availableWidth / serviceCount : root.minButtonWidth
+            readonly property real dynamicButtonWidth: Math.max(root.minButtonWidth, calculatedButtonWidth)
+
             Repeater {
                 model: root.services
 
@@ -207,7 +237,7 @@ Rectangle {
                         if (modelData.itemType === "separator") {
                             return 1 + Kirigami.Units.smallSpacing;
                         }
-                        return root.buttonSize;
+                        return parent.dynamicButtonWidth;
                     }
                     Layout.preferredHeight: root.buttonSize
                     Layout.alignment: Qt.AlignVCenter
@@ -225,7 +255,7 @@ Rectangle {
 
                     Components.ServiceIconButton {
                         visible: modelData.itemType === "service" || !modelData.itemType
-                        width: root.buttonSize
+                        width: parent.width
                         height: root.buttonSize
                         title: modelData.title || ""
                         image: modelData.image || ""
@@ -259,7 +289,7 @@ Rectangle {
 
                     Components.ShortcutIconButton {
                         visible: modelData.itemType === "shortcut"
-                        width: root.buttonSize
+                        width: parent.width
                         height: root.buttonSize
                         title: modelData.title || ""
                         iconName: modelData.customIcon || modelData.icon || "application-x-executable"
@@ -270,10 +300,6 @@ Rectangle {
                         onEditRequested: root.editShortcutRequested(modelData.id)
                     }
                 }
-            }
-
-            Item {
-                Layout.fillWidth: true
             }
         }
     }
