@@ -222,22 +222,40 @@ Rectangle {
                 return count;
             }
 
-            readonly property real separatorWidth: 1
+            readonly property real separatorItemWidth: 1 + Kirigami.Units.smallSpacing
             readonly property real totalSpacing: spacing * (root.services.length - 1)
-            readonly property real totalSeparatorsWidth: separatorCount * (separatorWidth + Kirigami.Units.smallSpacing)
+            readonly property real totalSeparatorsWidth: separatorCount * separatorItemWidth
             readonly property real availableWidth: scrollView.width - totalSpacing - totalSeparatorsWidth
             readonly property real calculatedButtonWidth: serviceCount > 0 ? availableWidth / serviceCount : root.minButtonWidth
-            readonly property real dynamicButtonWidth: Math.max(root.minButtonWidth, calculatedButtonWidth)
+            readonly property int baseButtonWidth: Math.max(root.minButtonWidth, Math.floor(calculatedButtonWidth))
+            readonly property int remainingPixels: Math.max(0, Math.floor(availableWidth - (baseButtonWidth * serviceCount)))
+
+            function getButtonWidth(serviceIndex) {
+                if (serviceIndex < remainingPixels) {
+                    return baseButtonWidth + 1;
+                }
+                return baseButtonWidth;
+            }
 
             Repeater {
                 model: root.services
 
                 Item {
+                    readonly property int serviceIndex: {
+                        let idx = 0;
+                        for (let i = 0; i < index; i++) {
+                            if (root.services[i].itemType !== "separator") {
+                                idx++;
+                            }
+                        }
+                        return idx;
+                    }
+
                     Layout.preferredWidth: {
                         if (modelData.itemType === "separator") {
                             return 1 + Kirigami.Units.smallSpacing;
                         }
-                        return parent.dynamicButtonWidth;
+                        return parent.getButtonWidth(serviceIndex);
                     }
                     Layout.preferredHeight: root.buttonSize
                     Layout.alignment: Qt.AlignVCenter
