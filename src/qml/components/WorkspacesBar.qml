@@ -39,7 +39,7 @@ Rectangle {
 
         // Favorites button
         Controls.ToolButton {
-            Layout.preferredWidth: implicitWidth
+            Layout.preferredWidth: 128
             icon.name: "starred-symbolic"
             text: i18n("Favorites")
             display: Controls.AbstractButton.TextBesideIcon
@@ -50,7 +50,7 @@ Rectangle {
 
         // All Services button
         Controls.ToolButton {
-            Layout.preferredWidth: implicitWidth
+            Layout.preferredWidth: 128
             icon.name: "applications-all-symbolic"
             text: i18n("All Services")
             display: Controls.AbstractButton.TextBesideIcon
