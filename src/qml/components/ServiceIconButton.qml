@@ -122,9 +122,6 @@ Controls.Button {
     checkable: true
     checked: active
     autoExclusive: true
-    Layout.preferredWidth: buttonSize
-    Layout.preferredHeight: buttonSize
-    Layout.alignment: Qt.AlignHCenter
 
     // Handle right click - show context menu
     MouseArea {

@@ -16,9 +16,6 @@ Controls.Button {
 
     text: title
     display: Controls.AbstractButton.IconOnly
-    Layout.preferredWidth: buttonSize
-    Layout.preferredHeight: buttonSize
-    Layout.alignment: Qt.AlignHCenter
 
     Controls.ToolTip.visible: hovered
     Controls.ToolTip.text: title
