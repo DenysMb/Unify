@@ -260,6 +260,14 @@ Item {
                 view._wasWindowFullScreenBeforeRequest = false;
             }
         }
+
+        // Handle desktop media requests for screen/window sharing (Qt 6.7+)
+        onDesktopMediaRequested: function (request) {
+            console.log("🖥️ Desktop media requested for:", view.serviceTitle);
+            console.log("   Windows available:", request.windowsModel.rowCount());
+            console.log("   Screens available:", request.screensModel.rowCount());
+            desktopMediaDialog.show(request);
+        }
     }
 
     // Initialize URL loading when component is ready
@@ -312,6 +320,10 @@ Item {
     Component {
         id: popupComponent
         PopupWindow {}
+    }
+
+    DesktopMediaDialog {
+        id: desktopMediaDialog
     }
 
     InternalLinkOverlay {

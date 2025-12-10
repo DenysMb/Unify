@@ -43,6 +43,7 @@ ecm_target_qml_sources(unify
     qml/dialogs/PermissionDialog.qml
     qml/dialogs/WorkspaceDialog.qml
     qml/dialogs/ApplicationShortcutDialog.qml
+    qml/dialogs/DesktopMediaDialog.qml
     qml/drawers/WorkspaceDrawer.qml
     qml/utils/Services.js
     qml/utils/AntiDetection.js
