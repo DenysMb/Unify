@@ -15,6 +15,7 @@
     "--device=all",
     "--talk-name=org.freedesktop.Notifications",
     "--talk-name=org.kde.StatusNotifierWatcher",
+    "--talk-name=org.freedesktop.portal.Desktop",
     "--own-name=org.mpris.MediaPlayer2.unify",
     "--filesystem=home:ro",
     "--filesystem=xdg-download",
