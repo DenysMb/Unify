@@ -2,6 +2,7 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Layouts
+import QtCore
 import QtWebEngine
 // Controls are used in components; WebEngine used here for profile
 import org.kde.kirigami as Kirigami
@@ -342,6 +343,16 @@ Kirigami.ApplicationWindow {
                 // Use the new method that passes the full notification object (includes icon)
                 notificationPresenter.presentFromQmlWithNotification(notification, serviceId);
             }
+        }
+
+        onDownloadRequested: function (download) {
+            var downloadDirUrl = StandardPaths.writableLocation(StandardPaths.DownloadLocation);
+            var downloadDir = downloadDirUrl.toString().replace("file://", "");
+
+            download.downloadDirectory = downloadDir;
+            download.downloadFileName = download.suggestedFileName;
+
+            download.accept();
         }
     }
 

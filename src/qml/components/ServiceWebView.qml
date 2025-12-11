@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls as QQC2
+import QtQuick.Layouts
 import QtWebEngine
 import org.kde.kirigami as Kirigami
 import "AntiDetection.js" as AntiDetection
