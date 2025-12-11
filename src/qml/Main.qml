@@ -349,8 +349,19 @@ Kirigami.ApplicationWindow {
             var downloadDirUrl = StandardPaths.writableLocation(StandardPaths.DownloadLocation);
             var downloadDir = downloadDirUrl.toString().replace("file://", "");
 
+            // Get unique filename to avoid overwriting existing files
+            var fileName = fileUtils.getUniqueFileName(downloadDir, download.suggestedFileName);
+
             download.downloadDirectory = downloadDir;
-            download.downloadFileName = download.suggestedFileName;
+            download.downloadFileName = fileName;
+
+            // Monitor download completion
+            download.isFinishedChanged.connect(function () {
+                if (download.isFinished) {
+                    var fullPath = downloadDir + "/" + fileName;
+                    root.showPassiveNotification(i18n("Download completed: %1", fileName), "long");
+                }
+            });
 
             download.accept();
         }

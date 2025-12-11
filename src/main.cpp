@@ -4,6 +4,7 @@
 #include "ui/trayiconmanager.h"
 #include "utils/faviconcache.h"
 #include "utils/keyeventfilter.h"
+#include "utils/fileutils.h"
 #include <KIconTheme>
 #include <KLocalizedContext>
 #include <KLocalizedString>
@@ -77,6 +78,9 @@ int main(int argc, char *argv[])
     // Create application shortcut manager instance
     ApplicationShortcutManager *applicationShortcutManager = new ApplicationShortcutManager(&app);
 
+    // Create file utils instance
+    FileUtils *fileUtils = new FileUtils(&app);
+
     // Set up a global notification presenter function that can be used by all profiles
     // Note: This is used by the default profile, but QML profiles use presentFromQml instead
     auto globalNotificationPresenter = [notificationPresenter](std::unique_ptr<QWebEngineNotification> notification) {
@@ -106,13 +110,14 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
 
-    // Register the notification presenter, config manager, tray icon manager, favicon cache, key event filter and application shortcut manager with QML context
+    // Register the notification presenter, config manager, tray icon manager, favicon cache, key event filter, application shortcut manager and file utils with QML context
     engine.rootContext()->setContextProperty(QStringLiteral("notificationPresenter"), notificationPresenter);
     engine.rootContext()->setContextProperty(QStringLiteral("configManager"), configManager);
     engine.rootContext()->setContextProperty(QStringLiteral("trayIconManager"), trayIconManager);
     engine.rootContext()->setContextProperty(QStringLiteral("faviconCache"), faviconCache);
     engine.rootContext()->setContextProperty(QStringLiteral("keyEventFilter"), keyEventFilter);
     engine.rootContext()->setContextProperty(QStringLiteral("applicationShortcutManager"), applicationShortcutManager);
+    engine.rootContext()->setContextProperty(QStringLiteral("fileUtils"), fileUtils);
 
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
     engine.loadFromModule("io.github.denysmb.unify", "Main");
