@@ -23,6 +23,8 @@ target_sources(unify
     utils/faviconcache.h
     utils/keyeventfilter.cpp
     utils/keyeventfilter.h
+    utils/fileutils.cpp
+    utils/fileutils.h
     resources.qrc
 )
 
