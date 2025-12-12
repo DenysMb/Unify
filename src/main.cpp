@@ -5,6 +5,7 @@
 #include "utils/faviconcache.h"
 #include "utils/keyeventfilter.h"
 #include "utils/fileutils.h"
+#include "utils/printhandler.h"
 #include <KIconTheme>
 #include <KLocalizedContext>
 #include <KLocalizedString>
@@ -81,6 +82,9 @@ int main(int argc, char *argv[])
     // Create file utils instance
     FileUtils *fileUtils = new FileUtils(&app);
 
+    // Create print handler instance
+    PrintHandler *printHandler = new PrintHandler(&app);
+
     // Set up a global notification presenter function that can be used by all profiles
     // Note: This is used by the default profile, but QML profiles use presentFromQml instead
     auto globalNotificationPresenter = [notificationPresenter](std::unique_ptr<QWebEngineNotification> notification) {
@@ -118,6 +122,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("keyEventFilter"), keyEventFilter);
     engine.rootContext()->setContextProperty(QStringLiteral("applicationShortcutManager"), applicationShortcutManager);
     engine.rootContext()->setContextProperty(QStringLiteral("fileUtils"), fileUtils);
+    engine.rootContext()->setContextProperty(QStringLiteral("printHandler"), printHandler);
 
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
     engine.loadFromModule("io.github.denysmb.unify", "Main");

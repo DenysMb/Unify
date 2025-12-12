@@ -1047,6 +1047,20 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Print current page with Ctrl+P
+    Shortcut {
+        sequences: ["Ctrl+P"]
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            if (root.currentServiceId !== "" && root.webViewStack) {
+                var webView = root.webViewStack.getCurrentWebView();
+                if (webView && webView.printPage) {
+                    webView.printPage();
+                }
+            }
+        }
+    }
+
     // --- Numeric shortcuts: Ctrl+1..9 for services (within current workspace) ---
     // Helper to switch to Nth service (1-based) in filteredServices
     function switchToServiceByPosition(pos) {

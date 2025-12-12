@@ -87,6 +87,13 @@ Item {
         return null;
     }
 
+    function getCurrentWebView() {
+        if (currentServiceId && webViewCache[currentServiceId]) {
+            return webViewCache[currentServiceId];
+        }
+        return null;
+    }
+
     function createWebViewForService(serviceId) {
         // Don't create if profile is not ready
         if (!root.webProfile) {
