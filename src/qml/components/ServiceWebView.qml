@@ -24,6 +24,12 @@ Item {
     // Signal to request updating service URL
     signal updateServiceUrlRequested(string serviceId, string newUrl)
 
+    // Public function to trigger printing
+    function printPage() {
+        var pdfPath = printHandler.getTempPdfPath(view.serviceTitle);
+        webView.printToPdf(pdfPath);
+    }
+
     // Internal state tracking
     property bool profileReady: webProfile !== null
     property bool urlLoaded: false
@@ -268,6 +274,31 @@ Item {
             console.log("   Windows available:", request.windowsModel.rowCount());
             console.log("   Screens available:", request.screensModel.rowCount());
             desktopMediaDialog.show(request);
+        }
+
+        // Handle print requests from main frame
+        onPrintRequested: function () {
+            view.printPage();
+        }
+
+        // Handle print requests from any frame (iframes, popups) - Qt 6.8+
+        onPrintRequestedByFrame: function (frame) {
+            var pdfPath = printHandler.getTempPdfPath(view.serviceTitle);
+            frame.printToPdf(function (pdfData) {
+                if (pdfData && pdfData.byteLength > 0) {
+                    // Save the PDF data to a file
+                    if (fileUtils.saveBinaryFile(pdfPath, pdfData)) {
+                        printHandler.printPdf(pdfPath);
+                    }
+                }
+            });
+        }
+
+        // Handle PDF printing finished
+        onPdfPrintingFinished: function (filePath, success) {
+            if (success) {
+                printHandler.printPdf(filePath);
+            }
         }
     }
 

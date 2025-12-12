@@ -25,6 +25,8 @@ target_sources(unify
     utils/keyeventfilter.h
     utils/fileutils.cpp
     utils/fileutils.h
+    utils/printhandler.cpp
+    utils/printhandler.h
     resources.qrc
 )
 
@@ -61,6 +63,8 @@ target_link_libraries(unify
     Qt6::WebEngineQuick
     Qt6::DBus
     Qt6::Network
+    Qt6::PrintSupport
+    Qt6::Pdf
     KF6::I18n
     KF6::CoreAddons
     KF6::IconThemes

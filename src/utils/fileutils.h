@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QByteArray>
 
 class FileUtils : public QObject
 {
@@ -12,4 +13,5 @@ public:
 
     Q_INVOKABLE static bool fileExists(const QString &filePath);
     Q_INVOKABLE static QString getUniqueFileName(const QString &directory, const QString &fileName);
+    Q_INVOKABLE static bool saveBinaryFile(const QString &filePath, const QByteArray &data);
 };
