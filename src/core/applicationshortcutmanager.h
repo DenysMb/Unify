@@ -27,6 +27,14 @@ Q_SIGNALS:
 
 private:
     void loadApplications();
+    void loadApplicationsFromKService();
+    void loadApplicationsFromDesktopFiles();
+    void loadApplicationsViaFlatpakSpawn(QSet<QString> &processedIds);
+    void scanDesktopFilesInDirectory(const QString &dirPath, QSet<QString> &processedIds);
+    QVariantMap parseDesktopFile(const QString &filePath) const;
+    QVariantMap parseDesktopFileViaFlatpakSpawn(const QString &filePath) const;
+    QVariantMap parseDesktopFileContent(const QString &content, const QString &filePath) const;
+    bool isRunningInFlatpak() const;
 
     QVariantList m_applications;
 };
