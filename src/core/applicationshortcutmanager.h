@@ -35,6 +35,7 @@ private:
     QVariantMap parseDesktopFileViaFlatpakSpawn(const QString &filePath) const;
     QVariantMap parseDesktopFileContent(const QString &content, const QString &filePath) const;
     bool isRunningInFlatpak() const;
+    QString cacheIconFromHost(const QString &iconName) const;
 
     QVariantList m_applications;
 };

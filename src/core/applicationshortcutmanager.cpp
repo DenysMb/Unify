@@ -126,7 +126,7 @@ void ApplicationShortcutManager::loadApplicationsViaFlatpakSpawn(QSet<QString> &
     for (const QString &hostPath : hostPaths) {
         QProcess process;
         process.start(QStringLiteral("flatpak-spawn"),
-                      {QStringLiteral("--host"), QStringLiteral("find"), hostPath,
+                      {QStringLiteral("--host"), QStringLiteral("find"), QStringLiteral("-L"), hostPath,
                        QStringLiteral("-maxdepth"), QStringLiteral("2"),
                        QStringLiteral("-name"), QStringLiteral("*.desktop"),
                        QStringLiteral("-type"), QStringLiteral("f")});
@@ -261,12 +261,77 @@ QVariantMap ApplicationShortcutManager::parseDesktopFileContent(const QString &c
     result[QStringLiteral("name")] = name;
     result[QStringLiteral("genericName")] = genericName;
     result[QStringLiteral("comment")] = comment;
-    result[QStringLiteral("icon")] = icon;
+
+    if (isRunningInFlatpak() && filePath.contains(QStringLiteral("flatpak")) && !icon.isEmpty() && !icon.startsWith(QLatin1Char('/'))) {
+        QString cachedIcon = cacheIconFromHost(icon);
+        result[QStringLiteral("icon")] = cachedIcon.isEmpty() ? icon : cachedIcon;
+    } else {
+        result[QStringLiteral("icon")] = icon;
+    }
+
     result[QStringLiteral("exec")] = exec;
     result[QStringLiteral("categories")] = categories;
     result[QStringLiteral("desktopFilePath")] = filePath;
 
     return result;
+}
+
+QString ApplicationShortcutManager::cacheIconFromHost(const QString &iconName) const
+{
+    if (iconName.isEmpty()) {
+        return {};
+    }
+
+    const QString cacheDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/icons");
+    QDir().mkpath(cacheDir);
+
+    const QString cachedPath = cacheDir + QStringLiteral("/") + iconName + QStringLiteral(".svg");
+
+    if (QFile::exists(cachedPath)) {
+        return cachedPath;
+    }
+
+    const QStringList possiblePaths = {
+        QStringLiteral("/var/lib/flatpak/exports/share/icons/hicolor/scalable/apps/") + iconName + QStringLiteral(".svg"),
+        QStringLiteral("/var/lib/flatpak/exports/share/icons/hicolor/128x128/apps/") + iconName + QStringLiteral(".png"),
+        QStringLiteral("/var/lib/flatpak/exports/share/icons/hicolor/256x256/apps/") + iconName + QStringLiteral(".png"),
+        QDir::homePath() + QStringLiteral("/.local/share/flatpak/exports/share/icons/hicolor/scalable/apps/") + iconName + QStringLiteral(".svg"),
+        QDir::homePath() + QStringLiteral("/.local/share/flatpak/exports/share/icons/hicolor/128x128/apps/") + iconName + QStringLiteral(".png"),
+        QDir::homePath() + QStringLiteral("/.local/share/flatpak/exports/share/icons/hicolor/256x256/apps/") + iconName + QStringLiteral(".png"),
+    };
+
+    for (const QString &hostPath : possiblePaths) {
+        QProcess process;
+        process.start(QStringLiteral("flatpak-spawn"),
+                      {QStringLiteral("--host"), QStringLiteral("cat"), hostPath});
+
+        if (!process.waitForFinished(3000)) {
+            continue;
+        }
+
+        if (process.exitCode() != 0) {
+            continue;
+        }
+
+        const QByteArray iconData = process.readAllStandardOutput();
+        if (iconData.isEmpty()) {
+            continue;
+        }
+
+        QString targetPath = cachedPath;
+        if (hostPath.endsWith(QStringLiteral(".png"))) {
+            targetPath = cacheDir + QStringLiteral("/") + iconName + QStringLiteral(".png");
+        }
+
+        QFile file(targetPath);
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(iconData);
+            file.close();
+            return targetPath;
+        }
+    }
+
+    return {};
 }
 
 void ApplicationShortcutManager::scanDesktopFilesInDirectory(const QString &dirPath, QSet<QString> &processedIds)

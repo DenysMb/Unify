@@ -20,7 +20,6 @@
     "--own-name=org.mpris.MediaPlayer2.unify",
     "--filesystem=home:ro",
     "--filesystem=xdg-download",
-    "--filesystem=/var/lib/flatpak/exports/share/applications:ro",
     "--filesystem=xdg-data/applications:ro",
     "--env=QTWEBENGINEPROCESS_PATH=/app/bin/QtWebEngineProcess"
   ],
