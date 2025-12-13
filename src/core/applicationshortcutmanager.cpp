@@ -481,12 +481,43 @@ QVariantMap ApplicationShortcutManager::parseDesktopFile(const QString &filePath
     result[QStringLiteral("name")] = name;
     result[QStringLiteral("genericName")] = genericName;
     result[QStringLiteral("comment")] = comment;
-    result[QStringLiteral("icon")] = icon;
+
+    if (!isRunningInFlatpak() && filePath.contains(QStringLiteral("flatpak")) && !icon.isEmpty() && !icon.startsWith(QLatin1Char('/'))) {
+        QString fullIconPath = findFlatpakIconPath(icon);
+        result[QStringLiteral("icon")] = fullIconPath.isEmpty() ? icon : fullIconPath;
+    } else {
+        result[QStringLiteral("icon")] = icon;
+    }
+
     result[QStringLiteral("exec")] = exec;
     result[QStringLiteral("categories")] = categories;
     result[QStringLiteral("desktopFilePath")] = filePath;
 
     return result;
+}
+
+QString ApplicationShortcutManager::findFlatpakIconPath(const QString &iconName) const
+{
+    if (iconName.isEmpty()) {
+        return {};
+    }
+
+    const QStringList possiblePaths = {
+        QDir::homePath() + QStringLiteral("/.local/share/flatpak/exports/share/icons/hicolor/scalable/apps/") + iconName + QStringLiteral(".svg"),
+        QDir::homePath() + QStringLiteral("/.local/share/flatpak/exports/share/icons/hicolor/256x256/apps/") + iconName + QStringLiteral(".png"),
+        QDir::homePath() + QStringLiteral("/.local/share/flatpak/exports/share/icons/hicolor/128x128/apps/") + iconName + QStringLiteral(".png"),
+        QStringLiteral("/var/lib/flatpak/exports/share/icons/hicolor/scalable/apps/") + iconName + QStringLiteral(".svg"),
+        QStringLiteral("/var/lib/flatpak/exports/share/icons/hicolor/256x256/apps/") + iconName + QStringLiteral(".png"),
+        QStringLiteral("/var/lib/flatpak/exports/share/icons/hicolor/128x128/apps/") + iconName + QStringLiteral(".png"),
+    };
+
+    for (const QString &path : possiblePaths) {
+        if (QFile::exists(path)) {
+            return path;
+        }
+    }
+
+    return {};
 }
 
 bool ApplicationShortcutManager::launchApplication(const QString &desktopFileName)
