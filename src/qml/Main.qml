@@ -655,8 +655,28 @@ Kirigami.ApplicationWindow {
             if (trayIconManager)
                 trayIconManager.windowVisible = true;
 
-            // Switch to the service's workspace if needed
-            if (service.workspace && service.workspace !== root.currentWorkspace) {
+            // Check if we're in a special workspace (Favorites or All Services)
+            var isInSpecialWorkspace = configManager && configManager.isSpecialWorkspace(root.currentWorkspace);
+
+            // Check if the service is available in the current workspace
+            var isServiceInCurrentWorkspace = false;
+            if (isInSpecialWorkspace) {
+                // For special workspaces, check if service is in filteredServices
+                for (var i = 0; i < root.filteredServices.length; i++) {
+                    if (root.filteredServices[i].id === serviceId) {
+                        isServiceInCurrentWorkspace = true;
+                        break;
+                    }
+                }
+            }
+
+            // If we're in a special workspace and the service is available, stay in current workspace
+            // Otherwise, switch to the service's original workspace
+            if (isInSpecialWorkspace && isServiceInCurrentWorkspace) {
+                // Stay in the current special workspace (Favorites or All Services)
+                console.log("📢 Staying in current workspace:", root.currentWorkspace);
+            } else if (service.workspace && service.workspace !== root.currentWorkspace) {
+                // Switch to the service's workspace
                 root.switchToWorkspace(service.workspace);
             }
 
