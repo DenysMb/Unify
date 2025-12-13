@@ -262,7 +262,7 @@ QVariantMap ApplicationShortcutManager::parseDesktopFileContent(const QString &c
     result[QStringLiteral("genericName")] = genericName;
     result[QStringLiteral("comment")] = comment;
 
-    if (isRunningInFlatpak() && filePath.contains(QStringLiteral("flatpak")) && !icon.isEmpty() && !icon.startsWith(QLatin1Char('/'))) {
+    if (isRunningInFlatpak() && !icon.isEmpty() && !icon.startsWith(QLatin1Char('/'))) {
         QString cachedIcon = cacheIconFromHost(icon);
         result[QStringLiteral("icon")] = cachedIcon.isEmpty() ? icon : cachedIcon;
     } else {
@@ -285,13 +285,22 @@ QString ApplicationShortcutManager::cacheIconFromHost(const QString &iconName) c
     const QString cacheDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/icons");
     QDir().mkpath(cacheDir);
 
-    const QString cachedPath = cacheDir + QStringLiteral("/") + iconName + QStringLiteral(".svg");
-
-    if (QFile::exists(cachedPath)) {
-        return cachedPath;
+    const QStringList cachedExtensions = {QStringLiteral(".svg"), QStringLiteral(".png"), QStringLiteral(".xpm")};
+    for (const QString &ext : cachedExtensions) {
+        QString cachedPath = cacheDir + QStringLiteral("/") + iconName + ext;
+        if (QFile::exists(cachedPath)) {
+            return cachedPath;
+        }
     }
 
     const QStringList possiblePaths = {
+        QStringLiteral("/usr/share/icons/hicolor/scalable/apps/") + iconName + QStringLiteral(".svg"),
+        QStringLiteral("/usr/share/icons/hicolor/256x256/apps/") + iconName + QStringLiteral(".png"),
+        QStringLiteral("/usr/share/icons/hicolor/128x128/apps/") + iconName + QStringLiteral(".png"),
+        QStringLiteral("/usr/share/icons/hicolor/48x48/apps/") + iconName + QStringLiteral(".png"),
+        QStringLiteral("/usr/share/pixmaps/") + iconName + QStringLiteral(".svg"),
+        QStringLiteral("/usr/share/pixmaps/") + iconName + QStringLiteral(".png"),
+        QStringLiteral("/usr/share/pixmaps/") + iconName + QStringLiteral(".xpm"),
         QStringLiteral("/var/lib/flatpak/exports/share/icons/hicolor/scalable/apps/") + iconName + QStringLiteral(".svg"),
         QStringLiteral("/var/lib/flatpak/exports/share/icons/hicolor/128x128/apps/") + iconName + QStringLiteral(".png"),
         QStringLiteral("/var/lib/flatpak/exports/share/icons/hicolor/256x256/apps/") + iconName + QStringLiteral(".png"),
@@ -318,10 +327,14 @@ QString ApplicationShortcutManager::cacheIconFromHost(const QString &iconName) c
             continue;
         }
 
-        QString targetPath = cachedPath;
+        QString extension = QStringLiteral(".svg");
         if (hostPath.endsWith(QStringLiteral(".png"))) {
-            targetPath = cacheDir + QStringLiteral("/") + iconName + QStringLiteral(".png");
+            extension = QStringLiteral(".png");
+        } else if (hostPath.endsWith(QStringLiteral(".xpm"))) {
+            extension = QStringLiteral(".xpm");
         }
+
+        QString targetPath = cacheDir + QStringLiteral("/") + iconName + extension;
 
         QFile file(targetPath);
         if (file.open(QIODevice::WriteOnly)) {
