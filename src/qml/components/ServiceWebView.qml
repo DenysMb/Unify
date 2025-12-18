@@ -35,22 +35,45 @@ Item {
     property bool urlLoaded: false
     property bool hasLoadedOnce: false  // Track if service has completed loading at least once
 
+    // Helper function to extract and normalize host from URL
+    function normalizeHost(url) {
+        if (!url) return "";
+        try {
+            // Extract host from URL
+            var match = url.match(/^https?:\/\/([^\/]+)/);
+            if (!match) return "";
+            var host = match[1].toLowerCase();
+            // Remove 'www.' prefix for comparison
+            if (host.startsWith("www.")) {
+                host = host.substring(4);
+            }
+            // Handle common subdomains that should be considered same origin
+            // e.g., consent.youtube.com, accounts.google.com should match youtube.com, google.com
+            var parts = host.split(".");
+            if (parts.length > 2) {
+                // Keep only the last two parts (domain + TLD)
+                host = parts.slice(-2).join(".");
+            }
+            return host;
+        } catch (e) {
+            return "";
+        }
+    }
+
     // Check if current URL is outside the service's base URL
     property bool isNavigatedAway: {
         if (!hasLoadedOnce || isServiceDisabled)
             return false;
         var currentUrl = webView.url.toString();
         var baseUrl = configuredUrl.toString();
-        if (currentUrl === "about:blank" || baseUrl === "about:blank")
+        if (!currentUrl || !baseUrl || currentUrl === "about:blank" || baseUrl === "about:blank")
             return false;
-        // Extract origin (protocol + host) from both URLs
-        try {
-            var currentOrigin = currentUrl.replace(/^(https?:\/\/[^\/]+).*$/, "$1");
-            var baseOrigin = baseUrl.replace(/^(https?:\/\/[^\/]+).*$/, "$1");
-            return currentOrigin !== baseOrigin;
-        } catch (e) {
+        // Normalize hosts for comparison
+        var currentHost = normalizeHost(currentUrl);
+        var baseHost = normalizeHost(baseUrl);
+        if (!currentHost || !baseHost)
             return false;
-        }
+        return currentHost !== baseHost;
     }
 
     // Anti-detection script for Google OAuth compatibility

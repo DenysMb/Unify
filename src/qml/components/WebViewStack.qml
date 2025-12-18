@@ -26,6 +26,7 @@ Item {
     // Internal properties
     property string currentServiceId: ""
     property var webViewCache: ({}) // serviceId -> WebView component instance
+    property var isolatedProfiles: ({}) // serviceId -> WebEngineProfile for isolated services
     property bool isInitialized: false
 
     // Expose currentIndex property to allow external control
@@ -94,6 +95,36 @@ Item {
         return null;
     }
 
+    function getOrCreateIsolatedProfile(serviceId, userAgent) {
+        // Check if we already have an isolated profile for this service
+        if (isolatedProfiles[serviceId]) {
+            console.log("Reusing existing isolated profile for:", serviceId);
+            return isolatedProfiles[serviceId];
+        }
+
+        console.log("Creating NEW isolated profile for service:", serviceId);
+
+        // Create a new isolated profile for this service
+        // Note: storageName MUST be set at creation time and cannot be changed later
+        var profile = isolatedProfileComponent.createObject(root, {
+            "storageName": "unify-isolated-" + serviceId,
+            "httpUserAgent": userAgent || ""
+        });
+
+        if (profile) {
+            var profiles = root.isolatedProfiles;
+            profiles[serviceId] = profile;
+            root.isolatedProfiles = profiles;
+            console.log("Created isolated profile for service:", serviceId,
+                        "storageName:", profile.storageName,
+                        "offTheRecord:", profile.offTheRecord);
+        } else {
+            console.error("Failed to create isolated profile component for:", serviceId);
+        }
+
+        return profile;
+    }
+
     function createWebViewForService(serviceId) {
         // Don't create if profile is not ready
         if (!root.webProfile) {
@@ -133,12 +164,24 @@ Item {
         // Create the instance with delayed URL loading for disabled services
         var initialUrl = root.isDisabled(serviceData.id) ? "about:blank" : serviceData.url;
 
+        // Determine which profile to use: isolated or shared
+        var profileToUse = root.webProfile;
+        if (serviceData.isolatedProfile) {
+            // Pass the user agent from the shared profile to maintain consistency
+            var userAgent = root.webProfile ? root.webProfile.httpUserAgent : "";
+            profileToUse = getOrCreateIsolatedProfile(serviceData.id, userAgent);
+            if (!profileToUse) {
+                console.error("Failed to create isolated profile for service:", serviceId);
+                profileToUse = root.webProfile; // Fallback to shared profile
+            }
+        }
+
         var instance = component.createObject(stackLayout, {
             "serviceTitle": serviceData.title,
             "serviceId": serviceData.id,
             "initialUrl": initialUrl,
             "configuredUrl": serviceData.url,
-            "webProfile": root.webProfile,
+            "webProfile": profileToUse,
             "isServiceDisabled": root.isDisabled(serviceData.id),
             "onTitleUpdated": root.onTitleUpdated,
             "stackIndex": nextIndex
@@ -159,12 +202,18 @@ Item {
         cache[serviceId] = instance;
         root.webViewCache = cache;
 
-        console.log("Created WebView for service:", serviceId, "at index:", nextIndex);
+        console.log("Created WebView for service:", serviceId, "at index:", nextIndex, serviceData.isolatedProfile ? "(isolated)" : "(shared)");
     }
 
     function updateWebViewForService(serviceId, serviceData) {
         var view = webViewCache[serviceId];
         if (!view) {
+            return;
+        }
+
+        // Ensure serviceData has required properties
+        if (!serviceData || !serviceData.url) {
+            console.warn("Invalid serviceData for:", serviceId);
             return;
         }
 
@@ -174,7 +223,8 @@ Item {
 
         // Only reload the WebView if the configured URL changed
         var newUrl = root.isDisabled(serviceData.id) ? "about:blank" : serviceData.url;
-        if (view.configuredUrl.toString() !== serviceData.url) {
+        var currentConfiguredUrl = view.configuredUrl ? view.configuredUrl.toString() : "";
+        if (currentConfiguredUrl !== serviceData.url) {
             view.configuredUrl = serviceData.url;
             if (view.contents) {
                 view.contents.url = newUrl;
@@ -190,6 +240,15 @@ Item {
             delete cache[serviceId];
             root.webViewCache = cache;
             console.log("Destroyed WebView for service:", serviceId);
+        }
+
+        // Also destroy isolated profile if it exists
+        if (isolatedProfiles[serviceId]) {
+            isolatedProfiles[serviceId].destroy();
+            var profiles = root.isolatedProfiles;
+            delete profiles[serviceId];
+            root.isolatedProfiles = profiles;
+            console.log("Destroyed isolated profile for service:", serviceId);
         }
     }
 
@@ -258,5 +317,17 @@ Item {
         }
 
         // WebViews will be dynamically added here by createWebViewForService
+    }
+
+    // Component for creating isolated WebEngine profiles dynamically
+    Component {
+        id: isolatedProfileComponent
+
+        WebEngineProfile {
+            // storageName and httpUserAgent will be set when creating the object
+            offTheRecord: false
+            httpCacheType: WebEngineProfile.DiskHttpCache
+            persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
+        }
     }
 }
