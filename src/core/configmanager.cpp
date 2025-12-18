@@ -239,6 +239,11 @@ void ConfigManager::updateService(const QString &serviceId, const QVariantMap &s
                 updatedService[QStringLiteral("favorite")] = existingService[QStringLiteral("favorite")];
             }
             
+            // Preserve the isolatedProfile flag - it cannot be changed after creation
+            if (existingService.contains(QStringLiteral("isolatedProfile"))) {
+                updatedService[QStringLiteral("isolatedProfile")] = existingService[QStringLiteral("isolatedProfile")];
+            }
+            
             m_services[i] = updatedService;
             updateWorkspacesList();
             Q_EMIT servicesChanged();

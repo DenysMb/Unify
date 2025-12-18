@@ -450,7 +450,8 @@ Kirigami.ApplicationWindow {
                     url: serviceData.url,
                     image: serviceData.image,
                     workspace: serviceData.workspace,
-                    useFavicon: serviceData.useFavicon || false
+                    useFavicon: serviceData.useFavicon || false,
+                    isolatedProfile: serviceData.isolatedProfile || false
                 };
                 if (configManager)
                     configManager.addService(newService);

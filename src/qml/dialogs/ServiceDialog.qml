@@ -16,7 +16,8 @@ Kirigami.Dialog {
             url: "",
             image: "",
             workspace: "",
-            useFavicon: false
+            useFavicon: false,
+            isolatedProfile: false
         })
 
     signal acceptedData(var data)
@@ -24,6 +25,7 @@ Kirigami.Dialog {
 
     property string selectedIconName: "internet-web-browser-symbolic"
     property bool useFavicon: true
+    property bool isolatedProfile: false
 
     // Validation properties
     readonly property bool isNameValid: serviceNameField.text.trim().length > 0
@@ -65,6 +67,7 @@ Kirigami.Dialog {
         workspaceComboBox.currentIndex = Math.max(0, filteredWorkspaces.indexOf(service.workspace || filteredWorkspaces[0]));
         root.selectedIconName = service.image || "internet-web-browser-symbolic";
         root.useFavicon = service.useFavicon || false;
+        root.isolatedProfile = service.isolatedProfile || false;
     }
 
     function clearFields() {
@@ -83,6 +86,7 @@ Kirigami.Dialog {
         workspaceComboBox.currentIndex = wsIndex;
         root.selectedIconName = "internet-web-browser-symbolic";
         root.useFavicon = true;
+        root.isolatedProfile = false;
     }
 
     onAccepted: {
@@ -99,7 +103,8 @@ Kirigami.Dialog {
             url: serviceUrlField.text,
             image: iconUrlField.text.trim() || "internet-web-browser-symbolic",
             workspace: filteredWorkspaces[workspaceComboBox.currentIndex],
-            useFavicon: root.useFavicon
+            useFavicon: root.useFavicon,
+            isolatedProfile: root.isolatedProfile
         };
         acceptedData(data);
         clearFields();
@@ -181,6 +186,19 @@ Kirigami.Dialog {
                 return filtered;
             }
             Layout.fillWidth: true
+        }
+
+        Controls.CheckBox {
+            id: isolatedProfileCheckbox
+            Kirigami.FormData.label: ""
+            text: i18n("Use isolated storage")
+            checked: root.isolatedProfile
+            onCheckedChanged: root.isolatedProfile = checked
+            enabled: !root.isEditMode
+            Controls.ToolTip.visible: hovered
+            Controls.ToolTip.text: root.isEditMode
+                ? i18n("This option cannot be changed after the service is created. Delete and recreate the service if you need to change this setting.")
+                : i18n("When enabled, this service will have its own separate cookies, login sessions, and data. Useful for having multiple accounts of the same service.")
         }
 
         // Separator before destructive actions (only in edit mode)
