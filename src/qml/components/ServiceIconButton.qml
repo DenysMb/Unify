@@ -353,17 +353,28 @@ Controls.Button {
             }
         }
 
-        // Audio playing indicator (shown when no notification badge)
-        Kirigami.Icon {
-            id: audioIndicator
-            visible: root.isPlayingAudio && root.notificationCount === 0
+        Rectangle {
+            id: audioIndicatorWrapper
+            visible: root.isPlayingAudio
             anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.margins: -Kirigami.Units.smallSpacing
-            width: Kirigami.Units.iconSizes.small
-            height: Kirigami.Units.iconSizes.small
-            source: "player-volume"
-            color: Kirigami.Theme.positiveTextColor
+            anchors.left: parent.left
+            anchors.margins: -Kirigami.Units.smallSpacing / 2
+            height: Kirigami.Units.gridUnit
+            width: Math.max(height, badgeText.implicitWidth + Kirigami.Units.smallSpacing)
+            radius: height / 2
+            color: Kirigami.Theme.highlightColor
+            // border.color: Kirigami.Theme.backgroundColor
+            // border.width: visible ? 1 : 0
+
+            // Audio playing indicator (shown in top-left corner)
+            Kirigami.Icon {
+                id: audioIndicator
+                anchors.centerIn: parent
+                width: Kirigami.Units.iconSizes.small
+                height: Kirigami.Units.iconSizes.small
+                source: "player-volume"
+                color: Kirigami.Theme.highlightedTextColor
+            }
         }
     }
 }
