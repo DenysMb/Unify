@@ -139,7 +139,7 @@ Window {
             var requestedDomain = extractDomain(requestedUrl);
             var currentDomain = extractDomain(currentUrl);
 
-            var oauthDomains = ["accounts.google.com", "login.microsoftonline.com", "login.live.com", "appleid.apple.com", "facebook.com", "www.facebook.com", "github.com", "api.twitter.com", "discord.com", "id.twitch.tv", "login.yahoo.com", "auth.atlassian.com", "slack.com", "login.salesforce.com", "accounts.spotify.com", "oauth.telegram.org", "web.telegram.org", "web.whatsapp.com"];
+            var oauthDomains = ["accounts.google.com"];
 
             function isOAuthDomain(domain) {
                 for (var i = 0; i < oauthDomains.length; i++) {
