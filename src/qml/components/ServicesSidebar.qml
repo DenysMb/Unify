@@ -12,6 +12,7 @@ Rectangle {
     property var disabledServices: ({})
     property var detachedServices: ({})
     property var notificationCounts: ({})
+    property var audibleServices: ({})
     property string currentServiceId: ""
     property int sidebarWidth: 80
     property int buttonSize: 64
@@ -153,6 +154,7 @@ Rectangle {
                         active: modelData.id === root.currentServiceId
                         disabledVisual: (root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)) || (root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id))
                         notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
+                        isPlayingAudio: root.audibleServices && root.audibleServices.hasOwnProperty(modelData.id)
                         isDisabled: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
                         isDetached: root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id)
                         isFavorite: {
@@ -284,6 +286,7 @@ Rectangle {
                         active: modelData.id === root.currentServiceId
                         disabledVisual: (root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)) || (root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id))
                         notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
+                        isPlayingAudio: root.audibleServices && root.audibleServices.hasOwnProperty(modelData.id)
                         isDisabled: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
                         isDetached: root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id)
                         isFavorite: {

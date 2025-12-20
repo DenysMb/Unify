@@ -58,6 +58,9 @@ Kirigami.ApplicationWindow {
     // Object to track notification counts per service ID
     property var serviceNotificationCounts: ({})
 
+    // Object to track services currently playing audio
+    property var serviceAudibleStates: ({})
+
     // Watcher for notification counts to update tray icon
     onServiceNotificationCountsChanged: {
         if (trayIconManager) {
@@ -793,6 +796,7 @@ Kirigami.ApplicationWindow {
                         disabledServices: root.disabledServices
                         detachedServices: root.detachedServices
                         notificationCounts: root.serviceNotificationCounts
+                        audibleServices: root.serviceAudibleStates
                         currentServiceId: root.currentServiceId
                         currentWorkspace: root.currentWorkspace
                         sidebarWidth: root.sidebarWidth
@@ -861,6 +865,9 @@ Kirigami.ApplicationWindow {
                             disabledServices: root.disabledServices
                             webProfile: persistentProfile
                             onTitleUpdated: root.updateBadgeFromTitle
+                            onAudibleServicesChanged: {
+                                root.serviceAudibleStates = audibleServices;
+                            }
                             onUpdateServiceUrlRequested: function (serviceId, newUrl) {
                                 var service = root.findServiceById(serviceId);
                                 if (service && configManager) {
@@ -907,6 +914,7 @@ Kirigami.ApplicationWindow {
                     disabledServices: root.disabledServices
                     detachedServices: root.detachedServices
                     notificationCounts: root.serviceNotificationCounts
+                    audibleServices: root.serviceAudibleStates
                     currentServiceId: root.currentServiceId
                     currentWorkspace: root.currentWorkspace
                     sidebarWidth: root.sidebarWidth
@@ -975,6 +983,9 @@ Kirigami.ApplicationWindow {
                         disabledServices: root.disabledServices
                         webProfile: persistentProfile
                         onTitleUpdated: root.updateBadgeFromTitle
+                        onAudibleServicesChanged: {
+                            root.serviceAudibleStates = audibleServices;
+                        }
                         onUpdateServiceUrlRequested: function (serviceId, newUrl) {
                             var service = root.findServiceById(serviceId);
                             if (service && configManager) {

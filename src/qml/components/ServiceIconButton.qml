@@ -18,6 +18,7 @@ Controls.Button {
     property bool disabledVisual: false
     property bool active: false
     property int notificationCount: 0
+    property bool isPlayingAudio: false
     property bool isDisabled: false
     property bool isDetached: false
     property bool isFavorite: false
@@ -350,6 +351,19 @@ Controls.Button {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
+        }
+
+        // Audio playing indicator (shown when no notification badge)
+        Kirigami.Icon {
+            id: audioIndicator
+            visible: root.isPlayingAudio && root.notificationCount === 0
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: -Kirigami.Units.smallSpacing
+            width: Kirigami.Units.iconSizes.small
+            height: Kirigami.Units.iconSizes.small
+            source: "player-volume"
+            color: Kirigami.Theme.positiveTextColor
         }
     }
 }

@@ -21,6 +21,12 @@ Item {
     property var onTitleUpdated: null
     property int stackIndex: 0
 
+    // Audio playback indicator - exposes WebEngineView's recentlyAudible property
+    readonly property bool isPlayingAudio: webView.recentlyAudible
+
+    // Signal emitted when audio playback state changes
+    signal audioStateChanged(string serviceId, bool isPlaying)
+
     // Signal to request updating service URL
     signal updateServiceUrlRequested(string serviceId, string newUrl)
 
@@ -221,6 +227,12 @@ Item {
             if (view.onTitleUpdated && typeof view.onTitleUpdated === "function") {
                 view.onTitleUpdated(view.serviceId, webView.title);
             }
+        }
+
+        // Monitor audio playback state changes
+        onRecentlyAudibleChanged: {
+            console.log("🔊 Audio state changed for", view.serviceTitle, ":", webView.recentlyAudible);
+            view.audioStateChanged(view.serviceId, webView.recentlyAudible);
         }
 
         // Handle popup windows - Ctrl+Click opens directly in browser, otherwise overlay

@@ -29,6 +29,9 @@ Item {
     property var isolatedProfiles: ({}) // serviceId -> WebEngineProfile for isolated services
     property bool isInitialized: false
 
+    // Track which services are currently playing audio
+    property var audibleServices: ({})
+
     // Expose currentIndex property to allow external control
     property alias currentIndex: stackLayout.currentIndex
 
@@ -197,6 +200,19 @@ Item {
             root.updateServiceUrlRequested(svcId, newUrl);
         });
 
+        // Monitor audio playback state changes
+        instance.audioStateChanged.connect(function (svcId, isPlaying) {
+            // Create a new object to ensure QML property change is detected
+            var audible = Object.assign({}, root.audibleServices);
+            if (isPlaying) {
+                audible[svcId] = true;
+            } else {
+                delete audible[svcId];
+            }
+            root.audibleServices = audible;
+            console.log("🔊 Updated audibleServices:", JSON.stringify(root.audibleServices));
+        });
+
         // Store in cache
         var cache = root.webViewCache;
         cache[serviceId] = instance;
@@ -249,6 +265,13 @@ Item {
             delete profiles[serviceId];
             root.isolatedProfiles = profiles;
             console.log("Destroyed isolated profile for service:", serviceId);
+        }
+
+        // Remove from audible services if present
+        if (audibleServices[serviceId]) {
+            var audible = Object.assign({}, root.audibleServices);
+            delete audible[serviceId];
+            root.audibleServices = audible;
         }
     }
 
