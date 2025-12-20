@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
             "--disable-gpu-compositing "
             "--disable-features=VizDisplayCompositor "
             "--disable-web-security=false "
-            "--enable-features=NetworkService,NetworkServiceInProcess,WebRTCPipeWireCapturer "
+            "--enable-features=NetworkService,NetworkServiceInProcess,WebRTCPipeWireCapturer,HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport "
             "--disable-background-networking=false "
             "--disable-client-side-phishing-detection "
             "--disable-default-apps "
@@ -42,7 +42,9 @@ int main(int argc, char *argv[])
             "--disable-sync "
             "--metrics-recording-only "
             "--no-first-run "
-            "--safebrowsing-disable-auto-update");
+            "--safebrowsing-disable-auto-update "
+            "--enable-widevine-cdm "
+            "--autoplay-policy=no-user-gesture-required");
 
     // Initialize WebEngine before QApplication
     QtWebEngineQuick::initialize();
