@@ -116,27 +116,9 @@ function isOAuthUrl(url) {
     if (!url) return false
     var urlStr = url.toString().toLowerCase()
 
-    // Known OAuth/Auth domains
+    // Only Google OAuth for now - other providers don't seem to have issues
     var oauthDomains = [
-        "accounts.google.com",
-        "login.microsoftonline.com",
-        "login.live.com",
-        "appleid.apple.com",
-        "facebook.com",
-        "www.facebook.com",
-        "github.com",
-        "api.twitter.com",
-        "discord.com",
-        "id.twitch.tv",
-        "login.yahoo.com",
-        "auth.atlassian.com",
-        "slack.com",
-        "login.salesforce.com",
-        "accounts.spotify.com",
-        "oauth.telegram.org",
-        "web.telegram.org",
-        "web.whatsapp.com",
-        "firebaseapp.com"
+        "accounts.google.com"
     ]
 
     // Check domains
@@ -146,14 +128,12 @@ function isOAuthUrl(url) {
         }
     }
 
-    // Check patterns
-    // We look for specific auth-related patterns in the URL
-    // This catches generic OAuth flows and login popups
-    if (urlStr.indexOf("oauth") !== -1 ||
-        urlStr.indexOf("/auth") !== -1 ||
-        (urlStr.indexOf("signin") !== -1 && urlStr.indexOf("google") !== -1) || // narrowing down generic terms
-        urlStr.indexOf("response_type=code") !== -1 ||
-        urlStr.indexOf("response_type=token") !== -1) {
+    // Check for Google-specific OAuth patterns
+    if (urlStr.indexOf("accounts.google.com") !== -1 &&
+        (urlStr.indexOf("oauth") !== -1 || 
+         urlStr.indexOf("signin") !== -1 ||
+         urlStr.indexOf("response_type=code") !== -1 ||
+         urlStr.indexOf("response_type=token") !== -1)) {
             return true
     }
 
