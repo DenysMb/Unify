@@ -6,6 +6,20 @@
   "base-version": "6.9",
   "sdk": "org.kde.Sdk",
   "command": "unify",
+  "add-extensions": {
+    "org.freedesktop.Platform.ffmpeg-full": {
+      "directory": "lib/ffmpeg",
+      "version": "24.08",
+      "add-ld-path": ".",
+      "no-autodownload": false,
+      "autodelete": false
+    },
+    "org.freedesktop.Platform.openh264": {
+      "directory": "lib/openh264",
+      "version": "2.4.1",
+      "add-ld-path": "."
+    }
+  },
   "finish-args": [
     "--share=ipc",
     "--socket=fallback-x11",
@@ -21,7 +35,12 @@
     "--filesystem=home:ro",
     "--filesystem=xdg-download",
     "--filesystem=xdg-data/applications:ro",
-    "--env=QTWEBENGINEPROCESS_PATH=/app/bin/QtWebEngineProcess"
+    "--env=QTWEBENGINEPROCESS_PATH=/app/bin/QtWebEngineProcess",
+    "--env=QTWEBENGINE_CHROMIUM_FLAGS=--autoplay-policy=no-user-gesture-required --enable-features=HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport"
+  ],
+  "cleanup-commands": [
+    "mkdir -p ${FLATPAK_DEST}/lib/ffmpeg",
+    "mkdir -p ${FLATPAK_DEST}/lib/openh264"
   ],
   "modules": [
     {
