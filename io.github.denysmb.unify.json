@@ -36,8 +36,9 @@
     "--filesystem=home:ro",
     "--filesystem=xdg-download",
     "--filesystem=xdg-data/applications:ro",
+    "--filesystem=~/.var/app/io.github.denysmb.unify/plugins:create",
     "--env=QTWEBENGINEPROCESS_PATH=/app/bin/QtWebEngineProcess",
-    "--env=QTWEBENGINE_CHROMIUM_FLAGS=--autoplay-policy=no-user-gesture-required --enable-features=HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport"
+    "--env=QTWEBENGINE_CHROMIUM_FLAGS=--autoplay-policy=no-user-gesture-required --enable-features=HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport --enable-widevine-cdm"
   ],
   "cleanup-commands": [
     "mkdir -p ${FLATPAK_DEST}/lib/ffmpeg",
