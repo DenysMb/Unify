@@ -165,56 +165,174 @@ Kirigami.Action { separator: true }
 
     Kirigami.Dialog {
         id: tipsDialog
-        title: i18n("Tips & Shortcuts")
+        title: i18n("Tips & Settings")
         padding: Kirigami.Units.largeSpacing
-        preferredWidth: Kirigami.Units.gridUnit * 28
+        preferredWidth: Kirigami.Units.gridUnit * 30
         standardButtons: Kirigami.Dialog.Ok
 
-        ColumnLayout {
-            spacing: Kirigami.Units.largeSpacing
+        QQC2.ScrollView {
+            implicitWidth: Kirigami.Units.gridUnit * 28
+            implicitHeight: Kirigami.Units.gridUnit * 24
 
-            Kirigami.Heading {
-                level: 4
-                text: i18n("Keyboard Shortcuts")
+            ColumnLayout {
+                width: parent.width
+                spacing: Kirigami.Units.largeSpacing
+
+                // DRM Content Section
+                Kirigami.Heading {
+                    level: 4
+                    text: i18n("DRM Content (Widevine)")
+                }
+
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    wrapMode: QQC2.Label.WordWrap
+                    text: i18n("Some streaming services (Spotify, Netflix, Prime Video, etc.) require Widevine CDM to play DRM-protected content. Widevine is a Google proprietary library that cannot be bundled with the app.")
+                }
+
+                // Status indicator
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Kirigami.Units.smallSpacing
+
+                    Kirigami.Icon {
+                        source: widevineManager && widevineManager.isInstalled ? "dialog-ok-apply" : "dialog-warning"
+                        color: widevineManager && widevineManager.isInstalled ? Kirigami.Theme.positiveTextColor : Kirigami.Theme.neutralTextColor
+                        Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                        Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                    }
+
+                    QQC2.Label {
+                        Layout.fillWidth: true
+                        text: {
+                            if (!widevineManager) {
+                                return i18n("Status: Unknown");
+                            }
+                            if (widevineManager.isInstalling) {
+                                return i18n("Status: Installing...");
+                            }
+                            if (widevineManager.isInstalled) {
+                                return i18n("Status: Installed (version %1)", widevineManager.installedVersion);
+                            }
+                            return i18n("Status: Not installed");
+                        }
+                        color: widevineManager && widevineManager.isInstalled ? Kirigami.Theme.positiveTextColor : Kirigami.Theme.neutralTextColor
+                    }
+                }
+
+                // Install/Uninstall buttons
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Kirigami.Units.smallSpacing
+
+                    QQC2.Button {
+                        text: widevineManager && widevineManager.isInstalled ? i18n("Reinstall Widevine") : i18n("Install Widevine")
+                        icon.name: "download"
+                        enabled: widevineManager && !widevineManager.isInstalling
+                        onClicked: {
+                            if (widevineManager) {
+                                widevineManager.install();
+                            }
+                        }
+
+                        QQC2.BusyIndicator {
+                            anchors.centerIn: parent
+                            running: widevineManager && widevineManager.isInstalling
+                            visible: running
+                        }
+                    }
+
+                    QQC2.Button {
+                        text: i18n("Uninstall")
+                        icon.name: "edit-delete"
+                        visible: widevineManager && widevineManager.isInstalled
+                        enabled: widevineManager && !widevineManager.isInstalling
+                        onClicked: {
+                            if (widevineManager) {
+                                widevineManager.uninstall();
+                            }
+                        }
+                    }
+                }
+
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    wrapMode: QQC2.Label.WordWrap
+                    font.pointSize: Kirigami.Theme.smallFont.pointSize
+                    opacity: 0.7
+                    text: i18n("Note: After installing or uninstalling Widevine, you need to restart Unify for changes to take effect.")
+                }
+
+                Kirigami.Separator {
+                    Layout.fillWidth: true
+                }
+
+                // Keyboard Shortcuts Section
+                Kirigami.Heading {
+                    level: 4
+                    text: i18n("Keyboard Shortcuts")
+                }
+
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    wrapMode: QQC2.Label.WordWrap
+                    textFormat: QQC2.Label.RichText
+                    text: i18n("<b>Ctrl + 1, 2, 3...</b> — Switch between services in the current workspace<br>" + "<b>Ctrl + Shift + 1, 2, 3...</b> — Switch between workspaces<br>" + "<b>Ctrl + B</b> — Go to Favorites workspace<br>" + "<b>Ctrl + Tab</b> — Go to the next service<br>" + "<b>Ctrl + Shift + Tab</b> — Go to the next workspace<br>" + "<b>Double-tap Ctrl</b> — Toggle between the last two services<br>" + "<b>Escape</b> — Close overlay/dialog")
+                }
+
+                Kirigami.Separator {
+                    Layout.fillWidth: true
+                }
+
+                Kirigami.Heading {
+                    level: 4
+                    text: i18n("Link Handling")
+                }
+
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    wrapMode: QQC2.Label.WordWrap
+                    textFormat: QQC2.Label.RichText
+                    text: i18n("When you click a link in a service, it opens in an <b>overlay</b> where you can choose to:<br>" + "• <b>Open in Service</b> — Navigate the service to that URL<br>" + "• <b>Open in Browser</b> — Open in your default browser<br><br>" + "<b>Tip:</b> Hold <b>Ctrl</b> while clicking a link to open it directly in your browser, bypassing the overlay.")
+                }
+
+                Kirigami.Separator {
+                    Layout.fillWidth: true
+                }
+
+                Kirigami.Heading {
+                    level: 4
+                    text: i18n("Other Tips")
+                }
+
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    wrapMode: QQC2.Label.WordWrap
+                    textFormat: QQC2.Label.RichText
+                    text: i18n("• <b>Right-click</b> a service icon to access quick actions (edit, disable, delete)<br>" + "• <b>Disabled services</b> won't load until re-enabled, saving resources<br>" + "• The app keeps running in the <b>system tray</b> when you close the window<br>" + "• <b>Notification badges</b> appear on service icons when there are unread messages")
+                }
             }
+        }
+    }
 
-            QQC2.Label {
-                Layout.fillWidth: true
-                wrapMode: QQC2.Label.WordWrap
-                textFormat: QQC2.Label.RichText
-                text: i18n("<b>Ctrl + 1, 2, 3...</b> — Switch between services in the current workspace<br>" + "<b>Ctrl + Shift + 1, 2, 3...</b> — Switch between workspaces<br>" + "<b>Ctrl + B</b> — Go to Favorites workspace<br>" + "<b>Ctrl + Tab</b> — Go to the next service<br>" + "<b>Ctrl + Shift + Tab</b> — Go to the next workspace<br>" + "<b>Double-tap Ctrl</b> — Toggle between the last two services<br>" + "<b>Escape</b> — Close overlay/dialog")
+    // Handle Widevine installation signals
+    Connections {
+        target: widevineManager
+        function onInstallationStarted() {
+            // Access showPassiveNotification from the root ApplicationWindow
+            if (drawer.Kirigami.ApplicationWindow.window) {
+                drawer.Kirigami.ApplicationWindow.window.showPassiveNotification(
+                    i18n("Widevine installation started. This may take a moment..."), "long");
             }
-
-            Kirigami.Separator {
-                Layout.fillWidth: true
+        }
+        function onInstallationFinished(success, message) {
+            if (drawer.Kirigami.ApplicationWindow.window) {
+                drawer.Kirigami.ApplicationWindow.window.showPassiveNotification(message, "long");
             }
-
-            Kirigami.Heading {
-                level: 4
-                text: i18n("Link Handling")
-            }
-
-            QQC2.Label {
-                Layout.fillWidth: true
-                wrapMode: QQC2.Label.WordWrap
-                textFormat: QQC2.Label.RichText
-                text: i18n("When you click a link in a service, it opens in an <b>overlay</b> where you can choose to:<br>" + "• <b>Open in Service</b> — Navigate the service to that URL<br>" + "• <b>Open in Browser</b> — Open in your default browser<br><br>" + "<b>Tip:</b> Hold <b>Ctrl</b> while clicking a link to open it directly in your browser, bypassing the overlay.")
-            }
-
-            Kirigami.Separator {
-                Layout.fillWidth: true
-            }
-
-            Kirigami.Heading {
-                level: 4
-                text: i18n("Other Tips")
-            }
-
-            QQC2.Label {
-                Layout.fillWidth: true
-                wrapMode: QQC2.Label.WordWrap
-                textFormat: QQC2.Label.RichText
-                text: i18n("• <b>Right-click</b> a service icon to access quick actions (edit, disable, delete)<br>" + "• <b>Disabled services</b> won't load until re-enabled, saving resources<br>" + "• The app keeps running in the <b>system tray</b> when you close the window<br>" + "• <b>Notification badges</b> appear on service icons when there are unread messages")
+        }
+        function onUninstallationFinished(success, message) {
+            if (drawer.Kirigami.ApplicationWindow.window) {
+                drawer.Kirigami.ApplicationWindow.window.showPassiveNotification(message, "long");
             }
         }
     }

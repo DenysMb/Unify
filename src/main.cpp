@@ -3,9 +3,10 @@
 #include "core/notificationpresenter.h"
 #include "ui/trayiconmanager.h"
 #include "utils/faviconcache.h"
-#include "utils/keyeventfilter.h"
 #include "utils/fileutils.h"
+#include "utils/keyeventfilter.h"
 #include "utils/printhandler.h"
+#include "utils/widevinemanager.h"
 #include <KIconTheme>
 #include <KLocalizedContext>
 #include <KLocalizedString>
@@ -93,6 +94,9 @@ int main(int argc, char *argv[])
     // Create print handler instance
     PrintHandler *printHandler = new PrintHandler(&app);
 
+    // Create widevine manager instance
+    WidevineManager *widevineManager = new WidevineManager(&app);
+
     // Set up a global notification presenter function that can be used by all profiles
     // Note: This is used by the default profile, but QML profiles use presentFromQml instead
     auto globalNotificationPresenter = [notificationPresenter](std::unique_ptr<QWebEngineNotification> notification) {
@@ -131,6 +135,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("applicationShortcutManager"), applicationShortcutManager);
     engine.rootContext()->setContextProperty(QStringLiteral("fileUtils"), fileUtils);
     engine.rootContext()->setContextProperty(QStringLiteral("printHandler"), printHandler);
+    engine.rootContext()->setContextProperty(QStringLiteral("widevineManager"), widevineManager);
 
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
     engine.loadFromModule("io.github.denysmb.unify", "Main");
