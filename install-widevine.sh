@@ -182,19 +182,21 @@ parse_json() {
 get_widevine_info() {
     local temp_json
     temp_json=$(mktemp --suffix=.json)
-    trap 'rm -f "$temp_json"' RETURN
 
     print_info "Fetching Widevine metadata from Firefox repository..."
     download_silent "$FIREFOX_WIDEVINE_JSON" > "$temp_json"
 
     if [ ! -s "$temp_json" ]; then
         print_error "Failed to download Widevine metadata"
+        rm -f "$temp_json"
         exit 1
     fi
 
     WIDEVINE_URL=$(parse_json "$temp_json" "fileUrl")
     WIDEVINE_VERSION=$(parse_json "$temp_json" "version")
     WIDEVINE_HASH=$(parse_json "$temp_json" "hashValue")
+
+    rm -f "$temp_json"
 
     if [ -z "$WIDEVINE_URL" ] || [ -z "$WIDEVINE_VERSION" ]; then
         print_error "Failed to parse Widevine metadata"
