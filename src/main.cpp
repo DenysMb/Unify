@@ -25,26 +25,32 @@ int main(int argc, char *argv[])
     // These flags help avoid detection as an automated/embedded browser
     // Chromium flags with GPU acceleration disabled to prevent freezing on some systems
     // WebRTCPipeWireCapturer enables screen/window sharing via PipeWire on Wayland
-    qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
-            "--disable-blink-features=AutomationControlled "
-            "--disable-gpu "
-            "--disable-gpu-compositing "
-            "--disable-features=VizDisplayCompositor "
-            "--disable-web-security=false "
-            "--enable-features=NetworkService,NetworkServiceInProcess,WebRTCPipeWireCapturer,HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport "
-            "--disable-background-networking=false "
-            "--disable-client-side-phishing-detection "
-            "--disable-default-apps "
-            "--disable-extensions "
-            "--disable-hang-monitor "
-            "--disable-popup-blocking "
-            "--disable-prompt-on-repost "
-            "--disable-sync "
-            "--metrics-recording-only "
-            "--no-first-run "
-            "--safebrowsing-disable-auto-update "
-            "--enable-widevine-cdm "
-            "--autoplay-policy=no-user-gesture-required");
+    //
+    // Note: In Flatpak builds, QTWEBENGINE_CHROMIUM_FLAGS is set via the manifest
+    // and can be overridden by the install-widevine.sh script for DRM support.
+    // We only set default flags here if the environment variable is not already defined.
+    if (qEnvironmentVariableIsEmpty("QTWEBENGINE_CHROMIUM_FLAGS")) {
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
+                "--disable-blink-features=AutomationControlled "
+                "--disable-gpu "
+                "--disable-gpu-compositing "
+                "--disable-features=VizDisplayCompositor "
+                "--disable-web-security=false "
+                "--enable-features=NetworkService,NetworkServiceInProcess,WebRTCPipeWireCapturer,HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport "
+                "--disable-background-networking=false "
+                "--disable-client-side-phishing-detection "
+                "--disable-default-apps "
+                "--disable-extensions "
+                "--disable-hang-monitor "
+                "--disable-popup-blocking "
+                "--disable-prompt-on-repost "
+                "--disable-sync "
+                "--metrics-recording-only "
+                "--no-first-run "
+                "--safebrowsing-disable-auto-update "
+                "--enable-widevine-cdm "
+                "--autoplay-policy=no-user-gesture-required");
+    }
 
     // Initialize WebEngine before QApplication
     QtWebEngineQuick::initialize();
