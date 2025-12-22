@@ -49,6 +49,35 @@ Generate/update translation catalogs (requires gettext):
 ./Messages.sh
 ```
 
+## DRM Content Support (Widevine)
+
+To play DRM-protected content from services like Spotify, Prime Video, Netflix, and Tidal, you need to install the Widevine CDM (Content Decryption Module).
+
+**For Flatpak users:**
+
+Run the installation script:
+
+```bash
+./install-widevine.sh
+```
+
+This script:
+- Downloads the latest Widevine CDM from Firefox's official repository
+- Installs it to `~/.var/app/io.github.denysmb.unify/plugins/WidevineCdm/`
+- Configures Qt WebEngine to use the library
+
+After installation, restart Unify for changes to take effect.
+
+**To uninstall:**
+
+```bash
+./install-widevine.sh uninstall
+```
+
+**Dependencies:** wget or curl, unzip, flatpak, jq or python
+
+**Note:** Widevine is proprietary software owned by Google and cannot be distributed with the application.
+
 ## Development Notes
 
 - C++ style follows `.clang-format`; the clang-format pre-commit hook is configured via CMake.
