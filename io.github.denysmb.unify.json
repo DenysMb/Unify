@@ -58,6 +58,9 @@
           "type": "dir",
           "path": "."
         }
+      ],
+      "post-install": [
+        "install -Dm755 ../install-widevine.sh ${FLATPAK_DEST}/bin/install-widevine.sh"
       ]
     }
   ]

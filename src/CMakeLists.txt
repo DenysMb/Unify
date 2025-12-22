@@ -27,6 +27,8 @@ target_sources(unify
     utils/fileutils.h
     utils/printhandler.cpp
     utils/printhandler.h
+    utils/widevinemanager.cpp
+    utils/widevinemanager.h
     resources.qrc
 )
 
