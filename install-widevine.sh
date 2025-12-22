@@ -15,8 +15,40 @@
 set -eu
 
 APP_ID="io.github.denysmb.unify"
+
+is_running_in_flatpak() {
+    # The most reliable indicator is the presence of /.flatpak-info.
+    # FLATPAK_ID is also set in many runtimes, but not always.
+    [ -f "/.flatpak-info" ] || [ -n "${FLATPAK_ID:-}" ]
+}
+
+IN_FLATPAK=0
+if is_running_in_flatpak; then
+    IN_FLATPAK=1
+fi
+
+# Installation directory:
+# We always install Widevine under the Flatpak app directory:
+#   ~/.var/app/<APP_ID>/plugins
+#
+# Important: Inside the Flatpak sandbox, $HOME is typically the user's real home
+# (and may be mounted read-only via --filesystem=home:ro). Write access to this
+# specific path must be granted (e.g. via:
+#   --filesystem=~/.var/app/<APP_ID>/plugins:create
+# )
 PLUGINS_DIR="$HOME/.var/app/$APP_ID/plugins"
+
 WIDEVINE_BASE_DIR="$PLUGINS_DIR/WidevineCdm"
+
+flatpak_cmd() {
+    # Inside Flatpak, the `flatpak` binary is typically not available. Use
+    # flatpak-spawn to execute host commands instead.
+    if [ "$IN_FLATPAK" -eq 1 ]; then
+        flatpak-spawn --host flatpak "$@"
+    else
+        flatpak "$@"
+    fi
+}
 
 # Firefox repository URL for Widevine metadata
 FIREFOX_WIDEVINE_JSON="https://raw.githubusercontent.com/mozilla/gecko-dev/master/toolkit/content/gmp-sources/widevinecdm.json"
@@ -50,8 +82,18 @@ check_dependencies() {
         missing_deps+=("unzip")
     fi
 
-    if ! command -v flatpak &> /dev/null; then
-        missing_deps+=("flatpak")
+    # Flatpak dependency handling:
+    # - Outside Flatpak: we need the `flatpak` CLI on the host.
+    # - Inside Flatpak: the CLI usually isn't exposed; we should use
+    #   flatpak-spawn to call host commands instead.
+    if [ "$IN_FLATPAK" -eq 1 ]; then
+        if ! command -v flatpak-spawn &> /dev/null; then
+            missing_deps+=("flatpak-spawn")
+        fi
+    else
+        if ! command -v flatpak &> /dev/null; then
+            missing_deps+=("flatpak")
+        fi
     fi
 
     # Check for JSON parser (prefer jq, fallback to python)
@@ -67,7 +109,7 @@ check_dependencies() {
 }
 
 check_flatpak_installed() {
-    if ! flatpak list --app | grep -q "$APP_ID"; then
+    if ! flatpak_cmd list --app | grep -q "$APP_ID"; then
         print_error "Unify Flatpak is not installed."
         print_error "Please install it first: flatpak install flathub $APP_ID"
         exit 1
@@ -79,7 +121,14 @@ download_file() {
     local output="$2"
 
     if command -v wget &> /dev/null; then
-        wget -q --show-progress -O "$output" "$url"
+        # NOTE: Flatpak runtime currently ships wget2, which does not support
+        # `--show-progress` (unlike GNU Wget 1.x). Try with `--show-progress`
+        # first (best UX on host), then fall back silently.
+        if [ "$IN_FLATPAK" -eq 1 ]; then
+            wget -q -O "$output" "$url"
+        else
+            wget -q --show-progress -O "$output" "$url" 2>/dev/null || wget -q -O "$output" "$url"
+        fi
     elif command -v curl &> /dev/null; then
         curl -L -o "$output" "$url"
     else
@@ -131,7 +180,8 @@ parse_json() {
 }
 
 get_widevine_info() {
-    local temp_json=$(mktemp --suffix=.json)
+    local temp_json
+    temp_json=$(mktemp --suffix=.json)
     trap 'rm -f "$temp_json"' RETURN
 
     print_info "Fetching Widevine metadata from Firefox repository..."
@@ -242,7 +292,7 @@ install_widevine() {
     CHROMIUM_FLAGS="$CHROMIUM_FLAGS --widevine-path=$LIB_PATH"
     CHROMIUM_FLAGS="$CHROMIUM_FLAGS --no-sandbox"
 
-    flatpak override --user --env=QTWEBENGINE_CHROMIUM_FLAGS="$CHROMIUM_FLAGS" "$APP_ID"
+    flatpak_cmd override --user --env=QTWEBENGINE_CHROMIUM_FLAGS="$CHROMIUM_FLAGS" "$APP_ID"
 
     print_info "Widevine $WIDEVINE_VERSION installed successfully!"
     echo ""
@@ -265,7 +315,7 @@ uninstall_widevine() {
 
     # Reset Flatpak environment override
     print_info "Resetting Flatpak environment..."
-    flatpak override --user --unset-env=QTWEBENGINE_CHROMIUM_FLAGS "$APP_ID" 2>/dev/null || true
+    flatpak_cmd override --user --unset-env=QTWEBENGINE_CHROMIUM_FLAGS "$APP_ID" 2>/dev/null || true
 
     print_info "Widevine uninstalled successfully!"
     print_info "Please restart Unify for changes to take effect."
@@ -287,7 +337,7 @@ show_help() {
     echo ""
     echo "Supported services: Spotify, Prime Video, Netflix, Tidal, and others."
     echo ""
-    echo "Dependencies: wget/curl, unzip, flatpak, jq/python"
+    echo "Dependencies: wget/curl, unzip, flatpak (only when outside Flatpak), jq/python"
 }
 
 # Main
