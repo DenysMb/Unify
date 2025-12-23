@@ -73,6 +73,7 @@ target_link_libraries(unify
     KF6::Notifications
     KF6::Service
     KF6::KIOGui
+    KF6::DBusAddons
 )
 
 install(TARGETS unify ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
