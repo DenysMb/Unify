@@ -1253,9 +1253,11 @@ Kirigami.ApplicationWindow {
     }
 
     // Function to detach a service (open in separate window)
+    // Uses reparenting to preserve WebView state (video playback, calls, etc.)
     function detachService(serviceId) {
         var service = findServiceById(serviceId);
-        if (!service || service.workspace !== currentWorkspace) {
+        if (!service) {
+            console.log("Service not found:", serviceId);
             return false;
         }
 
@@ -1265,10 +1267,17 @@ Kirigami.ApplicationWindow {
             return false;
         }
 
-        // Get the current WebView to preserve state
-        var webView = webViewStack.getWebViewByServiceId(serviceId);
-        if (!webView) {
-            console.log("WebView not found for service:", serviceId);
+        // Get the ServiceWebView container (not just WebEngineView)
+        var serviceWebView = webViewStack.getServiceWebViewByServiceId(serviceId);
+        if (!serviceWebView) {
+            console.log("ServiceWebView not found for service:", serviceId);
+            return false;
+        }
+
+        // Detach the WebView from the stack (prepares for reparenting)
+        var detachedView = webViewStack.detachWebView(serviceId);
+        if (!detachedView) {
+            console.log("Failed to detach WebView from stack:", service.title);
             return false;
         }
 
@@ -1276,48 +1285,56 @@ Kirigami.ApplicationWindow {
         var detachedComponent = Qt.createComponent("DetachedServiceWindow.qml");
         if (detachedComponent.status !== Component.Ready) {
             console.log("Failed to load detached window component:", detachedComponent.errorString());
+            // Reattach the view back if window creation fails
+            webViewStack.reattachWebView(serviceId, detachedView);
             return false;
         }
 
-        // Create the detached window
+        // Create the detached window with the existing WebView
         var detachedWindow = detachedComponent.createObject(root, {
             "serviceId": serviceId,
-            "serviceTitle": service.title,
-            "serviceUrl": webView.url // Use current URL to preserve state
-            ,
-            "webProfile": persistentProfile
+            "serviceTitle": service.title
         });
 
         if (!detachedWindow) {
             console.log("Failed to create detached window for:", service.title);
+            // Reattach the view back if window creation fails
+            webViewStack.reattachWebView(serviceId, detachedView);
             return false;
         }
+
+        // Reparent the existing ServiceWebView to the detached window
+        // This preserves all WebView state (video, audio, WebRTC calls, etc.)
+        detachedView.parent = detachedWindow.webViewContainer;
+        detachedView.anchors.fill = detachedWindow.webViewContainer;
+        detachedView.visible = true;
+
+        // Set the existingWebView property for the window to reference
+        detachedWindow.existingWebView = detachedView;
 
         // Connect to window closed signal
         detachedWindow.windowClosed.connect(function (closedServiceId) {
             reattachService(closedServiceId);
         });
 
-        // Store the detached window reference
-        detachedServices[serviceId] = detachedWindow;
-
-        // Disable the service in the main window (similar to disabled services)
-        disabledServices[serviceId] = true;
-        webView.stop();
-        webView.url = "about:blank";
+        // Store the detached window and view references
+        var newDetachedServices = Object.assign({}, detachedServices);
+        newDetachedServices[serviceId] = {
+            window: detachedWindow,
+            webView: detachedView
+        };
+        detachedServices = newDetachedServices;
 
         // Show the detached window
         detachedWindow.show();
         detachedWindow.raise();
 
-        // Emit signals to update UI
-        disabledServicesChanged();
-
-        console.log("Service detached:", service.title);
+        console.log("Service detached (with state preserved):", service.title);
         return true;
     }
 
     // Function to reattach a service (close detached window and re-enable in main)
+    // Reparents the WebView back to the main window stack, preserving state
     function reattachService(serviceId) {
         if (!isServiceDetached(serviceId)) {
             return false;
@@ -1328,39 +1345,49 @@ Kirigami.ApplicationWindow {
             return false;
         }
 
-        // Get the detached window
-        var detachedWindow = detachedServices[serviceId];
-        if (detachedWindow && detachedWindow.webView) {
-            // Get the current URL from the detached window to preserve state
-            var currentUrl = detachedWindow.webView.url;
+        // Get the detached window and webview
+        var detached = detachedServices[serviceId];
+        if (!detached) {
+            return false;
+        }
 
-            // Re-enable service in main window
-            delete disabledServices[serviceId];
-            var mainWebView = webViewStack.getWebViewByServiceId(serviceId);
-            if (mainWebView && currentUrl && currentUrl.toString() !== "about:blank") {
-                mainWebView.url = currentUrl;
-            } else if (mainWebView) {
-                mainWebView.url = service.url;
-            }
+        var detachedWindow = detached.window;
+        var serviceWebView = detached.webView;
 
-            // Close and cleanup detached window
+        if (serviceWebView) {
+            // Reparent the ServiceWebView back to the stack
+            // This preserves all WebView state
+            webViewStack.reattachWebView(serviceId, serviceWebView);
+        }
+
+        // Close and cleanup detached window (but not the WebView!)
+        if (detachedWindow) {
+            // Clear the reference to prevent destroying the reparented WebView
+            detachedWindow.existingWebView = null;
             detachedWindow.close();
             detachedWindow.destroy();
         }
 
         // Remove from detached services
-        delete detachedServices[serviceId];
+        var newDetachedServices = Object.assign({}, detachedServices);
+        delete newDetachedServices[serviceId];
+        detachedServices = newDetachedServices;
 
-        // Emit signals to update UI
-        disabledServicesChanged();
-
-        console.log("Service reattached:", service.title);
+        console.log("Service reattached (with state preserved):", service.title);
         return true;
     }
 
     // Function to check if a service is detached
     function isServiceDetached(serviceId) {
-        return detachedServices.hasOwnProperty(serviceId);
+        return detachedServices.hasOwnProperty(serviceId) && detachedServices[serviceId] !== null;
+    }
+
+    // Function to get detached window for a service
+    function getDetachedWindow(serviceId) {
+        if (isServiceDetached(serviceId)) {
+            return detachedServices[serviceId].window;
+        }
+        return null;
     }
 
     // Function to disable/enable a service

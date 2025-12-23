@@ -9,9 +9,13 @@ Kirigami.ApplicationWindow {
     // Properties
     property string serviceId: ""
     property string serviceTitle: ""
-    property url serviceUrl: "about:blank"
-    property WebEngineProfile webProfile
-    property alias webView: serviceWebView
+
+    // The existing ServiceWebView that will be reparented here
+    // This preserves the WebEngineView state (video playback, calls, etc.)
+    property var existingWebView: null
+
+    // Container where the reparented WebView will be placed
+    property alias webViewContainer: webViewContainerItem
 
     // Signal emitted when window is closed
     signal windowClosed(string serviceId)
@@ -42,9 +46,12 @@ Kirigami.ApplicationWindow {
             Kirigami.Action {
                 text: i18n("Refresh")
                 icon.name: "view-refresh"
+                enabled: existingWebView !== null
                 onTriggered: {
-                    serviceWebView.reload();
-                    console.log("Refreshing detached service: " + serviceTitle);
+                    if (existingWebView && existingWebView.contents) {
+                        existingWebView.contents.reload();
+                        console.log("Refreshing detached service: " + serviceTitle);
+                    }
                 }
             },
             Kirigami.Action {
@@ -57,25 +64,29 @@ Kirigami.ApplicationWindow {
             }
         ]
 
-        // Service WebView
-        ServiceWebView {
-            id: serviceWebView
+        // Container for the reparented ServiceWebView
+        // The existingWebView will have its parent changed to this Item
+        Item {
+            id: webViewContainerItem
             anchors.fill: parent
+        }
+    }
 
-            serviceTitle: detachedWindow.serviceTitle
-            serviceId: detachedWindow.serviceId
-            initialUrl: detachedWindow.serviceUrl
-            webProfile: detachedWindow.webProfile
-
-            // Note: onNewWindowRequested is already handled internally by ServiceWebView
-            // The popup windows will be created using the same logic as in the main window
+    // Reparent the existing WebView when it's set
+    onExistingWebViewChanged: {
+        if (existingWebView) {
+            console.log("Reparenting WebView for service:", serviceTitle);
+            // Reparent the ServiceWebView to this window's container
+            existingWebView.parent = webViewContainerItem;
+            // Reset anchors to fill the new container
+            existingWebView.anchors.fill = webViewContainerItem;
+            existingWebView.visible = true;
         }
     }
 
     // Handle window lifecycle
     Component.onCompleted: {
         console.log("Detached service window created for:", serviceTitle);
-        // ServiceWebView already loads initialUrl, no need to set it again
     }
 
     onClosing: {
@@ -94,12 +105,20 @@ Kirigami.ApplicationWindow {
     // Keyboard shortcuts for common actions
     Shortcut {
         sequence: "F5"
-        onActivated: serviceWebView.reload()
+        onActivated: {
+            if (existingWebView && existingWebView.contents) {
+                existingWebView.contents.reload();
+            }
+        }
     }
 
     Shortcut {
         sequence: "Ctrl+R"
-        onActivated: serviceWebView.reload()
+        onActivated: {
+            if (existingWebView && existingWebView.contents) {
+                existingWebView.contents.reload();
+            }
+        }
     }
 
     Shortcut {
