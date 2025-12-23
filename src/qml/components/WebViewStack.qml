@@ -51,6 +51,17 @@ Item {
         }
     }
 
+    // Helper function to find the actual index of a child in the StackLayout
+    function findChildIndex(item) {
+        var children = stackLayout.children;
+        for (var i = 0; i < children.length; i++) {
+            if (children[i] === item) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     function setCurrentByServiceId(serviceId) {
         root.currentServiceId = serviceId;
 
@@ -62,13 +73,21 @@ Item {
 
         // Switch to the view (all services are pre-loaded, so it should always exist)
         if (webViewCache[serviceId]) {
-            stackLayout.currentIndex = webViewCache[serviceId].stackIndex;
+            // Find the actual index in the StackLayout (may differ from stackIndex after reparenting)
+            var actualIndex = findChildIndex(webViewCache[serviceId]);
+            if (actualIndex >= 0) {
+                stackLayout.currentIndex = actualIndex;
+            } else {
+                // Fallback to stored stackIndex if item not found (shouldn't happen)
+                stackLayout.currentIndex = webViewCache[serviceId].stackIndex;
+            }
         } else {
             // This shouldn't happen with pre-loading, but keep as fallback
             console.warn("Service not pre-loaded:", serviceId, "- creating now");
             createWebViewForService(serviceId);
             if (webViewCache[serviceId]) {
-                stackLayout.currentIndex = webViewCache[serviceId].stackIndex;
+                var idx = findChildIndex(webViewCache[serviceId]);
+                stackLayout.currentIndex = idx >= 0 ? idx : webViewCache[serviceId].stackIndex;
             } else {
                 stackLayout.currentIndex = 0;
             }
@@ -140,10 +159,20 @@ Item {
         // StackLayout manages child sizes automatically, so we don't need anchors
         serviceWebView.parent = stackLayout;
 
-        // Make sure it's visible
-        serviceWebView.visible = true;
+        // Reset z to default (StackLayout manages visibility, not z-order)
+        serviceWebView.z = 0;
 
-        console.log("Reattached WebView for service:", serviceId);
+        // StackLayout controls visibility of its children based on currentIndex
+        // We need to explicitly set visible to false so StackLayout can manage it
+        // The current view's visibility will be set to true by StackLayout
+        serviceWebView.visible = false;
+
+        // Force StackLayout to re-evaluate its layout by toggling currentIndex
+        var currentIdx = stackLayout.currentIndex;
+        stackLayout.currentIndex = -1;
+        stackLayout.currentIndex = currentIdx;
+
+        console.log("Reattached WebView for service:", serviceId, "- StackLayout refreshed");
         return true;
     }
 
