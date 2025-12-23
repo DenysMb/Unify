@@ -7,6 +7,7 @@
 #include "utils/keyeventfilter.h"
 #include "utils/printhandler.h"
 #include "utils/widevinemanager.h"
+#include <KDBusService>
 #include <KIconTheme>
 #include <KLocalizedContext>
 #include <KLocalizedString>
@@ -68,6 +69,11 @@ int main(int argc, char *argv[])
     if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
         QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
     }
+
+    // Set up single instance support using KDBusService
+    // This ensures only one instance of the application runs at a time
+    // If another instance is launched, it will activate the existing window instead
+    KDBusService service(KDBusService::Unique);
 
     // Create config manager instance
     ConfigManager *configManager = new ConfigManager(&app);
@@ -146,12 +152,23 @@ int main(int argc, char *argv[])
 
     // Get the main window and set it in tray icon manager
     QObject *rootObject = engine.rootObjects().first();
+    QWindow *mainWindow = nullptr;
     if (rootObject) {
-        QWindow *mainWindow = qobject_cast<QWindow *>(rootObject);
+        mainWindow = qobject_cast<QWindow *>(rootObject);
         if (mainWindow) {
             trayIconManager->setMainWindow(mainWindow);
         }
     }
+
+    // Connect KDBusService activateRequested signal to show the existing window
+    // This is triggered when a second instance attempts to launch
+    QObject::connect(&service, &KDBusService::activateRequested, mainWindow, [mainWindow]() {
+        if (mainWindow) {
+            mainWindow->show();
+            mainWindow->raise();
+            mainWindow->requestActivate();
+        }
+    });
 
     // Show the tray icon
     trayIconManager->show();

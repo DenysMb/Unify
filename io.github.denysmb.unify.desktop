@@ -7,3 +7,6 @@ Icon=io.github.denysmb.unify
 Type=Application
 Terminal=false
 Categories=Internet;
+SingleMainWindow=true
+X-DBUS-ServiceName=io.github.denysmb.unify
+X-DBUS-StartupType=Unique

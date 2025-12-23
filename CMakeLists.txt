@@ -53,6 +53,7 @@ find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS
     Notifications
     Service
     KIO
+    DBusAddons
 )
 find_package(KF6 REQUIRED COMPONENTS KirigamiAddons)
 
