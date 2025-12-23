@@ -91,11 +91,60 @@ Item {
         return null;
     }
 
+    // Get the ServiceWebView container (not just WebEngineView contents)
+    function getServiceWebViewByServiceId(serviceId) {
+        if (webViewCache[serviceId]) {
+            return webViewCache[serviceId];
+        }
+        return null;
+    }
+
     function getCurrentWebView() {
         if (currentServiceId && webViewCache[currentServiceId]) {
             return webViewCache[currentServiceId];
         }
         return null;
+    }
+
+    // Detach a ServiceWebView from the stack (for reparenting to external window)
+    // Returns the ServiceWebView instance that was detached
+    function detachWebView(serviceId) {
+        if (!webViewCache[serviceId]) {
+            console.warn("Cannot detach: WebView not found for service:", serviceId);
+            return null;
+        }
+
+        var serviceWebView = webViewCache[serviceId];
+
+        console.log("Detaching WebView for service:", serviceId, "from stack index:", serviceWebView.stackIndex);
+
+        // Return the ServiceWebView - caller will reparent it
+        return serviceWebView;
+    }
+
+    // Reattach a previously detached ServiceWebView back to the stack
+    function reattachWebView(serviceId, serviceWebView) {
+        if (!serviceWebView) {
+            console.warn("Cannot reattach: ServiceWebView is null");
+            return false;
+        }
+
+        // Clear any anchors set by the detached window before reparenting
+        serviceWebView.anchors.fill = undefined;
+        serviceWebView.anchors.top = undefined;
+        serviceWebView.anchors.bottom = undefined;
+        serviceWebView.anchors.left = undefined;
+        serviceWebView.anchors.right = undefined;
+
+        // Reparent back to the stack layout
+        // StackLayout manages child sizes automatically, so we don't need anchors
+        serviceWebView.parent = stackLayout;
+
+        // Make sure it's visible
+        serviceWebView.visible = true;
+
+        console.log("Reattached WebView for service:", serviceId);
+        return true;
     }
 
     function getOrCreateIsolatedProfile(serviceId, userAgent) {
