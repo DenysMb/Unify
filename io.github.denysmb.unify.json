@@ -33,12 +33,11 @@
     "--talk-name=org.freedesktop.portal.Desktop",
     "--talk-name=org.freedesktop.Flatpak",
     "--own-name=org.mpris.MediaPlayer2.unify.*",
-    "--filesystem=home:ro",
     "--filesystem=xdg-download",
     "--filesystem=xdg-data/applications:ro",
     "--filesystem=~/.var/app/io.github.denysmb.unify/plugins:create",
     "--env=QTWEBENGINEPROCESS_PATH=/app/bin/QtWebEngineProcess",
-    "--env=QTWEBENGINE_CHROMIUM_FLAGS=--autoplay-policy=no-user-gesture-required --enable-features=HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport --enable-widevine-cdm"
+    "--env=QTWEBENGINE_CHROMIUM_FLAGS=--autoplay-policy=no-user-gesture-required --enable-features=HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport,WebRTCPipeWireCapturer --enable-widevine-cdm"
   ],
   "cleanup-commands": [
     "mkdir -p ${FLATPAK_DEST}/lib/ffmpeg",
