@@ -522,14 +522,19 @@ QString ApplicationShortcutManager::findFlatpakIconPath(const QString &iconName)
 
 bool ApplicationShortcutManager::launchApplication(const QString &desktopFileName)
 {
+    qDebug() << "Attempting to launch application:" << desktopFileName;
+
     KService::Ptr service = KService::serviceByDesktopName(desktopFileName);
 
     if (service) {
+        qDebug() << "Found KService for" << desktopFileName << "- using ApplicationLauncherJob";
         auto *job = new KIO::ApplicationLauncherJob(service);
         connect(job, &KJob::result, this, [this, desktopFileName](KJob *job) {
             if (job->error()) {
+                qWarning() << "ApplicationLauncherJob failed:" << job->errorString();
                 Q_EMIT launchError(job->errorString());
             } else {
+                qDebug() << "Successfully launched via KService:" << desktopFileName;
                 Q_EMIT applicationLaunched(desktopFileName);
             }
         });
@@ -537,41 +542,104 @@ bool ApplicationShortcutManager::launchApplication(const QString &desktopFileNam
         return true;
     }
 
+    qDebug() << "KService not found, using fallback methods for:" << desktopFileName;
+
     for (const QVariant &app : m_applications) {
         QVariantMap appMap = app.toMap();
         if (appMap[QStringLiteral("desktopFileName")].toString() == desktopFileName) {
             QString desktopFilePath = appMap[QStringLiteral("desktopFilePath")].toString();
 
             if (!desktopFilePath.isEmpty()) {
-                QStringList args;
-                args << QStringLiteral("--") << desktopFilePath;
+                bool started = false;
 
-                bool started = QProcess::startDetached(QStringLiteral("flatpak-spawn"), args);
-                if (!started) {
-                    started = QProcess::startDetached(QStringLiteral("gtk-launch"), {desktopFileName});
+                // Try flatpak-spawn with gtk-launch (best for sandboxed apps)
+                if (isRunningInFlatpak()) {
+                    qDebug() << "Running in Flatpak, trying: flatpak-spawn --host gtk-launch" << desktopFileName;
+                    started = QProcess::startDetached(QStringLiteral("flatpak-spawn"),
+                                                      {QStringLiteral("--host"),
+                                                       QStringLiteral("gtk-launch"),
+                                                       desktopFileName});
+                    if (started) {
+                        qDebug() << "Successfully launched via flatpak-spawn + gtk-launch";
+                    }
                 }
+
+                // Try gtk-launch directly (works inside and outside Flatpak)
                 if (!started) {
-                    started = QProcess::startDetached(QStringLiteral("kioclient5"), {QStringLiteral("exec"), desktopFilePath});
+                    qDebug() << "Trying: gtk-launch" << desktopFileName;
+                    started = QProcess::startDetached(QStringLiteral("gtk-launch"), {desktopFileName});
+                    if (started) {
+                        qDebug() << "Successfully launched via gtk-launch";
+                    }
+                }
+
+                // Try kioclient exec as fallback
+                if (!started) {
+                    qDebug() << "Trying: kioclient exec" << desktopFilePath;
+                    started = QProcess::startDetached(QStringLiteral("kioclient"),
+                                                      {QStringLiteral("exec"),
+                                                       desktopFilePath});
+                    if (started) {
+                        qDebug() << "Successfully launched via kioclient";
+                    }
+                }
+
+                // Try kioclient5 for older KDE
+                if (!started) {
+                    qDebug() << "Trying: kioclient5 exec" << desktopFilePath;
+                    started = QProcess::startDetached(QStringLiteral("kioclient5"),
+                                                      {QStringLiteral("exec"),
+                                                       desktopFilePath});
+                    if (started) {
+                        qDebug() << "Successfully launched via kioclient5";
+                    }
                 }
 
                 if (started) {
                     Q_EMIT applicationLaunched(desktopFileName);
                     return true;
                 }
+
+                qWarning() << "All desktop file launch methods failed for:" << desktopFileName;
             }
 
             QString exec = appMap[QStringLiteral("exec")].toString();
             if (!exec.isEmpty()) {
+                qDebug() << "Trying to execute Exec command:" << exec;
                 exec.remove(QRegularExpression(QStringLiteral("%[fFuUdDnNickvm]")));
                 exec = exec.trimmed();
 
                 QStringList parts = QProcess::splitCommand(exec);
                 if (!parts.isEmpty()) {
                     QString program = parts.takeFirst();
-                    if (QProcess::startDetached(program, parts)) {
+
+                    // Try with flatpak-spawn --host if running in Flatpak
+                    bool started = false;
+                    if (isRunningInFlatpak()) {
+                        QStringList spawnArgs = {QStringLiteral("--host"), program};
+                        spawnArgs.append(parts);
+                        qDebug() << "Trying: flatpak-spawn --host" << program << parts.join(QStringLiteral(" "));
+                        started = QProcess::startDetached(QStringLiteral("flatpak-spawn"), spawnArgs);
+                        if (started) {
+                            qDebug() << "Successfully launched via flatpak-spawn + exec";
+                        }
+                    }
+
+                    // Try direct execution as fallback
+                    if (!started) {
+                        qDebug() << "Trying direct execution:" << program << parts.join(QStringLiteral(" "));
+                        started = QProcess::startDetached(program, parts);
+                        if (started) {
+                            qDebug() << "Successfully launched via direct execution";
+                        }
+                    }
+
+                    if (started) {
                         Q_EMIT applicationLaunched(desktopFileName);
                         return true;
                     }
+
+                    qWarning() << "Failed to execute command:" << exec;
                 }
             }
 
