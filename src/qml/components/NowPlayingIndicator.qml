@@ -98,31 +98,24 @@ Controls.ToolButton {
             }
 
             // Animation that scrolls text
-            ParallelAnimation {
+            SequentialAnimation {
                 id: scrollAnim
 
                 property real xPos: 0
 
                 loops: Animation.Infinite
 
-                // Scroll from left to beyond right edge
+                // Scroll from left until last character is visible on the right
                 NumberAnimation {
                     target: scrollLabel
                     property: "x"
                     from: 0
-                    to: -scrollLabel.width - 50
-                    duration: Math.max(5000, scrollLabel.width * 10)
+                    to: maxTextWidth - scrollLabel.width - 10
+                    duration: Math.max(5000, Math.abs(maxTextWidth - scrollLabel.width - 10) * 20)
                     easing.type: Easing.Linear
                 }
 
-                // Then reset to right edge (instant, creates loop effect)
-                ScriptAction {
-                    script: {
-                        scrollLabel.x = maxTextWidth;
-                    }
-                }
-
-                // Short pause at start before scrolling again
+                // Small pause when fully visible
                 PauseAnimation {
                     duration: 1000
                 }
