@@ -27,6 +27,7 @@ Rectangle {
     signal editServiceRequested(string id)
     signal moveServiceUp(string id)
     signal moveServiceDown(string id)
+    signal refreshService(string id)
     signal disableService(string id)
     signal detachService(string id)
     signal toggleFavoriteRequested(string id)
@@ -169,6 +170,7 @@ Rectangle {
                         onEditServiceRequested: root.editServiceRequested(modelData.id)
                         onMoveUpRequested: root.moveServiceUp(modelData.id)
                         onMoveDownRequested: root.moveServiceDown(modelData.id)
+                        onRefreshServiceRequested: root.refreshService(modelData.id)
                         onDisableServiceRequested: root.disableService(modelData.id)
                         onDetachServiceRequested: root.detachService(modelData.id)
                         onToggleFavoriteRequested: {
@@ -301,6 +303,7 @@ Rectangle {
                         onEditServiceRequested: root.editServiceRequested(modelData.id)
                         onMoveUpRequested: root.moveServiceUp(modelData.id)
                         onMoveDownRequested: root.moveServiceDown(modelData.id)
+                        onRefreshServiceRequested: root.refreshService(modelData.id)
                         onDisableServiceRequested: root.disableService(modelData.id)
                         onDetachServiceRequested: root.detachService(modelData.id)
                         onToggleFavoriteRequested: {

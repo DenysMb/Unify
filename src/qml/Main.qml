@@ -722,53 +722,6 @@ Kirigami.ApplicationWindow {
                     addServiceDialog.clearFields();
                     addServiceDialog.open();
                 }
-            },
-            Kirigami.Action {
-                text: i18n("Edit Service")
-                icon.name: "document-edit"
-                enabled: root.currentServiceId !== ""
-                onTriggered: {
-                    // Set dialog to edit mode and populate with current service data
-                    addServiceDialog.isEditMode = true;
-                    var currentService = root.findServiceById(root.currentServiceId);
-                    if (currentService) {
-                        addServiceDialog.populateFields(currentService);
-                    }
-                    addServiceDialog.open();
-                }
-            },
-            Kirigami.Action {
-                text: i18n("Refresh Service")
-                icon.name: "view-refresh"
-                enabled: root.currentServiceId !== "" && !root.isServiceDisabled(root.currentServiceId) && !root.isServiceDetached(root.currentServiceId)
-                onTriggered: {
-                    webViewStack.refreshCurrent();
-                    console.log("Refreshing service: " + root.currentServiceName);
-                }
-            },
-            Kirigami.Action {
-                text: root.isServiceDetached(root.currentServiceId) ? i18n("Reattach Service") : i18n("Detach Service")
-                icon.name: root.isServiceDetached(root.currentServiceId) ? "view-restore" : "view-split-left-right"
-                enabled: root.currentServiceId !== "" && !root.isServiceDisabled(root.currentServiceId)
-                onTriggered: {
-                    if (root.currentServiceId !== "") {
-                        if (root.isServiceDetached(root.currentServiceId)) {
-                            root.reattachService(root.currentServiceId);
-                        } else {
-                            root.detachService(root.currentServiceId);
-                        }
-                    }
-                }
-            },
-            Kirigami.Action {
-                text: root.isServiceDisabled(root.currentServiceId) ? i18n("Enable Service") : i18n("Disable Service")
-                icon.name: root.isServiceDisabled(root.currentServiceId) ? "media-playback-start" : "media-playback-pause"
-                enabled: root.currentServiceId !== "" && !root.isServiceDetached(root.currentServiceId)
-                onTriggered: {
-                    if (root.currentServiceId !== "") {
-                        root.setServiceEnabled(root.currentServiceId, root.isServiceDisabled(root.currentServiceId));
-                    }
-                }
             }
         ]
 
@@ -822,6 +775,11 @@ Kirigami.ApplicationWindow {
                         }
                         onMoveServiceDown: function (id) {
                             root.moveServiceDown(id);
+                        }
+                        onRefreshService: function (id) {
+                            webViewStackVertical.refreshByServiceId(id);
+                            var svc = root.findServiceById(id);
+                            if (svc) console.log("Refreshing service: " + svc.title);
                         }
                         onDisableService: function (id) {
                             root.setServiceEnabled(id, root.isServiceDisabled(id));
@@ -940,6 +898,11 @@ Kirigami.ApplicationWindow {
                     }
                     onMoveServiceDown: function (id) {
                         root.moveServiceDown(id);
+                    }
+                    onRefreshService: function (id) {
+                        webViewStackHorizontal.refreshByServiceId(id);
+                        var svc = root.findServiceById(id);
+                        if (svc) console.log("Refreshing service: " + svc.title);
                     }
                     onDisableService: function (id) {
                         root.setServiceEnabled(id, root.isServiceDisabled(id));

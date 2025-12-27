@@ -103,6 +103,15 @@ Item {
         }
     }
 
+    function refreshByServiceId(serviceId) {
+        if (webViewCache[serviceId]) {
+            var wv = webViewCache[serviceId];
+            if (wv.contents && wv.contents.reload) {
+                wv.contents.reload();
+            }
+        }
+    }
+
     function getWebViewByServiceId(serviceId) {
         if (webViewCache[serviceId]) {
             return webViewCache[serviceId].contents;
