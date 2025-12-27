@@ -30,6 +30,7 @@ Controls.Button {
     signal toggleFavoriteRequested
     signal moveUpRequested
     signal moveDownRequested
+    signal refreshServiceRequested
     signal disableServiceRequested
     signal detachServiceRequested
 
@@ -150,6 +151,13 @@ Controls.Button {
             text: i18n("Edit Service")
             icon.name: "document-edit"
             onTriggered: root.editServiceRequested()
+        }
+
+        Controls.MenuItem {
+            text: i18n("Refresh Service")
+            icon.name: "view-refresh"
+            enabled: !root.isDisabled && !root.isDetached
+            onTriggered: root.refreshServiceRequested()
         }
 
         Controls.MenuSeparator {
