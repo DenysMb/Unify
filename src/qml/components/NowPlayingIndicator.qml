@@ -18,6 +18,9 @@ Controls.ToolButton {
 
     padding: Kirigami.Units.smallSpacing * 2
 
+    // Maximum width for the text label
+    readonly property int maxTextWidth: 200
+
     background: Rectangle {
         color: "#0d120f"
         radius: Kirigami.Units.smallSpacing
@@ -34,18 +37,96 @@ Controls.ToolButton {
             color: Kirigami.Theme.textColor
         }
 
-        Controls.Label {
-            text: {
-                var displayText = root.serviceName;
-                if (root.mediaArtist && root.mediaTitle) {
-                    displayText += ": " + root.mediaArtist + " - " + root.mediaTitle;
-                } else if (root.mediaTitle) {
-                    displayText += ": " + root.mediaTitle;
+        // Container for scrolling text
+        Item {
+            Layout.preferredWidth: maxTextWidth
+            Layout.preferredHeight: scrollLabel.height
+            clip: true
+
+            Controls.Label {
+                id: scrollLabel
+
+                // Full text without elision
+                text: {
+                    var displayText = root.serviceName;
+                    if (root.mediaArtist && root.mediaTitle) {
+                        displayText += ": " + root.mediaArtist + " - " + root.mediaTitle;
+                    } else if (root.mediaTitle) {
+                        displayText += ": " + root.mediaTitle;
+                    }
+                    return displayText;
                 }
-                return displayText;
+
+                // Position changes for scrolling effect
+                x: {
+                    if (scrollLabel.width <= maxTextWidth) {
+                        return 0;
+                    }
+                    return scrollAnim.running ? scrollAnim.xPos : 0;
+                }
+
+                // Determine if text needs scrolling
+                readonly property bool needsScroll: width > maxTextWidth
+
+                // Start scrolling after a delay when content changes
+                onTextChanged: {
+                    scrollAnim.stop();
+                    if (needsScroll) {
+                        scrollDelayTimer.restart();
+                    }
+                }
+
+                onNeedsScrollChanged: {
+                    if (needsScroll) {
+                        scrollDelayTimer.restart();
+                    } else {
+                        scrollAnim.stop();
+                        x = 0;
+                    }
+                }
             }
-            elide: Text.ElideRight
-            Layout.maximumWidth: 300
+
+            // Delay before starting scroll (so user can read beginning first)
+            Timer {
+                id: scrollDelayTimer
+                interval: 1500
+                onTriggered: {
+                    if (scrollLabel.needsScroll) {
+                        scrollAnim.start();
+                    }
+                }
+            }
+
+            // Animation that scrolls text
+            ParallelAnimation {
+                id: scrollAnim
+
+                property real xPos: 0
+
+                loops: Animation.Infinite
+
+                // Scroll from left to beyond right edge
+                NumberAnimation {
+                    target: scrollLabel
+                    property: "x"
+                    from: 0
+                    to: -scrollLabel.width - 50
+                    duration: Math.max(5000, scrollLabel.width * 10)
+                    easing.type: Easing.Linear
+                }
+
+                // Then reset to right edge (instant, creates loop effect)
+                ScriptAction {
+                    script: {
+                        scrollLabel.x = maxTextWidth;
+                    }
+                }
+
+                // Short pause at start before scrolling again
+                PauseAnimation {
+                    duration: 1000
+                }
+            }
         }
     }
 
