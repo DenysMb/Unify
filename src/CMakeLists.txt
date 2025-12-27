@@ -45,6 +45,7 @@ ecm_target_qml_sources(unify
     qml/components/WebViewStack.qml
     qml/components/InternalLinkOverlay.qml
     qml/components/WorkspacesBar.qml
+    qml/components/NowPlayingIndicator.qml
     qml/dialogs/ServiceDialog.qml
     qml/dialogs/PermissionDialog.qml
     qml/dialogs/WorkspaceDialog.qml

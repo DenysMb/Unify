@@ -24,8 +24,16 @@ Item {
     // Audio playback indicator - exposes WebEngineView's recentlyAudible property
     readonly property bool isPlayingAudio: webView.recentlyAudible
 
+    // Media metadata properties for "Now Playing" feature
+    property string mediaTitle: ""
+    property string mediaArtist: ""
+    property string mediaAlbum: ""
+
     // Signal emitted when audio playback state changes
     signal audioStateChanged(string serviceId, bool isPlaying)
+
+    // Signal emitted when media metadata changes
+    signal mediaMetadataChanged(string serviceId, var metadata)
 
     // Signal to request updating service URL
     signal updateServiceUrlRequested(string serviceId, string newUrl)
@@ -43,11 +51,13 @@ Item {
 
     // Helper function to extract and normalize host from URL
     function normalizeHost(url) {
-        if (!url) return "";
+        if (!url)
+            return "";
         try {
             // Extract host from URL
             var match = url.match(/^https?:\/\/([^\/]+)/);
-            if (!match) return "";
+            if (!match)
+                return "";
             var host = match[1].toLowerCase();
             // Remove 'www.' prefix for comparison
             if (host.startsWith("www.")) {
@@ -233,6 +243,16 @@ Item {
         onRecentlyAudibleChanged: {
             console.log("🔊 Audio state changed for", view.serviceTitle, ":", webView.recentlyAudible);
             view.audioStateChanged(view.serviceId, webView.recentlyAudible);
+
+            if (webView.recentlyAudible) {
+                mediaMetadataTimer.start();
+            } else {
+                mediaMetadataTimer.stop();
+                view.mediaTitle = "";
+                view.mediaArtist = "";
+                view.mediaAlbum = "";
+                view.mediaMetadataChanged(view.serviceId, null);
+            }
         }
 
         // Handle popup windows - Ctrl+Click opens directly in browser, otherwise overlay
@@ -334,6 +354,33 @@ Item {
             if (success) {
                 printHandler.printPdf(filePath);
             }
+        }
+    }
+
+    Timer {
+        id: mediaMetadataTimer
+        interval: 1500
+        repeat: true
+        onTriggered: {
+            webView.runJavaScript("(function() {" + "    if (navigator.mediaSession && navigator.mediaSession.metadata) {" + "        return JSON.stringify({" + "            title: navigator.mediaSession.metadata.title || ''," + "            artist: navigator.mediaSession.metadata.artist || ''," + "            album: navigator.mediaSession.metadata.album || ''" + "        });" + "    }" + "    return null;" + "})();", function (result) {
+                if (result && result !== "null") {
+                    try {
+                        var metadata = JSON.parse(result);
+                        var changed = (view.mediaTitle !== metadata.title || view.mediaArtist !== metadata.artist || view.mediaAlbum !== metadata.album);
+
+                        view.mediaTitle = metadata.title || "";
+                        view.mediaArtist = metadata.artist || "";
+                        view.mediaAlbum = metadata.album || "";
+
+                        if (changed) {
+                            console.log("🎵 Media metadata for", view.serviceTitle, ":", metadata.artist, "-", metadata.title);
+                            view.mediaMetadataChanged(view.serviceId, metadata);
+                        }
+                    } catch (e) {
+                        console.warn("Failed to parse media metadata:", e);
+                    }
+                }
+            });
         }
     }
 

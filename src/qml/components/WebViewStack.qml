@@ -32,6 +32,12 @@ Item {
     // Track which services are currently playing audio
     property var audibleServices: ({})
 
+    // Track media metadata for services playing audio
+    property var mediaMetadata: ({})
+
+    // Signal when media metadata for a specific service changes
+    signal serviceMediaMetadataUpdated(string serviceId, var metadata)
+
     // Expose currentIndex property to allow external control
     property alias currentIndex: stackLayout.currentIndex
 
@@ -205,9 +211,7 @@ Item {
             var profiles = root.isolatedProfiles;
             profiles[serviceId] = profile;
             root.isolatedProfiles = profiles;
-            console.log("Created isolated profile for service:", serviceId,
-                        "storageName:", profile.storageName,
-                        "offTheRecord:", profile.offTheRecord);
+            console.log("Created isolated profile for service:", serviceId, "storageName:", profile.storageName, "offTheRecord:", profile.offTheRecord);
         } else {
             console.error("Failed to create isolated profile component for:", serviceId);
         }
@@ -300,6 +304,19 @@ Item {
             console.log("🔊 Updated audibleServices:", JSON.stringify(root.audibleServices));
         });
 
+        // Monitor media metadata changes
+        instance.mediaMetadataChanged.connect(function (svcId, metadata) {
+            var meta = Object.assign({}, root.mediaMetadata);
+            if (metadata) {
+                meta[svcId] = metadata;
+            } else {
+                delete meta[svcId];
+            }
+            root.mediaMetadata = meta;
+            root.serviceMediaMetadataUpdated(svcId, metadata);
+            console.log("🎵 Updated mediaMetadata:", JSON.stringify(root.mediaMetadata));
+        });
+
         // Store in cache
         var cache = root.webViewCache;
         cache[serviceId] = instance;
@@ -359,6 +376,13 @@ Item {
             var audible = Object.assign({}, root.audibleServices);
             delete audible[serviceId];
             root.audibleServices = audible;
+        }
+
+        // Remove from media metadata if present
+        if (mediaMetadata[serviceId]) {
+            var meta = Object.assign({}, root.mediaMetadata);
+            delete meta[serviceId];
+            root.mediaMetadata = meta;
         }
     }
 

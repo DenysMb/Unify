@@ -61,6 +61,30 @@ Kirigami.ApplicationWindow {
     // Object to track services currently playing audio
     property var serviceAudibleStates: ({})
 
+    // Object to track media metadata for services playing audio
+    property var serviceMediaMetadata: ({})
+
+    // Computed property for the currently playing service info (first audible service)
+    readonly property var nowPlayingInfo: {
+        var audibleIds = Object.keys(serviceAudibleStates);
+        if (audibleIds.length === 0) {
+            return null;
+        }
+        var serviceId = audibleIds[0];
+        var service = findServiceById(serviceId);
+        if (!service) {
+            return null;
+        }
+        var metadata = serviceMediaMetadata[serviceId] || {};
+        return {
+            serviceId: serviceId,
+            serviceName: service.title,
+            mediaTitle: metadata.title || "",
+            mediaArtist: metadata.artist || "",
+            mediaAlbum: metadata.album || ""
+        };
+    }
+
     // Watcher for notification counts to update tray icon
     onServiceNotificationCountsChanged: {
         if (trayIconManager) {
@@ -714,6 +738,20 @@ Kirigami.ApplicationWindow {
         // Add actions to the page header
         actions: [
             Kirigami.Action {
+                visible: root.nowPlayingInfo !== null
+                displayHint: Kirigami.DisplayHint.KeepVisible
+                displayComponent: NowPlayingIndicator {
+                    serviceName: root.nowPlayingInfo ? root.nowPlayingInfo.serviceName : ""
+                    serviceId: root.nowPlayingInfo ? root.nowPlayingInfo.serviceId : ""
+                    mediaTitle: root.nowPlayingInfo ? root.nowPlayingInfo.mediaTitle : ""
+                    mediaArtist: root.nowPlayingInfo ? root.nowPlayingInfo.mediaArtist : ""
+                    isPlaying: root.nowPlayingInfo !== null
+                    onSwitchToService: function (id) {
+                        root.switchToService(id);
+                    }
+                }
+            },
+            Kirigami.Action {
                 text: i18n("Add Service")
                 icon.name: "list-add"
                 onTriggered: {
@@ -779,7 +817,8 @@ Kirigami.ApplicationWindow {
                         onRefreshService: function (id) {
                             webViewStackVertical.refreshByServiceId(id);
                             var svc = root.findServiceById(id);
-                            if (svc) console.log("Refreshing service: " + svc.title);
+                            if (svc)
+                                console.log("Refreshing service: " + svc.title);
                         }
                         onDisableService: function (id) {
                             root.setServiceEnabled(id, root.isServiceDisabled(id));
@@ -825,6 +864,15 @@ Kirigami.ApplicationWindow {
                             onTitleUpdated: root.updateBadgeFromTitle
                             onAudibleServicesChanged: {
                                 root.serviceAudibleStates = audibleServices;
+                            }
+                            onServiceMediaMetadataUpdated: function (serviceId, metadata) {
+                                var meta = Object.assign({}, root.serviceMediaMetadata);
+                                if (metadata) {
+                                    meta[serviceId] = metadata;
+                                } else {
+                                    delete meta[serviceId];
+                                }
+                                root.serviceMediaMetadata = meta;
                             }
                             onUpdateServiceUrlRequested: function (serviceId, newUrl) {
                                 var service = root.findServiceById(serviceId);
@@ -902,7 +950,8 @@ Kirigami.ApplicationWindow {
                     onRefreshService: function (id) {
                         webViewStackHorizontal.refreshByServiceId(id);
                         var svc = root.findServiceById(id);
-                        if (svc) console.log("Refreshing service: " + svc.title);
+                        if (svc)
+                            console.log("Refreshing service: " + svc.title);
                     }
                     onDisableService: function (id) {
                         root.setServiceEnabled(id, root.isServiceDisabled(id));
@@ -948,6 +997,15 @@ Kirigami.ApplicationWindow {
                         onTitleUpdated: root.updateBadgeFromTitle
                         onAudibleServicesChanged: {
                             root.serviceAudibleStates = audibleServices;
+                        }
+                        onServiceMediaMetadataUpdated: function (serviceId, metadata) {
+                            var meta = Object.assign({}, root.serviceMediaMetadata);
+                            if (metadata) {
+                                meta[serviceId] = metadata;
+                            } else {
+                                delete meta[serviceId];
+                            }
+                            root.serviceMediaMetadata = meta;
                         }
                         onUpdateServiceUrlRequested: function (serviceId, newUrl) {
                             var service = root.findServiceById(serviceId);
