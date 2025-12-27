@@ -245,6 +245,9 @@ Item {
             view.audioStateChanged(view.serviceId, webView.recentlyAudible);
 
             if (webView.recentlyAudible) {
+                // Try to fetch metadata immediately to avoid delay
+                fetchMediaMetadata();
+                // Then start polling for metadata changes (e.g., track changes)
                 mediaMetadataTimer.start();
             } else {
                 mediaMetadataTimer.stop();
@@ -357,30 +360,35 @@ Item {
         }
     }
 
+    // Function to fetch media metadata from navigator.mediaSession
+    function fetchMediaMetadata() {
+        webView.runJavaScript("(function() {" + "    if (navigator.mediaSession && navigator.mediaSession.metadata) {" + "        return JSON.stringify({" + "            title: navigator.mediaSession.metadata.title || ''," + "            artist: navigator.mediaSession.metadata.artist || ''," + "            album: navigator.mediaSession.metadata.album || ''" + "        });" + "    }" + "    return null;" + "})();", function (result) {
+            if (result && result !== "null") {
+                try {
+                    var metadata = JSON.parse(result);
+                    var changed = (view.mediaTitle !== metadata.title || view.mediaArtist !== metadata.artist || view.mediaAlbum !== metadata.album);
+
+                    view.mediaTitle = metadata.title || "";
+                    view.mediaArtist = metadata.artist || "";
+                    view.mediaAlbum = metadata.album || "";
+
+                    if (changed) {
+                        console.log("🎵 Media metadata for", view.serviceTitle, ":", metadata.artist, "-", metadata.title);
+                        view.mediaMetadataChanged(view.serviceId, metadata);
+                    }
+                } catch (e) {
+                    console.warn("Failed to parse media metadata:", e);
+                }
+            }
+        });
+    }
+
     Timer {
         id: mediaMetadataTimer
         interval: 1500
         repeat: true
         onTriggered: {
-            webView.runJavaScript("(function() {" + "    if (navigator.mediaSession && navigator.mediaSession.metadata) {" + "        return JSON.stringify({" + "            title: navigator.mediaSession.metadata.title || ''," + "            artist: navigator.mediaSession.metadata.artist || ''," + "            album: navigator.mediaSession.metadata.album || ''" + "        });" + "    }" + "    return null;" + "})();", function (result) {
-                if (result && result !== "null") {
-                    try {
-                        var metadata = JSON.parse(result);
-                        var changed = (view.mediaTitle !== metadata.title || view.mediaArtist !== metadata.artist || view.mediaAlbum !== metadata.album);
-
-                        view.mediaTitle = metadata.title || "";
-                        view.mediaArtist = metadata.artist || "";
-                        view.mediaAlbum = metadata.album || "";
-
-                        if (changed) {
-                            console.log("🎵 Media metadata for", view.serviceTitle, ":", metadata.artist, "-", metadata.title);
-                            view.mediaMetadataChanged(view.serviceId, metadata);
-                        }
-                    } catch (e) {
-                        console.warn("Failed to parse media metadata:", e);
-                    }
-                }
-            });
+            fetchMediaMetadata();
         }
     }
 
