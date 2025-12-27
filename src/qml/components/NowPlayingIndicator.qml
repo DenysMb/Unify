@@ -39,7 +39,7 @@ Controls.ToolButton {
 
         // Container for scrolling text
         Item {
-            Layout.preferredWidth: maxTextWidth
+            Layout.preferredWidth: Math.min(scrollLabel.implicitWidth, maxTextWidth)
             Layout.preferredHeight: scrollLabel.height
             clip: true
 
