@@ -89,7 +89,7 @@ Controls.ToolButton {
             // Delay before starting scroll (so user can read beginning first)
             Timer {
                 id: scrollDelayTimer
-                interval: 1500
+                interval: 500
                 onTriggered: {
                     if (scrollLabel.needsScroll) {
                         scrollAnim.start();
