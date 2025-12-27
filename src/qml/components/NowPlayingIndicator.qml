@@ -16,6 +16,14 @@ Controls.ToolButton {
 
     visible: isPlaying && serviceName !== ""
 
+    padding: Kirigami.Units.smallSpacing * 2
+
+    background: Rectangle {
+        color: "#0d120f"
+        radius: Kirigami.Units.smallSpacing
+        opacity: 0.5
+    }
+
     contentItem: RowLayout {
         spacing: Kirigami.Units.smallSpacing
 
