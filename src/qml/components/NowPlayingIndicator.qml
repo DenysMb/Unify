@@ -105,6 +105,11 @@ Controls.ToolButton {
 
                 loops: Animation.Infinite
 
+                // Pause at the beginning (before scrolling starts)
+                PauseAnimation {
+                    duration: 1000
+                }
+
                 // Scroll from left until last character is visible on the right
                 NumberAnimation {
                     target: scrollLabel
@@ -118,6 +123,14 @@ Controls.ToolButton {
                 // Small pause when fully visible
                 PauseAnimation {
                     duration: 1000
+                }
+
+                // Return to beginning instantly
+                NumberAnimation {
+                    target: scrollLabel
+                    property: "x"
+                    to: 0
+                    duration: 0
                 }
             }
         }
