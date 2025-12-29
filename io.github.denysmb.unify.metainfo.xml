@@ -43,18 +43,23 @@
 
   <screenshots>
     <screenshot type="default">
+      <caption>Unify managing multiple web services (Discord, YouTube, Gmail, etc.) in a single application window</caption>
       <image>https://raw.githubusercontent.com/DenysMb/Unify/main/screenshots/screenshot_webview.png</image>
     </screenshot>
     <screenshot>
+      <caption>Workspace drawer menu showing organized service categories (Favorites, Social, Office, Multimedia)</caption>
       <image>https://raw.githubusercontent.com/DenysMb/Unify/main/screenshots/screenshot_drawer.png</image>
     </screenshot>
     <screenshot>
+      <caption>Horizontal service bar with quick access to multiple web applications</caption>
       <image>https://raw.githubusercontent.com/DenysMb/Unify/main/screenshots/screenshot_horizontal-bar.png</image>
     </screenshot>
     <screenshot>
+      <caption>Workspace status bar with quick access to multiple workspaces</caption>
       <image>https://raw.githubusercontent.com/DenysMb/Unify/main/screenshots/screenshot_status-bar.png</image>
     </screenshot>
     <screenshot>
+      <caption>Service configuration dialog for adding and editing web services</caption>
       <image>https://raw.githubusercontent.com/DenysMb/Unify/main/screenshots/screenshot_service-dialog.png</image>
     </screenshot>
   </screenshots>
