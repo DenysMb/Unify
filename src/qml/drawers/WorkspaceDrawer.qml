@@ -185,9 +185,17 @@ Kirigami.Action { separator: true }
                 }
 
                 QQC2.Label {
+                    Layout.preferredWidth: parent.width - 20
                     Layout.fillWidth: true
                     wrapMode: QQC2.Label.WordWrap
-                    text: i18n("Some streaming services (Spotify, Netflix, Prime Video, etc.) require Widevine CDM to play DRM-protected content. Widevine is a Google proprietary library that cannot be bundled with the app.")
+                    text: i18n("Some streaming services (Spotify, Netflix, Prime Video, etc.) require Widevine CDM to play DRM-protected content.")
+                }
+
+                QQC2.Label {
+                    Layout.preferredWidth: parent.width - 20
+                    Layout.fillWidth: true
+                    wrapMode: QQC2.Label.WordWrap
+                    text: i18n("Widevine is a Google proprietary library that cannot be bundled with the app.")
                 }
 
                 // Status indicator
@@ -290,6 +298,7 @@ Kirigami.Action { separator: true }
                 }
 
                 QQC2.Label {
+                    Layout.preferredWidth: parent.width - 20
                     Layout.fillWidth: true
                     wrapMode: QQC2.Label.WordWrap
                     textFormat: QQC2.Label.RichText
@@ -321,8 +330,7 @@ Kirigami.Action { separator: true }
         function onInstallationStarted() {
             // Access showPassiveNotification from the root ApplicationWindow
             if (drawer.Kirigami.ApplicationWindow.window) {
-                drawer.Kirigami.ApplicationWindow.window.showPassiveNotification(
-                    i18n("Widevine installation started. This may take a moment..."), "long");
+                drawer.Kirigami.ApplicationWindow.window.showPassiveNotification(i18n("Widevine installation started. This may take a moment..."), "long");
             }
         }
         function onInstallationFinished(success, message) {
