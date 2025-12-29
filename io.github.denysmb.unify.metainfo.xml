@@ -25,14 +25,37 @@
   </categories>
 
   <description>
-    <p>
-      ...
-    </p>
+    <p>Unify is a web app aggregator that brings all your favorite web applications (Spotify, YouTube, Gmail, WhatsApp Web, and more) into a single, desktop-native window.</p>
+    <p>Organize your web apps into workspaces, switch between them instantly, and enjoy desktop features like native notifications, screen sharing, and media session tracking.</p>
+    <p>Features:</p>
+    <ul>
+      <li>Run multiple web apps in one application window</li>
+      <li>Organize services into customizable workspaces</li>
+      <li>Native desktop notifications integration</li>
+      <li>Screen sharing and webcam support</li>
+      <li>DRM content playback (Spotify, Netflix, Prime Video with Widevine)</li>
+      <li>Media session tracking with "Now Playing" indicator</li>
+      <li>Favicon auto-detection for service icons</li>
+      <li>Detachable windows for individual services</li>
+      <li>Keyboard shortcuts support</li>
+    </ul>
   </description>
 
   <screenshots>
     <screenshot type="default">
-      <image>...</image>
+      <image>https://raw.githubusercontent.com/DenysMb/Unify/main/screenshots/screenshot_webview.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/DenysMb/Unify/main/screenshots/screenshot_drawer.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/DenysMb/Unify/main/screenshots/screenshot_horizontal-bar.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/DenysMb/Unify/main/screenshots/screenshot_status-bar.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/DenysMb/Unify/main/screenshots/screenshot_service-dialog.png</image>
     </screenshot>
   </screenshots>
 
@@ -41,7 +64,7 @@
   <content_rating type="oars-1.1" />
 
   <releases>
-    <release version="0.1.0" date="2025-06-05">
+    <release version="0.1.0" date="2025-12-30">
       <description>
         <p>Initial release.</p>
       </description>
