@@ -1,7 +1,6 @@
 [Desktop Entry]
 Name=Unify
 Comment=Web app aggregator
-Version=0.1.0
 Exec=unify
 Icon=io.github.denysmb.unify
 Type=Application
