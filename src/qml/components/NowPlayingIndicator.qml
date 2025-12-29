@@ -6,20 +6,78 @@ import org.kde.kirigami as Kirigami
 Controls.ToolButton {
     id: root
 
+    // Legacy properties for single service (for backward compatibility)
     property string serviceName: ""
     property string serviceId: ""
     property string mediaTitle: ""
     property string mediaArtist: ""
     property bool isPlaying: false
 
+    // New: list of playing services with metadata
+    // Format: [{ serviceId: string, serviceName: string, mediaTitle: string, mediaArtist: string, mediaAlbum: string }]
+    property var playingServices: []
+
     signal switchToService(string serviceId)
 
-    visible: isPlaying && serviceName !== ""
+    // Computed: check if we have multiple services playing
+    readonly property bool hasMultiplePlaying: playingServices.length > 1
+
+    // Visible if we have services playing (either legacy or new mode)
+    visible: (isPlaying && serviceName !== "") || playingServices.length > 0
 
     padding: Kirigami.Units.smallSpacing * 2
 
     // Maximum width for the text label
-    readonly property int maxTextWidth: 200
+    readonly property int maxTextWidth: hasMultiplePlaying ? 150 : 200
+
+    // Get display text based on mode
+    readonly property string displayText: {
+        if (hasMultiplePlaying) {
+            // Show count in new mode
+            return i18nc("@label:button Number of services playing audio", "%1 playing", playingServices.length);
+        } else {
+            // Use legacy single service properties or first from playingServices
+            var name = serviceName !== "" ? serviceName : (playingServices.length > 0 ? playingServices[0].serviceName : "");
+            var title = mediaTitle !== "" ? mediaTitle : (playingServices.length > 0 ? playingServices[0].mediaTitle : "");
+            var artist = mediaArtist !== "" ? mediaArtist : (playingServices.length > 0 ? playingServices[0].mediaArtist : "");
+
+            if (artist && title) {
+                return name + ": " + artist + " - " + title;
+            } else if (title) {
+                return name + ": " + title;
+            }
+            return name;
+        }
+    }
+
+    // Get tooltip text based on mode
+    readonly property string tooltipText: {
+        if (hasMultiplePlaying) {
+            var tip = i18n("Playing:");
+            for (var i = 0; i < playingServices.length; i++) {
+                var svc = playingServices[i];
+                var line = "\n• " + svc.serviceName;
+                if (svc.mediaArtist && svc.mediaTitle) {
+                    line += " - " + svc.mediaArtist + " - " + svc.mediaTitle;
+                } else if (svc.mediaTitle) {
+                    line += " - " + svc.mediaTitle;
+                }
+                tip += line;
+            }
+            return tip;
+        } else {
+            var name = serviceName !== "" ? serviceName : (playingServices.length > 0 ? playingServices[0].serviceName : "");
+            var title = mediaTitle !== "" ? mediaTitle : (playingServices.length > 0 ? playingServices[0].mediaTitle : "");
+            var artist = mediaArtist !== "" ? mediaArtist : (playingServices.length > 0 ? playingServices[0].mediaArtist : "");
+            var tip = name;
+            if (artist && title) {
+                tip += "\n" + artist + " - " + title;
+            } else if (title) {
+                tip += "\n" + title;
+            }
+            return tip;
+        }
+    }
 
     background: Rectangle {
         color: "#0d120f"
@@ -46,27 +104,18 @@ Controls.ToolButton {
             Controls.Label {
                 id: scrollLabel
 
-                // Full text without elision
-                text: {
-                    var displayText = root.serviceName;
-                    if (root.mediaArtist && root.mediaTitle) {
-                        displayText += ": " + root.mediaArtist + " - " + root.mediaTitle;
-                    } else if (root.mediaTitle) {
-                        displayText += ": " + root.mediaTitle;
-                    }
-                    return displayText;
-                }
+                text: root.displayText
 
                 // Position changes for scrolling effect
                 x: {
-                    if (scrollLabel.width <= maxTextWidth) {
+                    if (scrollLabel.width <= maxTextWidth || hasMultiplePlaying) {
                         return 0;
                     }
                     return scrollAnim.running ? scrollAnim.xPos : 0;
                 }
 
                 // Determine if text needs scrolling
-                readonly property bool needsScroll: width > maxTextWidth
+                readonly property bool needsScroll: width > maxTextWidth && !hasMultiplePlaying
 
                 // Start scrolling after a delay when content changes
                 onTextChanged: {
@@ -134,23 +183,58 @@ Controls.ToolButton {
                 }
             }
         }
+
+        // Dropdown arrow for multiple services
+        Kirigami.Icon {
+            source: hasMultiplePlaying ? "arrow-down" : ""
+            Layout.preferredWidth: hasMultiplePlaying ? Kirigami.Units.iconSizes.small : 0
+            Layout.preferredHeight: hasMultiplePlaying ? Kirigami.Units.iconSizes.small : 0
+            color: Kirigami.Theme.textColor
+            visible: hasMultiplePlaying
+        }
     }
 
     onClicked: {
-        if (root.serviceId) {
-            root.switchToService(root.serviceId);
+        if (hasMultiplePlaying) {
+            // Open menu for multiple services
+            multipleServicesMenu.open();
+        } else {
+            // Direct switch for single service
+            var targetId = serviceId !== "" ? serviceId : (playingServices.length > 0 ? playingServices[0].serviceId : "");
+            if (targetId) {
+                root.switchToService(targetId);
+            }
         }
     }
 
-    Controls.ToolTip.visible: hovered && (mediaTitle || mediaArtist)
-    Controls.ToolTip.text: {
-        var tip = root.serviceName;
-        if (root.mediaArtist && root.mediaTitle) {
-            tip += "\n" + root.mediaArtist + " - " + root.mediaTitle;
-        } else if (root.mediaTitle) {
-            tip += "\n" + root.mediaTitle;
-        }
-        return tip;
-    }
+    Controls.ToolTip.visible: hovered && (hasMultiplePlaying || mediaTitle || mediaArtist || (playingServices.length > 0 && playingServices[0].mediaTitle))
+    Controls.ToolTip.text: root.tooltipText
     Controls.ToolTip.delay: 500
+
+    // Menu for multiple playing services
+    Controls.Menu {
+        id: multipleServicesMenu
+
+        title: i18nc("@title:menu", "Playing Services")
+
+        Instantiator {
+            model: playingServices
+            delegate: Controls.MenuItem {
+                text: {
+                    var display = modelData.serviceName;
+                    if (modelData.mediaArtist && modelData.mediaTitle) {
+                        display += " - " + modelData.mediaArtist + " - " + modelData.mediaTitle;
+                    } else if (modelData.mediaTitle) {
+                        display += " - " + modelData.mediaTitle;
+                    }
+                    return display;
+                }
+                onTriggered: {
+                    root.switchToService(modelData.serviceId);
+                }
+            }
+            onObjectAdded: multipleServicesMenu.insertItem(index, object)
+            onObjectRemoved: multipleServicesMenu.removeItem(object)
+        }
+    }
 }

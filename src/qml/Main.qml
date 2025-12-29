@@ -65,6 +65,7 @@ Kirigami.ApplicationWindow {
     property var serviceMediaMetadata: ({})
 
     // Computed property for the currently playing service info (first audible service)
+    // Kept for backward compatibility
     readonly property var nowPlayingInfo: {
         var audibleIds = Object.keys(serviceAudibleStates);
         if (audibleIds.length === 0) {
@@ -83,6 +84,30 @@ Kirigami.ApplicationWindow {
             mediaArtist: metadata.artist || "",
             mediaAlbum: metadata.album || ""
         };
+    }
+
+    // Computed property for all playing services with metadata
+    readonly property var allPlayingServices: {
+        var audibleIds = Object.keys(serviceAudibleStates);
+        var playingList = [];
+
+        for (var i = 0; i < audibleIds.length; i++) {
+            var serviceId = audibleIds[i];
+            var service = findServiceById(serviceId);
+            if (!service) {
+                continue;
+            }
+            var metadata = serviceMediaMetadata[serviceId] || {};
+            playingList.push({
+                serviceId: serviceId,
+                serviceName: service.title,
+                mediaTitle: metadata.title || "",
+                mediaArtist: metadata.artist || "",
+                mediaAlbum: metadata.album || ""
+            });
+        }
+
+        return playingList;
     }
 
     // Watcher for notification counts to update tray icon
@@ -746,6 +771,7 @@ Kirigami.ApplicationWindow {
                     mediaTitle: root.nowPlayingInfo ? root.nowPlayingInfo.mediaTitle : ""
                     mediaArtist: root.nowPlayingInfo ? root.nowPlayingInfo.mediaArtist : ""
                     isPlaying: root.nowPlayingInfo !== null
+                    playingServices: root.allPlayingServices
                     onSwitchToService: function (id) {
                         root.switchToService(id);
                     }
