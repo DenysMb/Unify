@@ -1,12 +1,12 @@
 [Desktop Entry]
 Name=Unify
 Comment=Web app aggregator
-Version=1.0
-Exec=Unify
+Version=0.1.0
+Exec=unify
 Icon=io.github.denysmb.unify
 Type=Application
 Terminal=false
-Categories=Internet;
+Categories=Network;
 SingleMainWindow=true
 X-DBUS-ServiceName=io.github.denysmb.unify
 X-DBUS-StartupType=Unique
