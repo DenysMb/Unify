@@ -2,6 +2,8 @@
 
 Unify is a web app aggregator built with Qt 6, Qt WebEngine, and Kirigami. It organizes "services" (web apps) by "workspaces" and opens each service in a WebView with desktop-friendly integrations (notifications, screen sharing, etc.).
 
+<img src="https://raw.githubusercontent.com/DenysMb/Unify/refs/heads/main/screenshots/screenshot_webview.png" />
+
 ## Requirements
 
 - Qt 6 (Quick, Qml, QuickControls2, WebEngineQuick, DBus)
