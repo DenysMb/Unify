@@ -199,33 +199,6 @@ void ConfigManager::addService(const QVariantMap &service)
     qDebug() << "Added service:" << newService[QStringLiteral("title")].toString() << "to workspace:" << newService[QStringLiteral("workspace")].toString();
 }
 
-void ConfigManager::addShortcut(const QVariantMap &shortcut)
-{
-    QVariantMap newShortcut = shortcut;
-
-    // Generate UUID if not provided
-    if (!newShortcut.contains(QStringLiteral("id")) || newShortcut[QStringLiteral("id")].toString().isEmpty()) {
-        newShortcut[QStringLiteral("id")] = QUuid::createUuid().toString(QUuid::WithoutBraces);
-    }
-
-    // Mark as shortcut type
-    newShortcut[QStringLiteral("itemType")] = QStringLiteral("shortcut");
-
-    // Set default workspace if not provided
-    if (!newShortcut.contains(QStringLiteral("workspace")) || newShortcut[QStringLiteral("workspace")].toString().isEmpty()) {
-        newShortcut[QStringLiteral("workspace")] = m_currentWorkspace.isEmpty() ? QStringLiteral("Personal") : m_currentWorkspace;
-    }
-
-    // Shortcuts are always appended at the end
-    m_services.append(newShortcut);
-
-    updateWorkspacesList();
-    Q_EMIT servicesChanged();
-    saveSettings();
-
-    qDebug() << "Added shortcut:" << newShortcut[QStringLiteral("title")].toString() << "to workspace:" << newShortcut[QStringLiteral("workspace")].toString();
-}
-
 void ConfigManager::updateService(const QString &serviceId, const QVariantMap &service)
 {
     for (int i = 0; i < m_services.size(); ++i) {

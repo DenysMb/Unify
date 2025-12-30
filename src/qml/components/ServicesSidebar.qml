@@ -31,8 +31,6 @@ Rectangle {
     signal disableService(string id)
     signal detachService(string id)
     signal toggleFavoriteRequested(string id)
-    signal shortcutClicked(string desktopFileName)
-    signal editShortcutRequested(string id)
 
     Connections {
         target: typeof configManager !== "undefined" ? configManager : null
@@ -177,19 +175,6 @@ Rectangle {
                             root.toggleFavoriteRequested(modelData.id);
                         }
                     }
-
-                    Components.ShortcutIconButton {
-                        visible: modelData.itemType === "shortcut"
-                        width: parent.width
-                        height: root.buttonSize
-                        title: modelData.title || ""
-                        iconName: modelData.customIcon || modelData.icon || "application-x-executable"
-                        desktopFileName: modelData.desktopFileName || ""
-                        buttonSize: root.buttonSize
-                        iconSize: root.iconSize
-                        onClicked: root.shortcutClicked(modelData.desktopFileName)
-                        onEditRequested: root.editShortcutRequested(modelData.id)
-                    }
                 }
             }
 
@@ -309,19 +294,6 @@ Rectangle {
                         onToggleFavoriteRequested: {
                             root.toggleFavoriteRequested(modelData.id);
                         }
-                    }
-
-                    Components.ShortcutIconButton {
-                        visible: modelData.itemType === "shortcut"
-                        width: parent.width
-                        height: root.buttonSize
-                        title: modelData.title || ""
-                        iconName: modelData.customIcon || modelData.icon || "application-x-executable"
-                        desktopFileName: modelData.desktopFileName || ""
-                        buttonSize: root.buttonSize
-                        iconSize: root.iconSize
-                        onClicked: root.shortcutClicked(modelData.desktopFileName)
-                        onEditRequested: root.editShortcutRequested(modelData.id)
                     }
                 }
             }

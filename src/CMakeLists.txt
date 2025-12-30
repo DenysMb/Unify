@@ -15,8 +15,6 @@ target_sources(unify
     core/configmanager.h
     core/notificationpresenter.cpp
     core/notificationpresenter.h
-    core/applicationshortcutmanager.cpp
-    core/applicationshortcutmanager.h
     ui/trayiconmanager.cpp
     ui/trayiconmanager.h
     utils/faviconcache.cpp
@@ -37,7 +35,6 @@ ecm_target_qml_sources(unify
     qml/Main.qml
     qml/components/ServiceIconButton.qml
     qml/components/ServicesSidebar.qml
-    qml/components/ShortcutIconButton.qml
     qml/components/EmptyState.qml
     qml/components/ServiceWebView.qml
     qml/components/DetachedServiceWindow.qml
@@ -49,7 +46,6 @@ ecm_target_qml_sources(unify
     qml/dialogs/ServiceDialog.qml
     qml/dialogs/PermissionDialog.qml
     qml/dialogs/WorkspaceDialog.qml
-    qml/dialogs/ApplicationShortcutDialog.qml
     qml/dialogs/DesktopMediaDialog.qml
     qml/drawers/WorkspaceDrawer.qml
     qml/utils/Services.js

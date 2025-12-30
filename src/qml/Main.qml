@@ -453,11 +453,6 @@ Kirigami.ApplicationWindow {
                 addWorkspaceDialog.open();
             }
         }
-        onCreateShortcutRequested: {
-            applicationShortcutDialog.isEditMode = false;
-            applicationShortcutDialog.clearFields();
-            applicationShortcutDialog.open();
-        }
     }
 
     // Add/Edit Service Dialog
@@ -597,49 +592,6 @@ Kirigami.ApplicationWindow {
     // Permission Request Dialog (componente)
     PermissionDialog {
         id: permissionDialog
-    }
-
-    // Application Shortcut Dialog
-    ApplicationShortcutDialog {
-        id: applicationShortcutDialog
-        workspaces: root.workspaces
-        currentWorkspace: root.currentWorkspace
-        onRejected: {
-            root.editingServiceId = "";
-        }
-        onAcceptedShortcut: function (shortcutData) {
-            if (isEditMode) {
-                var shortcutId = root.editingServiceId;
-                if (configManager && shortcutId) {
-                    configManager.updateService(shortcutId, {
-                        itemType: "shortcut",
-                        title: shortcutData.title,
-                        desktopFileName: shortcutData.desktopFileName,
-                        icon: shortcutData.icon,
-                        customIcon: shortcutData.customIcon,
-                        workspace: shortcutData.workspace
-                    });
-                }
-                root.editingServiceId = "";
-            } else {
-                if (configManager) {
-                    configManager.addShortcut({
-                        title: shortcutData.title,
-                        desktopFileName: shortcutData.desktopFileName,
-                        icon: shortcutData.icon,
-                        customIcon: shortcutData.customIcon,
-                        workspace: shortcutData.workspace
-                    });
-                }
-            }
-        }
-        onDeleteRequested: {
-            if (isEditMode && configManager && root.editingServiceId) {
-                configManager.removeService(root.editingServiceId);
-                applicationShortcutDialog.close();
-                root.editingServiceId = "";
-            }
-        }
     }
 
     // Keep currently selected service visible after services list changes (add/update/remove)
@@ -859,20 +811,6 @@ Kirigami.ApplicationWindow {
                         onToggleFavoriteRequested: function (id) {
                             root.handleToggleFavorite(id);
                         }
-                        onShortcutClicked: function (desktopFileName) {
-                            if (typeof applicationShortcutManager !== "undefined") {
-                                applicationShortcutManager.launchApplication(desktopFileName);
-                            }
-                        }
-                        onEditShortcutRequested: function (id) {
-                            var shortcut = root.findServiceById(id);
-                            if (shortcut) {
-                                root.editingServiceId = id;
-                                applicationShortcutDialog.isEditMode = true;
-                                applicationShortcutDialog.populateFields(shortcut);
-                                applicationShortcutDialog.open();
-                            }
-                        }
                     }
 
                     Rectangle {
@@ -991,20 +929,6 @@ Kirigami.ApplicationWindow {
                     }
                     onToggleFavoriteRequested: function (id) {
                         root.handleToggleFavorite(id);
-                    }
-                    onShortcutClicked: function (desktopFileName) {
-                        if (typeof applicationShortcutManager !== "undefined") {
-                            applicationShortcutManager.launchApplication(desktopFileName);
-                        }
-                    }
-                    onEditShortcutRequested: function (id) {
-                        var shortcut = root.findServiceById(id);
-                        if (shortcut) {
-                            root.editingServiceId = id;
-                            applicationShortcutDialog.isEditMode = true;
-                            applicationShortcutDialog.populateFields(shortcut);
-                            applicationShortcutDialog.open();
-                        }
                     }
                 }
 

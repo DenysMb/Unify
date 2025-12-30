@@ -1,4 +1,3 @@
-#include "core/applicationshortcutmanager.h"
 #include "core/configmanager.h"
 #include "core/notificationpresenter.h"
 #include "ui/trayiconmanager.h"
@@ -85,9 +84,6 @@ int main(int argc, char *argv[])
     // Create notification presenter instance
     NotificationPresenter *notificationPresenter = new NotificationPresenter(&app);
 
-    // Create application shortcut manager instance
-    ApplicationShortcutManager *applicationShortcutManager = new ApplicationShortcutManager(&app);
-
     // Create file utils instance
     FileUtils *fileUtils = new FileUtils(&app);
 
@@ -132,7 +128,6 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("trayIconManager"), trayIconManager);
     engine.rootContext()->setContextProperty(QStringLiteral("faviconCache"), faviconCache);
     engine.rootContext()->setContextProperty(QStringLiteral("keyEventFilter"), keyEventFilter);
-    engine.rootContext()->setContextProperty(QStringLiteral("applicationShortcutManager"), applicationShortcutManager);
     engine.rootContext()->setContextProperty(QStringLiteral("fileUtils"), fileUtils);
     engine.rootContext()->setContextProperty(QStringLiteral("printHandler"), printHandler);
     engine.rootContext()->setContextProperty(QStringLiteral("widevineManager"), widevineManager);

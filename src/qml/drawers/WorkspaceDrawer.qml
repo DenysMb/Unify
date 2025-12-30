@@ -14,7 +14,6 @@ Kirigami.GlobalDrawer {
     signal addWorkspaceRequested
     signal editWorkspaceRequested(int index)
     signal tipsRequested
-    signal createShortcutRequested
 
     function buildActions() {
         var acts = [];
@@ -86,22 +85,6 @@ Kirigami.Action { separator: true }
               text: i18n("Add Workspace")
               icon.name: "folder-new"
               onTriggered: drawer.addWorkspaceRequested()
-            }
-        `, drawer));
-
-        // separator
-        acts.push(Qt.createQmlObject(`import org.kde.kirigami as Kirigami
-Kirigami.Action { separator: true }
-`, drawer));
-
-        // Create Application Shortcut
-        acts.push(Qt.createQmlObject(`
-            import org.kde.kirigami as Kirigami
-            Kirigami.Action {
-              text: i18n("Create Application Shortcut")
-              icon.name: "application-x-executable"
-              enabled: drawer.currentWorkspace !== "" && configManager && !configManager.isSpecialWorkspace(drawer.currentWorkspace)
-              onTriggered: drawer.createShortcutRequested()
             }
         `, drawer));
 
