@@ -28,7 +28,7 @@
     "--socket=pulseaudio",
     "--device=all",
     "--talk-name=org.kde.StatusNotifierWatcher",
-    "--own-name=org.mpris.MediaPlayer2.unify.*",
+    "--own-name=org.mpris.MediaPlayer2.chromium.*",
     "--filesystem=xdg-download",
     "--filesystem=xdg-data/applications:ro",
     "--env=QTWEBENGINEPROCESS_PATH=/app/bin/QtWebEngineProcess",
