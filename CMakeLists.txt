@@ -54,6 +54,7 @@ find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS
     Service
     KIO
     DBusAddons
+    Archive
 )
 find_package(KF6 REQUIRED COMPONENTS KirigamiAddons)
 

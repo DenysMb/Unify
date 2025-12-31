@@ -71,6 +71,7 @@ target_link_libraries(unify
     KF6::Service
     KF6::KIOGui
     KF6::DBusAddons
+    KF6::Archive
 )
 
 install(TARGETS unify ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
