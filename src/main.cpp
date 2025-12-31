@@ -11,6 +11,7 @@
 #include <KLocalizedString>
 #include <QApplication>
 #include <QDebug>
+#include <QDir>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
 #include <QUrl>
@@ -19,38 +20,85 @@
 #include <QtQml>
 #include <QtWebEngineQuick>
 
+// Helper function to find installed Widevine library path
+static QString findWidevinePath()
+{
+    const QString homePath = QDir::homePath();
+    const QString widevinePath = homePath + QStringLiteral("/.var/app/io.github.denysmb.unify/plugins/WidevineCdm");
+    QDir widevineDir(widevinePath);
+
+    if (!widevineDir.exists()) {
+        return QString();
+    }
+
+    // Look for version directories (e.g., 4.10.2830.0)
+    const QStringList entries = widevineDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QString &entry : entries) {
+        // Check if this looks like a version number
+        if (entry.contains(QLatin1Char('.')) && !entry.isEmpty() && entry.at(0).isDigit()) {
+            const QString libPath =
+                widevinePath + QLatin1Char('/') + entry + QStringLiteral("/_platform_specific/linux_x64/libwidevinecdm.so");
+            if (QFile::exists(libPath)) {
+                return libPath;
+            }
+        }
+    }
+
+    return QString();
+}
+
 int main(int argc, char *argv[])
 {
+    // Check if Widevine is installed
+    const QString widevinePath = findWidevinePath();
+    const bool isInFlatpak = QFile::exists(QStringLiteral("/.flatpak-info")) || !qEnvironmentVariableIsEmpty("FLATPAK_ID");
+
     // Set Chromium command line arguments for better OAuth/Google compatibility
     // These flags help avoid detection as an automated/embedded browser
     // Chromium flags with GPU acceleration disabled to prevent freezing on some systems
     // WebRTCPipeWireCapturer enables screen/window sharing via PipeWire on Wayland
-    //
-    // Note: In Flatpak builds, QTWEBENGINE_CHROMIUM_FLAGS is set via the manifest
-    // and can be overridden by the install-widevine.sh script for DRM support.
-    // We only set default flags here if the environment variable is not already defined.
+    QByteArray chromiumFlags;
+
     if (qEnvironmentVariableIsEmpty("QTWEBENGINE_CHROMIUM_FLAGS")) {
-        qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
-                "--disable-blink-features=AutomationControlled "
-                "--disable-gpu "
-                "--disable-gpu-compositing "
-                "--disable-features=VizDisplayCompositor "
-                "--disable-web-security=false "
-                "--enable-features=NetworkService,NetworkServiceInProcess,WebRTCPipeWireCapturer,HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport "
-                "--disable-background-networking=false "
-                "--disable-client-side-phishing-detection "
-                "--disable-default-apps "
-                "--disable-extensions "
-                "--disable-hang-monitor "
-                "--disable-popup-blocking "
-                "--disable-prompt-on-repost "
-                "--disable-sync "
-                "--metrics-recording-only "
-                "--no-first-run "
-                "--safebrowsing-disable-auto-update "
-                "--enable-widevine-cdm "
-                "--autoplay-policy=no-user-gesture-required");
+        // No flags set, use our defaults
+        chromiumFlags =
+            "--disable-blink-features=AutomationControlled "
+            "--disable-gpu "
+            "--disable-gpu-compositing "
+            "--disable-features=VizDisplayCompositor "
+            "--disable-web-security=false "
+            "--enable-features=NetworkService,NetworkServiceInProcess,WebRTCPipeWireCapturer,HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport "
+            "--disable-background-networking=false "
+            "--disable-client-side-phishing-detection "
+            "--disable-default-apps "
+            "--disable-extensions "
+            "--disable-hang-monitor "
+            "--disable-popup-blocking "
+            "--disable-prompt-on-repost "
+            "--disable-sync "
+            "--metrics-recording-only "
+            "--no-first-run "
+            "--safebrowsing-disable-auto-update "
+            "--enable-widevine-cdm "
+            "--autoplay-policy=no-user-gesture-required";
+    } else {
+        // Flags already set (e.g., by Flatpak manifest), use them as base
+        chromiumFlags = qgetenv("QTWEBENGINE_CHROMIUM_FLAGS");
     }
+
+    // Add Widevine path if installed and not already present in flags
+    if (!widevinePath.isEmpty() && !chromiumFlags.contains("--widevine-path=")) {
+        qDebug() << "Found Widevine at:" << widevinePath;
+        chromiumFlags += " --widevine-path=" + widevinePath.toUtf8();
+
+        // Add --no-sandbox flag required for Widevine in Flatpak (if not already present)
+        if (isInFlatpak && !chromiumFlags.contains("--no-sandbox")) {
+            chromiumFlags += " --no-sandbox";
+        }
+    }
+
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", chromiumFlags);
+    qDebug() << "QTWEBENGINE_CHROMIUM_FLAGS:" << chromiumFlags;
 
     // Initialize WebEngine before QApplication
     QtWebEngineQuick::initialize();
