@@ -16,7 +16,6 @@
     "--talk-name=org.kde.StatusNotifierWatcher",
     "--own-name=org.mpris.MediaPlayer2.chromium.*",
     "--filesystem=xdg-download",
-    "--filesystem=xdg-data/applications:ro",
     "--env=QTWEBENGINEPROCESS_PATH=/app/bin/QtWebEngineProcess",
     "--env=QTWEBENGINE_CHROMIUM_FLAGS=--autoplay-policy=no-user-gesture-required --enable-features=HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport,WebRTCPipeWireCapturer --enable-widevine-cdm"
   ],
