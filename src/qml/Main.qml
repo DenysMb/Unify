@@ -730,6 +730,16 @@ Kirigami.ApplicationWindow {
                 }
             },
             Kirigami.Action {
+                text: i18n("Refresh Service")
+                icon.name: "view-refresh"
+                enabled: root.currentServiceId !== ""
+                onTriggered: {
+                    if (root.currentServiceId !== "" && root.webViewStack) {
+                        root.webViewStack.refreshByServiceId(root.currentServiceId);
+                    }
+                }
+            },
+            Kirigami.Action {
                 text: i18n("Add Service")
                 icon.name: "list-add"
                 onTriggered: {
