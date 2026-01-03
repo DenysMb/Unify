@@ -113,6 +113,10 @@ Kirigami.Dialog {
         }
 
         var url = serviceUrlField.text.trim();
+        // Prepend https:// if no protocol is specified (for favicon fetching)
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "https://" + url;
+        }
 
         // Fetch Google favicon
         root.googleFaviconLoading = true;
