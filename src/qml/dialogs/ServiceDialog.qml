@@ -40,12 +40,12 @@ Kirigami.Dialog {
         var url = serviceUrlField.text.trim();
         if (url.length === 0)
             return false;
-
-        // Check if URL starts with http://, https://, or is a valid domain
+        // Accept http://, https://, or domain-only
         var urlPattern = /^(https?:\/\/)|([\w-]+\.[\w-]+)/;
         return urlPattern.test(url);
     }
     readonly property bool isFormValid: isNameValid && isUrlValid
+    readonly property bool isUsingHttp: serviceUrlField.text.trim().startsWith("http://")
 
     title: isEditMode ? i18n("Edit Service") : i18n("Add Service")
     standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
@@ -113,6 +113,10 @@ Kirigami.Dialog {
         }
 
         var url = serviceUrlField.text.trim();
+        // Prepend https:// if no protocol is specified (for favicon fetching)
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "https://" + url;
+        }
 
         // Fetch Google favicon
         root.googleFaviconLoading = true;
@@ -155,9 +159,15 @@ Kirigami.Dialog {
             }
         }
 
+        var url = serviceUrlField.text.trim();
+        // Auto-prepend https:// ONLY if no protocol is specified (domain-only)
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "https://" + url;
+        }
+
         var data = {
             title: serviceNameField.text,
-            url: serviceUrlField.text,
+            url: url,
             image: iconUrlField.text.trim() || "internet-web-browser-symbolic",
             workspace: filteredWorkspaces[workspaceComboBox.currentIndex],
             useFavicon: root.useFavicon,
@@ -192,6 +202,25 @@ Kirigami.Dialog {
 
             Controls.ToolTip.visible: text.trim().length > 0 && !root.isUrlValid && hovered
             Controls.ToolTip.text: i18n("URL must start with http://, https://, or be a valid domain (e.g., example.com)")
+        }
+
+        // HTTP security warning
+        Controls.Label {
+            text: i18n("⚠️ Using HTTP is not secure. Your connection will not be encrypted.")
+            visible: root.isUsingHttp
+            color: Kirigami.Theme.neutralTextColor
+            font: Kirigami.Theme.smallFont
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+        }
+
+        Controls.Label {
+            text: i18n("For security, we recommend using HTTPS.")
+            visible: root.isUsingHttp
+            color: Kirigami.Theme.neutralTextColor
+            font: Kirigami.Theme.smallFont
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
         }
 
         Controls.CheckBox {
@@ -401,9 +430,7 @@ Kirigami.Dialog {
             onCheckedChanged: root.isolatedProfile = checked
             enabled: !root.isEditMode
             Controls.ToolTip.visible: hovered
-            Controls.ToolTip.text: root.isEditMode
-                ? i18n("This option cannot be changed after the service is created. Delete and recreate the service if you need to change this setting.")
-                : i18n("When enabled, this service will have its own separate cookies, login sessions, and data. Useful for having multiple accounts of the same service.")
+            Controls.ToolTip.text: root.isEditMode ? i18n("This option cannot be changed after the service is created. Delete and recreate the service if you need to change this setting.") : i18n("When enabled, this service will have its own separate cookies, login sessions, and data. Useful for having multiple accounts of the same service.")
         }
 
         // Separator before destructive actions (only in edit mode)
