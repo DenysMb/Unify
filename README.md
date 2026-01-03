@@ -80,6 +80,29 @@ After installation, restart Unify for changes to take effect.
 
 **Note:** Widevine is proprietary software owned by Google and cannot be distributed with the application.
 
+## Permissions & Privacy
+
+Unify automatically grants certain browser permissions to configured services for seamless functionality:
+
+- Geolocation
+- Media capture (audio/video)
+- Screen and window sharing
+- Notifications
+- Clipboard access
+
+These permissions are auto-granted because users have explicitly chosen to add and use each service. If you need more isolation between services, you can enable `isolatedProfile: true` for a service to use separate cookies and storage.
+
+**Data Storage:**
+- Cookies and localStorage are persisted via Qt's WebEngineProfile
+- Storage location: `~/.local/share/io.github.denysmb/Unify/` (or Flatpak equivalent, like `~/.var/app/io.github.denysmb.unify/data/io.github.denysmb/Unify/`)
+- Unify does not collect or transmit any user data to third-party servers
+
+**Network Traffic:**
+- Unify does not proxy or intercept network traffic
+- All web services communicate directly with their respective servers
+
+For more details, see [SECURITY.md](SECURITY.md).
+
 ## Development Notes
 
 - C++ style follows `.clang-format`; the clang-format pre-commit hook is configured via CMake.
