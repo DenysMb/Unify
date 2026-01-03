@@ -199,11 +199,11 @@ void FaviconCache::downloadFavicon(const QString &serviceUrl, const QString &hos
         break;
     }
     case IconHorseSubdomainOnly:
-        faviconUrl = QStringLiteral("https://icon.horse/icon/%1?size=128").arg(hostname);
+        faviconUrl = QStringLiteral("https://icon.horse/icon/%1").arg(hostname);
         break;
     case IconHorseRootDomainOnly: {
         QString rootDomain = extractRootDomain(hostname);
-        faviconUrl = QStringLiteral("https://icon.horse/icon/%1?size=128").arg(rootDomain);
+        faviconUrl = QStringLiteral("https://icon.horse/icon/%1").arg(rootDomain);
         break;
     }
     }
