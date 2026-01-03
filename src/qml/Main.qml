@@ -730,6 +730,16 @@ Kirigami.ApplicationWindow {
                 }
             },
             Kirigami.Action {
+                text: i18n("Refresh Service")
+                icon.name: "view-refresh"
+                enabled: root.currentServiceId !== ""
+                onTriggered: {
+                    if (root.currentServiceId !== "" && root.webViewStack) {
+                        root.webViewStack.refreshByServiceId(root.currentServiceId);
+                    }
+                }
+            },
+            Kirigami.Action {
                 text: i18n("Add Service")
                 icon.name: "list-add"
                 onTriggered: {
@@ -1060,6 +1070,17 @@ Kirigami.ApplicationWindow {
                 if (webView && webView.printPage) {
                     webView.printPage();
                 }
+            }
+        }
+    }
+
+    // Refresh current service with Ctrl+R or F5
+    Shortcut {
+        sequences: ["Ctrl+R", "F5"]
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            if (root.currentServiceId !== "" && root.webViewStack) {
+                root.webViewStack.refreshByServiceId(root.currentServiceId);
             }
         }
     }
