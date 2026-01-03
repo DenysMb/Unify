@@ -34,7 +34,17 @@ Kirigami.Dialog {
         if (url.length === 0)
             return false;
 
-        // Check if URL starts with http://, https://, or is a valid domain
+        // For new services, require HTTPS
+        if (!isEditMode) {
+            // Accept https:// or domain-only (will be converted)
+            var httpsPattern = /^https:\/\/|([\w-]+\.[\w-]+)/;
+            if (httpsPattern.test(url) && !url.startsWith("http")) {
+                return true; // Domain without protocol - will add https://
+            }
+            return url.startsWith("https://");
+        }
+
+        // For editing, allow both HTTP and HTTPS (grandfathered services)
         var urlPattern = /^(https?:\/\/)|([\w-]+\.[\w-]+)/;
         return urlPattern.test(url);
     }
@@ -98,9 +108,15 @@ Kirigami.Dialog {
             }
         }
 
+        var url = serviceUrlField.text.trim();
+        // Auto-prepend https:// if domain without protocol (only for new services)
+        if (!url.startsWith("http")) {
+            url = "https://" + url;
+        }
+
         var data = {
             title: serviceNameField.text,
-            url: serviceUrlField.text,
+            url: url,
             image: iconUrlField.text.trim() || "internet-web-browser-symbolic",
             workspace: filteredWorkspaces[workspaceComboBox.currentIndex],
             useFavicon: root.useFavicon,
@@ -128,7 +144,9 @@ Kirigami.Dialog {
             Layout.fillWidth: true
 
             Controls.ToolTip.visible: text.trim().length > 0 && !root.isUrlValid && hovered
-            Controls.ToolTip.text: i18n("URL must start with http://, https://, or be a valid domain (e.g., example.com)")
+            Controls.ToolTip.text: isEditMode
+                ? i18n("URL must start with http://, https://, or be a valid domain")
+                : i18n("URL must use HTTPS (e.g., https://example.com or example.com)")
         }
 
         Controls.CheckBox {

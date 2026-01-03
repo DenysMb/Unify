@@ -4,6 +4,7 @@ import QtQuick.Window
 import QtQuick.Layouts
 import QtCore
 import QtWebEngine
+import QtQuick.Controls as Controls
 // Controls are used in components; WebEngine used here for profile
 import org.kde.kirigami as Kirigami
 // Note: QML files are flattened into module root by CMake.
@@ -398,24 +399,92 @@ Kirigami.ApplicationWindow {
         }
 
         onDownloadRequested: function (download) {
-            var downloadDirUrl = StandardPaths.writableLocation(StandardPaths.DownloadLocation);
-            var downloadDir = downloadDirUrl.toString().replace("file://", "");
+            if (configManager && configManager.confirmDownloads) {
+                // Show confirmation dialog
+                downloadConfirmDialog.pendingDownload = download;
+                downloadConfirmDialog.fileName = download.suggestedFileName;
+                downloadConfirmDialog.open();
+            } else {
+                // Auto-accept (original behavior)
+                var downloadDirUrl = StandardPaths.writableLocation(StandardPaths.DownloadLocation);
+                var downloadDir = downloadDirUrl.toString().replace("file://", "");
 
-            // Get unique filename to avoid overwriting existing files
-            var fileName = fileUtils.getUniqueFileName(downloadDir, download.suggestedFileName);
+                // Get unique filename to avoid overwriting existing files
+                var fileName = fileUtils.getUniqueFileName(downloadDir, download.suggestedFileName);
 
-            download.downloadDirectory = downloadDir;
-            download.downloadFileName = fileName;
+                download.downloadDirectory = downloadDir;
+                download.downloadFileName = fileName;
 
-            // Monitor download completion
-            download.isFinishedChanged.connect(function () {
-                if (download.isFinished) {
-                    var fullPath = downloadDir + "/" + fileName;
-                    root.showPassiveNotification(i18n("Download completed: %1", fileName), "long");
-                }
-            });
+                // Monitor download completion
+                download.isFinishedChanged.connect(function () {
+                    if (download.isFinished) {
+                        var fullPath = downloadDir + "/" + fileName;
+                        root.showPassiveNotification(i18n("Download completed: %1", fileName), "long");
+                    }
+                });
 
-            download.accept();
+                download.accept();
+            }
+        }
+    }
+
+    // Download confirmation dialog
+    Kirigami.Dialog {
+        id: downloadConfirmDialog
+
+        title: i18n("Confirm Download")
+        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+        preferredWidth: Kirigami.Units.gridUnit * 25
+        padding: Kirigami.Units.largeSpacing
+
+        property var pendingDownload: null
+        property string fileName: ""
+
+        onAccepted: {
+            if (pendingDownload) {
+                // Proceed with download
+                var downloadDirUrl = StandardPaths.writableLocation(StandardPaths.DownloadLocation);
+                var downloadDir = downloadDirUrl.toString().replace("file://", "");
+                var uniqueFileName = fileUtils.getUniqueFileName(downloadDir, fileName);
+
+                pendingDownload.downloadDirectory = downloadDir;
+                pendingDownload.downloadFileName = uniqueFileName;
+
+                pendingDownload.isFinishedChanged.connect(function () {
+                    if (pendingDownload.isFinished) {
+                        root.showPassiveNotification(i18n("Download completed: %1", uniqueFileName), "long");
+                    }
+                });
+
+                pendingDownload.accept();
+                pendingDownload = null;
+            }
+        }
+
+        onRejected: {
+            if (pendingDownload) {
+                // Don't call accept() - the download will be discarded
+                pendingDownload = null;
+            }
+        }
+
+        ColumnLayout {
+            spacing: Kirigami.Units.largeSpacing
+
+            Controls.Label {
+                text: i18n("Do you want to download this file?")
+                font.bold: true
+                Layout.fillWidth: true
+            }
+
+            Kirigami.Separator {
+                Layout.fillWidth: true
+            }
+
+            Controls.Label {
+                text: i18n("File: %1", downloadConfirmDialog.fileName)
+                Layout.fillWidth: true
+            }
         }
     }
 

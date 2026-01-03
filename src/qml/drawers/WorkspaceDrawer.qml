@@ -125,6 +125,22 @@ Kirigami.Action { separator: true }
             }
         `, drawer));
 
+        // Confirm Downloads toggle
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+              text: i18n("Confirm Downloads")
+              icon.name: "download-later"
+              checkable: true
+              checked: configManager && configManager.confirmDownloads
+              onTriggered: {
+                  if (configManager) {
+                      configManager.confirmDownloads = !configManager.confirmDownloads
+                  }
+              }
+            }
+        `, drawer));
+
         // separator
         acts.push(Qt.createQmlObject(`import org.kde.kirigami as Kirigami
 Kirigami.Action { separator: true }

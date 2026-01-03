@@ -18,6 +18,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(QVariantMap disabledServices READ disabledServices WRITE setDisabledServices NOTIFY disabledServicesChanged)
     Q_PROPERTY(bool horizontalSidebar READ horizontalSidebar WRITE setHorizontalSidebar NOTIFY horizontalSidebarChanged)
     Q_PROPERTY(bool alwaysShowWorkspacesBar READ alwaysShowWorkspacesBar WRITE setAlwaysShowWorkspacesBar NOTIFY alwaysShowWorkspacesBarChanged)
+    Q_PROPERTY(bool confirmDownloads READ confirmDownloads WRITE setConfirmDownloads NOTIFY confirmDownloadsChanged)
 
 public:
     explicit ConfigManager(QObject *parent = nullptr);
@@ -58,6 +59,10 @@ public:
     bool alwaysShowWorkspacesBar() const;
     void setAlwaysShowWorkspacesBar(bool enabled);
 
+    // Download confirmation setting
+    bool confirmDownloads() const;
+    void setConfirmDownloads(bool enabled);
+
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
 
@@ -84,6 +89,7 @@ Q_SIGNALS:
     void disabledServicesChanged();
     void horizontalSidebarChanged();
     void alwaysShowWorkspacesBarChanged();
+    void confirmDownloadsChanged();
 
 private:
     void updateWorkspacesList();
@@ -97,6 +103,7 @@ private:
     QVariantMap m_disabledServices; // serviceId -> bool (true if disabled)
     bool m_horizontalSidebar = false;
     bool m_alwaysShowWorkspacesBar = false;
+    bool m_confirmDownloads = true;
 };
 
 #endif // CONFIGMANAGER_H

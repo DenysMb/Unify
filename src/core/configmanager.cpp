@@ -161,6 +161,20 @@ void ConfigManager::setAlwaysShowWorkspacesBar(bool enabled)
     }
 }
 
+bool ConfigManager::confirmDownloads() const
+{
+    return m_confirmDownloads;
+}
+
+void ConfigManager::setConfirmDownloads(bool enabled)
+{
+    if (m_confirmDownloads != enabled) {
+        m_confirmDownloads = enabled;
+        Q_EMIT confirmDownloadsChanged();
+        saveSettings();
+    }
+}
+
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
@@ -445,6 +459,7 @@ void ConfigManager::loadSettings()
     m_settings.beginGroup(QStringLiteral("Display"));
     m_horizontalSidebar = m_settings.value(QStringLiteral("horizontalSidebar"), false).toBool();
     m_alwaysShowWorkspacesBar = m_settings.value(QStringLiteral("alwaysShowWorkspacesBar"), false).toBool();
+    m_confirmDownloads = m_settings.value(QStringLiteral("confirmDownloads"), true).toBool();
     m_settings.endGroup();
 
     // Only update workspaces list if it's empty (first run)
