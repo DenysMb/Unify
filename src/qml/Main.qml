@@ -442,21 +442,22 @@ Kirigami.ApplicationWindow {
 
         onAccepted: {
             if (pendingDownload) {
-                // Proceed with download
+                // Capture download in local variable for the signal handler
+                var download = pendingDownload;
                 var downloadDirUrl = StandardPaths.writableLocation(StandardPaths.DownloadLocation);
                 var downloadDir = downloadDirUrl.toString().replace("file://", "");
                 var uniqueFileName = fileUtils.getUniqueFileName(downloadDir, fileName);
 
-                pendingDownload.downloadDirectory = downloadDir;
-                pendingDownload.downloadFileName = uniqueFileName;
+                download.downloadDirectory = downloadDir;
+                download.downloadFileName = uniqueFileName;
 
-                pendingDownload.isFinishedChanged.connect(function () {
-                    if (pendingDownload.isFinished) {
+                download.isFinishedChanged.connect(function () {
+                    if (download.isFinished) {
                         root.showPassiveNotification(i18n("Download completed: %1", uniqueFileName), "long");
                     }
                 });
 
-                pendingDownload.accept();
+                download.accept();
                 pendingDownload = null;
             }
         }
