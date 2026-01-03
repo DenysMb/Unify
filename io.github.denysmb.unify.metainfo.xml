@@ -69,6 +69,19 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.3.0" date="2026-01-03">
+      <description>
+        <p>This release adds several new features to improve your experience:</p>
+        <ul>
+          <li>Added HTTP warning for service URLs</li>
+          <li>Added download confirmation</li>
+          <li>Added IconHorse integration as additional favicon source</li>
+          <li>Added Google favicon as fallback for service icons</li>
+          <li>Added refresh service action to header toolbar (Ctrl+R and F5 shortcut)</li>
+          <li>Added Dutch translation</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.2.1" date="2025-12-31">
       <description>
         <p>Removed Widevine installation script (now handled internally).</p>
