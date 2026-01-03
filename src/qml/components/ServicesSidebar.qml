@@ -148,6 +148,7 @@ Rectangle {
                         image: modelData.image || ""
                         serviceUrl: modelData.url || ""
                         useFavicon: modelData.useFavicon || false
+                        faviconSource: modelData.faviconSource || -1
                         buttonSize: root.buttonSize
                         iconSize: root.iconSize
                         active: modelData.id === root.currentServiceId
@@ -268,6 +269,7 @@ Rectangle {
                         image: modelData.image || ""
                         serviceUrl: modelData.url || ""
                         useFavicon: modelData.useFavicon || false
+                        faviconSource: modelData.faviconSource || -1
                         buttonSize: root.buttonSize
                         iconSize: root.iconSize
                         active: modelData.id === root.currentServiceId

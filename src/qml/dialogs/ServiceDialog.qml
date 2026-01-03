@@ -26,6 +26,13 @@ Kirigami.Dialog {
     property string selectedIconName: "internet-web-browser-symbolic"
     property bool useFavicon: true
     property bool isolatedProfile: false
+    property int selectedFaviconSource: 0 // 0 = Google, 1 = IconHorse
+
+    // Favicon preview URLs
+    property string googleFaviconUrl: ""
+    property string iconHorseFaviconUrl: ""
+    property bool googleFaviconLoading: false
+    property bool iconHorseFaviconLoading: false
 
     // Validation properties
     readonly property bool isNameValid: serviceNameField.text.trim().length > 0
@@ -68,12 +75,23 @@ Kirigami.Dialog {
         root.selectedIconName = service.image || "internet-web-browser-symbolic";
         root.useFavicon = service.useFavicon || false;
         root.isolatedProfile = service.isolatedProfile || false;
+        root.selectedFaviconSource = service.faviconSource || 0;
+
+        // Fetch favicon previews if URL is valid
+        if (service.url) {
+            fetchFaviconPreviews();
+        }
     }
 
     function clearFields() {
         serviceNameField.text = "";
         iconUrlField.text = "";
         serviceUrlField.text = "";
+        root.googleFaviconUrl = "";
+        root.iconHorseFaviconUrl = "";
+        root.googleFaviconLoading = false;
+        root.iconHorseFaviconLoading = false;
+        root.selectedFaviconSource = 0;
         // Set to current workspace if available, otherwise default to first
         // Filter out special workspaces
         var filteredWorkspaces = [];
@@ -87,6 +105,45 @@ Kirigami.Dialog {
         root.selectedIconName = "internet-web-browser-symbolic";
         root.useFavicon = true;
         root.isolatedProfile = false;
+    }
+
+    function fetchFaviconPreviews() {
+        if (!serviceUrlField.text || !root.isUrlValid) {
+            return;
+        }
+
+        var url = serviceUrlField.text.trim();
+
+        // Fetch Google favicon
+        root.googleFaviconLoading = true;
+        if (typeof faviconCache !== "undefined" && faviconCache !== null) {
+            faviconCache.fetchFaviconFromSource(url, 0); // 0 = GoogleSource
+
+            // Try to get from cache immediately
+            var googleCached = faviconCache.getFaviconForSource(url, 0);
+            if (googleCached && googleCached !== "") {
+                root.googleFaviconUrl = googleCached;
+                root.googleFaviconLoading = false;
+            }
+
+            // Fetch IconHorse favicon
+            root.iconHorseFaviconLoading = true;
+            faviconCache.fetchFaviconFromSource(url, 1); // 1 = IconHorseSource
+
+            // Try to get from cache immediately
+            var iconHorseCached = faviconCache.getFaviconForSource(url, 1);
+            if (iconHorseCached && iconHorseCached !== "") {
+                root.iconHorseFaviconUrl = iconHorseCached;
+                root.iconHorseFaviconLoading = false;
+            }
+        }
+    }
+
+    function clearFaviconPreviews() {
+        root.googleFaviconUrl = "";
+        root.iconHorseFaviconUrl = "";
+        root.googleFaviconLoading = false;
+        root.iconHorseFaviconLoading = false;
     }
 
     onAccepted: {
@@ -110,7 +167,8 @@ Kirigami.Dialog {
             image: iconUrlField.text.trim() || "internet-web-browser-symbolic",
             workspace: filteredWorkspaces[workspaceComboBox.currentIndex],
             useFavicon: root.useFavicon,
-            isolatedProfile: root.isolatedProfile
+            isolatedProfile: root.isolatedProfile,
+            faviconSource: root.useFavicon ? root.selectedFaviconSource : -1
         };
         acceptedData(data);
         clearFields();
@@ -132,6 +190,11 @@ Kirigami.Dialog {
             Kirigami.FormData.label: i18n("Service URL:")
             placeholderText: i18n("Enter service URL")
             Layout.fillWidth: true
+
+            onTextChanged: {
+                // Restart the favicon fetch timer when URL changes
+                faviconFetchTimer.restart();
+            }
 
             Controls.ToolTip.visible: text.trim().length > 0 && !root.isUrlValid && hovered
             Controls.ToolTip.text: i18n("URL must start with http://, https://, or be a valid domain (e.g., example.com)")
@@ -161,9 +224,151 @@ Kirigami.Dialog {
             Kirigami.FormData.label: ""
             text: i18n("Use service favicon in sidebar")
             checked: root.useFavicon
-            onCheckedChanged: root.useFavicon = checked
+            onCheckedChanged: {
+                root.useFavicon = checked;
+                if (checked) {
+                    fetchFaviconPreviews();
+                } else {
+                    clearFaviconPreviews();
+                }
+            }
             Controls.ToolTip.visible: hovered
             Controls.ToolTip.text: i18n("When enabled, the service's favicon will be displayed in the sidebar instead of the selected icon")
+        }
+
+        // Favicon source selection (shown when useFavicon is enabled)
+        Column {
+            visible: useFaviconCheckbox.checked
+            Kirigami.FormData.label: ""
+            Kirigami.FormData.isSection: false
+            Layout.fillWidth: true
+            spacing: Kirigami.Units.smallSpacing
+
+            Row {
+                spacing: Kirigami.Units.smallSpacing
+                Layout.fillWidth: true
+
+                // Google favicon preview
+                Rectangle {
+                    width: Kirigami.Units.gridUnit * 6
+                    height: Kirigami.Units.gridUnit * 6
+                    color: root.selectedFaviconSource === 0 ? Kirigami.Theme.highlightColor : Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
+                    border.width: root.selectedFaviconSource === 0 ? 2 : 1
+                    border.color: root.selectedFaviconSource === 0 ? Kirigami.Theme.highlightColor : Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.3)
+                    radius: Kirigami.Units.smallSpacing
+
+                    Behavior on color { ColorAnimation { duration: Kirigami.Units.shortDuration } }
+                    Behavior on border.color { ColorAnimation { duration: Kirigami.Units.shortDuration } }
+
+                    Item {
+                        anchors.fill: parent
+                        anchors.margins: Kirigami.Units.smallSpacing
+
+                        Image {
+                            anchors.centerIn: parent
+                            width: Math.min(parent.width, parent.height)
+                            height: Math.min(parent.width, parent.height)
+                            source: root.googleFaviconUrl
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                            mipmap: true
+                            asynchronous: true
+                            visible: root.googleFaviconUrl !== ""
+                        }
+
+                        Kirigami.Icon {
+                            anchors.centerIn: parent
+                            width: Kirigami.Units.iconSizes.medium
+                            height: Kirigami.Units.iconSizes.medium
+                            source: "internet-web-browser-symbolic"
+                            visible: root.googleFaviconLoading && root.googleFaviconUrl === ""
+                            opacity: 0.5
+                        }
+
+                        Kirigami.Icon {
+                            anchors.centerIn: parent
+                            width: Kirigami.Units.iconSizes.small
+                            height: Kirigami.Units.iconSizes.small
+                            source: "edit-none"
+                            visible: !root.googleFaviconLoading && root.googleFaviconUrl === ""
+                            opacity: 0.5
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: root.selectedFaviconSource = 0
+                        cursorShape: Qt.PointingHandCursor
+                    }
+
+                    Controls.ToolTip.visible: hovered
+                    Controls.ToolTip.text: i18n("Click to use Google favicon\n\nGoogle favicon service with automatic fallback to root domain")
+                }
+
+                // IconHorse favicon preview
+                Rectangle {
+                    width: Kirigami.Units.gridUnit * 6
+                    height: Kirigami.Units.gridUnit * 6
+                    color: root.selectedFaviconSource === 1 ? Kirigami.Theme.highlightColor : Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
+                    border.width: root.selectedFaviconSource === 1 ? 2 : 1
+                    border.color: root.selectedFaviconSource === 1 ? Kirigami.Theme.highlightColor : Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.3)
+                    radius: Kirigami.Units.smallSpacing
+
+                    Behavior on color { ColorAnimation { duration: Kirigami.Units.shortDuration } }
+                    Behavior on border.color { ColorAnimation { duration: Kirigami.Units.shortDuration } }
+
+                    Item {
+                        anchors.fill: parent
+                        anchors.margins: Kirigami.Units.smallSpacing
+
+                        Image {
+                            anchors.centerIn: parent
+                            width: Math.min(parent.width, parent.height)
+                            height: Math.min(parent.width, parent.height)
+                            source: root.iconHorseFaviconUrl
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                            mipmap: true
+                            asynchronous: true
+                            visible: root.iconHorseFaviconUrl !== ""
+                        }
+
+                        Kirigami.Icon {
+                            anchors.centerIn: parent
+                            width: Kirigami.Units.iconSizes.medium
+                            height: Kirigami.Units.iconSizes.medium
+                            source: "internet-web-browser-symbolic"
+                            visible: root.iconHorseFaviconLoading && root.iconHorseFaviconUrl === ""
+                            opacity: 0.5
+                        }
+
+                        Kirigami.Icon {
+                            anchors.centerIn: parent
+                            width: Kirigami.Units.iconSizes.small
+                            height: Kirigami.Units.iconSizes.small
+                            source: "edit-none"
+                            visible: !root.iconHorseFaviconLoading && root.iconHorseFaviconUrl === ""
+                            opacity: 0.5
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: root.selectedFaviconSource = 1
+                        cursorShape: Qt.PointingHandCursor
+                    }
+
+                    Controls.ToolTip.visible: hovered
+                    Controls.ToolTip.text: i18n("Click to use IconHorse favicon\n\nAlternative favicon service that may have icons not available on Google")
+                }
+            }
+
+            // Label showing the current selection
+            Controls.Label {
+                text: root.selectedFaviconSource === 0 ? i18n("Selected: Google") : i18n("Selected: IconHorse")
+                font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.9
+                opacity: 0.7
+            }
         }
 
         Controls.TextField {
@@ -241,6 +446,34 @@ Kirigami.Dialog {
             icon.name: "edit-delete"
             Layout.fillWidth: true
             onClicked: confirmDeleteDialog.open()
+        }
+    }
+
+    // Timer to debounce favicon fetching when URL changes
+    Timer {
+        id: faviconFetchTimer
+        interval: 500
+        onTriggered: {
+            if (root.useFavicon && root.isUrlValid) {
+                fetchFaviconPreviews();
+            }
+        }
+    }
+
+    // Listen for favicon source ready signals from FaviconCache
+    Connections {
+        target: typeof faviconCache !== "undefined" ? faviconCache : null
+
+        function onFaviconSourceReady(serviceUrl, source, localPath) {
+            if (serviceUrlField.text && serviceUrl === serviceUrlField.text.trim()) {
+                if (source === 0) { // Google
+                    root.googleFaviconUrl = localPath;
+                    root.googleFaviconLoading = false;
+                } else if (source === 1) { // IconHorse
+                    root.iconHorseFaviconUrl = localPath;
+                    root.iconHorseFaviconLoading = false;
+                }
+            }
         }
     }
 

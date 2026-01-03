@@ -13,6 +13,7 @@ Controls.Button {
     property string image: ""
     property string serviceUrl: ""
     property bool useFavicon: false
+    property int faviconSource: -1  // -1 = legacy/default, 0 = Google, 1 = IconHorse
     property int buttonSize: 64
     property int iconSize: 48
     property bool disabledVisual: false
@@ -72,6 +73,13 @@ Controls.Button {
         requestCachedAssets();
     }
 
+    onFaviconSourceChanged: {
+        if (root.useFavicon) {
+            root.cachedFaviconUrl = "";
+            requestCachedAssets();
+        }
+    }
+
     onImageChanged: {
         if (!root.useFavicon && root.isUrl) {
             root.cachedImageUrl = "";
@@ -86,10 +94,25 @@ Controls.Button {
 
         if (root.useFavicon && root.serviceUrl) {
             root.faviconLoading = true;
-            var cached = faviconCache.getFavicon(root.serviceUrl, true);
-            if (cached && cached !== "") {
-                root.cachedFaviconUrl = cached;
-                root.faviconLoading = false;
+
+            // Check if faviconSource is explicitly set (0 or 1)
+            if (root.faviconSource >= 0) {
+                // Use the selected favicon source
+                var cached = faviconCache.getFaviconForSource(root.serviceUrl, root.faviconSource);
+                if (cached && cached !== "") {
+                    root.cachedFaviconUrl = cached;
+                    root.faviconLoading = false;
+                } else {
+                    // Fetch from the specific source
+                    faviconCache.fetchFaviconFromSource(root.serviceUrl, root.faviconSource);
+                }
+            } else {
+                // Use legacy behavior (getFavicon with Google fallback)
+                var cached = faviconCache.getFavicon(root.serviceUrl, true);
+                if (cached && cached !== "") {
+                    root.cachedFaviconUrl = cached;
+                    root.faviconLoading = false;
+                }
             }
         } else if (!root.useFavicon && root.hasImage && root.isUrl) {
             root.imageLoading = true;
@@ -105,7 +128,15 @@ Controls.Button {
         target: typeof faviconCache !== "undefined" ? faviconCache : null
 
         function onFaviconReady(serviceUrl, localPath) {
-            if (root.useFavicon && root.serviceUrl === serviceUrl) {
+            // Only use this signal for legacy behavior (faviconSource < 0)
+            if (root.useFavicon && root.serviceUrl === serviceUrl && root.faviconSource < 0) {
+                root.cachedFaviconUrl = localPath;
+                root.faviconLoading = false;
+            }
+        }
+
+        function onFaviconSourceReady(serviceUrl, source, localPath) {
+            if (root.useFavicon && root.serviceUrl === serviceUrl && root.faviconSource === source) {
                 root.cachedFaviconUrl = localPath;
                 root.faviconLoading = false;
             }
