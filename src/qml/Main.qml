@@ -1074,6 +1074,17 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Refresh current service with Ctrl+R or F5
+    Shortcut {
+        sequences: ["Ctrl+R", "F5"]
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            if (root.currentServiceId !== "" && root.webViewStack) {
+                root.webViewStack.refreshByServiceId(root.currentServiceId);
+            }
+        }
+    }
+
     // --- Numeric shortcuts: Ctrl+1..9 for services (within current workspace) ---
     // Helper to switch to Nth service (1-based) in filteredServices
     function switchToServiceByPosition(pos) {
