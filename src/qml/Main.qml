@@ -374,13 +374,6 @@ Kirigami.ApplicationWindow {
     // IMPORTANT: storageName must be set BEFORE the profile is used
     WebEngineProfile {
         id: persistentProfile
-        Component.onCompleted: {
-            console.log("persistentProfile created:", "storageName:", persistentProfile.storageName, "offTheRecord:", persistentProfile.offTheRecord, "persistentStoragePath:", persistentProfile.persistentStoragePath);
-        }
-
-        // Opt-in diagnostics: allow using C++ default profile to compare behavior.
-        // Set `UNIFY_USE_DEFAULT_WEBENGINE_PROFILE=1` to skip creating this QML profile.
-        readonly property bool useDefaultProfile: (typeof Qt !== "undefined" && Qt.platform && Qt.platform.os && Qt.application && Qt.application.arguments) && false
 
         // Set storageName first - this is critical for persistence
         storageName: "unify-storage"
