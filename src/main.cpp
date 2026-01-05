@@ -36,8 +36,7 @@ static QString findWidevinePath()
     for (const QString &entry : entries) {
         // Check if this looks like a version number
         if (entry.contains(QLatin1Char('.')) && !entry.isEmpty() && entry.at(0).isDigit()) {
-            const QString libPath =
-                widevinePath + QLatin1Char('/') + entry + QStringLiteral("/_platform_specific/linux_x64/libwidevinecdm.so");
+            const QString libPath = widevinePath + QLatin1Char('/') + entry + QStringLiteral("/_platform_specific/linux_x64/libwidevinecdm.so");
             if (QFile::exists(libPath)) {
                 return libPath;
             }
@@ -54,20 +53,22 @@ int main(int argc, char *argv[])
     const bool isInFlatpak = QFile::exists(QStringLiteral("/.flatpak-info")) || !qEnvironmentVariableIsEmpty("FLATPAK_ID");
 
     // Set Chromium command line arguments for better OAuth/Google compatibility
-    // These flags help avoid detection as an automated/embedded browser
-    // Chromium flags with GPU acceleration disabled to prevent freezing on some systems
-    // WebRTCPipeWireCapturer enables screen/window sharing via PipeWire on Wayland
+    // These flags help avoid detection as an automated/embedded browser.
+    // IMPORTANT: In practice, QtWebEngine stability varies significantly depending on GPU/Wayland drivers.
+    // We keep hardware acceleration enabled by default and allow forcing software rendering via env vars.
+    // WebRTCPipeWireCapturer enables screen/window sharing via PipeWire on Wayland.
     QByteArray chromiumFlags;
 
-    if (qEnvironmentVariableIsEmpty("QTWEBENGINE_CHROMIUM_FLAGS")) {
-        // No flags set, use our defaults
+    // If the user/Flatpak already set flags, respect them.
+    chromiumFlags = qgetenv("QTWEBENGINE_CHROMIUM_FLAGS");
+
+    if (chromiumFlags.isEmpty()) {
+        // No flags set, use our defaults.
         chromiumFlags =
             "--disable-blink-features=AutomationControlled "
-            "--disable-gpu "
-            "--disable-gpu-compositing "
-            "--disable-features=VizDisplayCompositor "
             "--disable-web-security=false "
-            "--enable-features=NetworkService,NetworkServiceInProcess,WebRTCPipeWireCapturer,HardwareMediaDecoding,PlatformEncryptedDolbyVision,PlatformHEVCEncoderSupport "
+            "--enable-features=NetworkService,NetworkServiceInProcess,WebRTCPipeWireCapturer,HardwareMediaDecoding,PlatformEncryptedDolbyVision,"
+            "PlatformHEVCEncoderSupport "
             "--disable-background-networking=false "
             "--disable-client-side-phishing-detection "
             "--disable-default-apps "
@@ -81,9 +82,22 @@ int main(int argc, char *argv[])
             "--safebrowsing-disable-auto-update "
             "--enable-widevine-cdm "
             "--autoplay-policy=no-user-gesture-required";
-    } else {
-        // Flags already set (e.g., by Flatpak manifest), use them as base
-        chromiumFlags = qgetenv("QTWEBENGINE_CHROMIUM_FLAGS");
+    }
+
+    // GPU/Compositor workarounds
+    // Default: disable GPU to avoid QtWebEngine compositor freezes on Wayland/AMD.
+    // Users can opt-in to GPU acceleration by setting `UNIFY_WEBENGINE_DISABLE_GPU=0`.
+    const bool disableGpu = !qEnvironmentVariableIsSet("UNIFY_WEBENGINE_DISABLE_GPU") || qEnvironmentVariableIntValue("UNIFY_WEBENGINE_DISABLE_GPU") != 0;
+
+    if (disableGpu) {
+        chromiumFlags += " --disable-gpu --disable-gpu-compositing --disable-features=VizDisplayCompositor";
+        qDebug() << "WebEngine GPU disabled (set UNIFY_WEBENGINE_DISABLE_GPU=0 to enable)";
+    }
+
+    if (qEnvironmentVariableIsSet("UNIFY_WEBENGINE_FORCE_USE_GBM") && qEnvironmentVariableIntValue("UNIFY_WEBENGINE_FORCE_USE_GBM") == 0) {
+        // Matches the known workaround used by other QtWebEngine-based apps on Wayland.
+        qputenv("QTWEBENGINE_FORCE_USE_GBM", "0");
+        qDebug() << "QTWEBENGINE_FORCE_USE_GBM=0 (via UNIFY_WEBENGINE_FORCE_USE_GBM=0)";
     }
 
     // Add Widevine path if installed and not already present in flags
@@ -147,9 +161,9 @@ int main(int argc, char *argv[])
         notificationPresenter->present(std::move(notification));
     };
 
-    // Configure the default profile BEFORE any QML is loaded
-    // Note: The default profile is already disk-based (not off-the-record)
-    // In Qt 6, profile type is determined by constructor, not setter methods
+    // Configure the default profile BEFORE any QML is loaded.
+    // Note: QML views should use the explicitly provided `WebEngineProfile` (Main.qml's `persistentProfile`).
+    // This default profile config is still useful for popups or any view accidentally falling back to the default.
     auto *defaultProf = QWebEngineProfile::defaultProfile();
 
     // Configure persistence settings
@@ -170,7 +184,8 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
 
-    // Register the notification presenter, config manager, tray icon manager, favicon cache, key event filter, application shortcut manager and file utils with QML context
+    // Register the notification presenter, config manager, tray icon manager, favicon cache, key event filter, application shortcut manager and file utils with
+    // QML context
     engine.rootContext()->setContextProperty(QStringLiteral("notificationPresenter"), notificationPresenter);
     engine.rootContext()->setContextProperty(QStringLiteral("configManager"), configManager);
     engine.rootContext()->setContextProperty(QStringLiteral("trayIconManager"), trayIconManager);

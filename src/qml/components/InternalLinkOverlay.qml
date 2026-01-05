@@ -22,6 +22,12 @@ Rectangle {
 
     function open(url) {
         requestedUrl = url;
+
+        // Ensure the old page is not visible while the new one is still loading.
+        // We deliberately avoid navigating to about:blank during close; instead we temporarily hide the view.
+        overlayWebView.visible = true;
+        overlayWebView.opacity = 0;
+
         overlayWebView.url = url;
         visible = true;
         openAnimation.start();
@@ -29,6 +35,23 @@ Rectangle {
 
     function close() {
         closeAnimation.start();
+    }
+
+    function forceClose() {
+        if (!overlay.visible) {
+            return;
+        }
+        closeAnimation.stop();
+        openAnimation.stop();
+
+        // Stop any in-flight work and hide the view so old content never flashes on next open.
+        overlayWebView.stop();
+        overlayWebView.visible = false;
+        overlayWebView.opacity = 0;
+
+        overlay.requestedUrl = "about:blank";
+        overlay.visible = false;
+        overlay.closed();
     }
 
     NumberAnimation {
@@ -50,15 +73,19 @@ Rectangle {
         duration: 100
         easing.type: Easing.InCubic
         onFinished: {
+            // Avoid forcing a navigation during teardown; it can be fragile with QtWebEngine.
+            overlayWebView.stop();
+            overlayWebView.visible = false;
+            overlayWebView.opacity = 0;
+            overlay.requestedUrl = "about:blank";
             overlay.visible = false;
-            overlayWebView.url = "about:blank";
             overlay.closed();
         }
     }
 
     MouseArea {
         anchors.fill: parent
-        onClicked: overlay.close()
+        onClicked: overlay.forceClose()
     }
 
     Rectangle {
@@ -144,7 +171,7 @@ Rectangle {
                         icon.name: "window-close"
                         text: i18n("Close")
                         display: QQC2.AbstractButton.TextBesideIcon
-                        onClicked: overlay.close()
+                        onClicked: overlay.forceClose()
                     }
                 }
             }
@@ -178,6 +205,10 @@ Rectangle {
                     id: overlayWebView
                     anchors.fill: parent
 
+                    // Intentionally hidden until the first non-blank frame of the next page.
+                    visible: overlay.visible
+                    opacity: 1
+
                     profile: overlay.webProfile
                     url: "about:blank"
 
@@ -193,10 +224,16 @@ Rectangle {
 
                     onLoadingChanged: function (loadRequest) {
                         if (loadRequest.status === WebEngineView.LoadStartedStatus) {
+                            // Hide until a new page starts producing frames.
+                            overlayWebView.opacity = 0;
                             overlayWebView.runJavaScript(AntiDetection.getScript());
                         }
                         if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
                             overlayWebView.runJavaScript(AntiDetection.getScript());
+                            overlayWebView.opacity = 1;
+                        }
+                        if (loadRequest.status === WebEngineView.LoadFailedStatus) {
+                            overlayWebView.opacity = 1;
                         }
                     }
 
@@ -206,7 +243,7 @@ Rectangle {
                     }
 
                     onWindowCloseRequested: {
-                        overlay.close();
+                        overlay.forceClose();
                     }
                 }
 
@@ -222,6 +259,6 @@ Rectangle {
     Shortcut {
         sequence: "Escape"
         enabled: overlay.visible
-        onActivated: overlay.close()
+        onActivated: overlay.forceClose()
     }
 }
