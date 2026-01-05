@@ -69,6 +69,15 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.3.1" date="2026-01-05">
+      <description>
+        <p>Bug fixes:</p>
+        <ul>
+          <li>Fixed favicon preview for domain-only URLs</li>
+          <li>Disabled WebEngine GPU by default to improve stability</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.3.0" date="2026-01-03">
       <description>
         <p>This release adds several new features to improve your experience:</p>
