@@ -469,7 +469,19 @@ Kirigami.Dialog {
         target: typeof faviconCache !== "undefined" ? faviconCache : null
 
         function onFaviconSourceReady(serviceUrl, source, localPath) {
-            if (serviceUrlField.text && serviceUrl === serviceUrlField.text.trim()) {
+            // Normalize both URLs for comparison (prepend https:// if no protocol)
+            var normalizedServiceUrl = serviceUrl;
+            var normalizedFieldUrl = serviceUrlField.text.trim();
+
+            if (!normalizedServiceUrl.startsWith("http://") && !normalizedServiceUrl.startsWith("https://")) {
+                normalizedServiceUrl = "https://" + normalizedServiceUrl;
+            }
+
+            if (!normalizedFieldUrl.startsWith("http://") && !normalizedFieldUrl.startsWith("https://")) {
+                normalizedFieldUrl = "https://" + normalizedFieldUrl;
+            }
+
+            if (normalizedFieldUrl && normalizedServiceUrl === normalizedFieldUrl) {
                 if (source === 0) { // Google
                     root.googleFaviconUrl = localPath;
                     root.googleFaviconLoading = false;
