@@ -194,6 +194,15 @@ Kirigami.ApplicationWindow {
         if (detachedWindow.visibility === Window.Hidden || detachedWindow.visibility === Window.Minimized)
         // Window is hidden/minimized, but service continues running
         {}
+        
+        // If window exits fullscreen (e.g. via OS gesture or Alt-Tab) while we are in content fullscreen mode,
+        // we need to tell the web content to exit fullscreen too.
+        if (isContentFullscreen && visibility !== Window.FullScreen && visibility !== Window.Minimized && visibility !== Window.Hidden) {
+            console.log("Detached window exited fullscreen (OS/User action) - syncing web content");
+            if (fullscreenWebView) {
+                fullscreenWebView.triggerWebAction(WebEngineView.ExitFullScreen);
+            }
+        }
     }
 
     // Keyboard shortcuts for common actions

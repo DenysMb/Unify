@@ -772,6 +772,15 @@ Kirigami.ApplicationWindow {
         if (trayIconManager) {
             trayIconManager.windowVisible = (root.visibility !== Window.Hidden && root.visibility !== Window.Minimized);
         }
+
+        // If window exits fullscreen (e.g. via OS gesture or Alt-Tab) while we are in content fullscreen mode,
+        // we need to tell the web content to exit fullscreen too.
+        if (isContentFullscreen && visibility !== Window.FullScreen && visibility !== Window.Minimized && visibility !== Window.Hidden) {
+            console.log("Window exited fullscreen (OS/User action) - syncing web content");
+            if (fullscreenWebView) {
+                fullscreenWebView.triggerWebAction(WebEngineView.ExitFullScreen);
+            }
+        }
     }
 
     // Helper property to track horizontal sidebar setting
