@@ -17,6 +17,13 @@ Kirigami.ApplicationWindow {
     // Container where the reparented WebView will be placed
     property alias webViewContainer: webViewContainerItem
 
+    // Fullscreen state tracking for page-initiated fullscreen
+    property bool isContentFullscreen: false
+    property var fullscreenWebView: null
+    property var fullscreenOriginalParent: null
+    property bool wasWindowFullScreenBeforeContent: false
+    property color fullscreenOriginalBgColor: "transparent"
+
     // Signal emitted when window is closed
     signal windowClosed(string serviceId)
 
@@ -35,6 +42,66 @@ Kirigami.ApplicationWindow {
     // Custom header with service info
     globalDrawer: null
     contextDrawer: null
+
+    // Function to enter fullscreen mode for a WebEngineView
+    function enterContentFullscreen(webEngineView) {
+        if (isContentFullscreen || !webEngineView) {
+            return;
+        }
+
+        fullscreenWebView = webEngineView;
+        fullscreenOriginalParent = webEngineView.parent;
+        wasWindowFullScreenBeforeContent = (detachedWindow.visibility === Window.FullScreen);
+
+        // Store original background color and set to black to prevent white flash
+        fullscreenOriginalBgColor = webEngineView.backgroundColor;
+        webEngineView.backgroundColor = "black";
+
+        // Show the fullscreen container first (black background visible immediately)
+        isContentFullscreen = true;
+
+        if (!wasWindowFullScreenBeforeContent) {
+            detachedWindow.showFullScreen();
+        }
+
+        // Reparent WebView to fullscreen container
+        webEngineView.parent = fullscreenContainer;
+        webEngineView.anchors.fill = fullscreenContainer;
+        webEngineView.z = 1;  // Above the black background
+
+        // Ensure the WebEngineView has focus to receive ESC key
+        webEngineView.forceActiveFocus();
+
+        console.log("Detached window: Entered content fullscreen mode");
+    }
+
+    // Function to exit fullscreen mode
+    function exitContentFullscreen() {
+        if (!isContentFullscreen || !fullscreenWebView) {
+            return;
+        }
+
+        // Restore original background color
+        fullscreenWebView.backgroundColor = fullscreenOriginalBgColor;
+
+        if (fullscreenOriginalParent) {
+            fullscreenWebView.parent = fullscreenOriginalParent;
+            fullscreenWebView.anchors.fill = fullscreenOriginalParent;
+        }
+
+        isContentFullscreen = false;
+
+        if (!wasWindowFullScreenBeforeContent) {
+            detachedWindow.showNormal();
+        }
+
+        fullscreenWebView = null;
+        fullscreenOriginalParent = null;
+        wasWindowFullScreenBeforeContent = false;
+        fullscreenOriginalBgColor = "transparent";
+
+        console.log("Detached window: Exited content fullscreen mode");
+    }
 
     // Main page content
     pageStack.initialPage: Kirigami.Page {
@@ -72,7 +139,25 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    // Reparent the existing WebView when it's set
+    // Fullscreen container that overlays the entire window
+    Item {
+        id: fullscreenContainer
+        parent: detachedWindow.contentItem
+        anchors.fill: parent
+        visible: detachedWindow.isContentFullscreen
+        z: 999999
+
+        // Black background to prevent white flash
+        Rectangle {
+            anchors.fill: parent
+            color: "black"
+            z: 0
+        }
+
+        // WebEngineView will be reparented here with z: 1
+    }
+
+    // Reparent the existing WebView when it's set and connect fullscreen signal
     onExistingWebViewChanged: {
         if (existingWebView) {
             console.log("Reparenting WebView for service:", serviceTitle);
@@ -81,6 +166,15 @@ Kirigami.ApplicationWindow {
             // Reset anchors to fill the new container
             existingWebView.anchors.fill = webViewContainerItem;
             existingWebView.visible = true;
+
+            // Connect fullscreen signal for this detached window
+            existingWebView.fullscreenRequested.connect(function(webEngineView, toggleOn) {
+                if (toggleOn) {
+                    detachedWindow.enterContentFullscreen(webEngineView);
+                } else {
+                    detachedWindow.exitContentFullscreen();
+                }
+            });
         }
     }
 
