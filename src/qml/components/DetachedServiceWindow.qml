@@ -225,4 +225,17 @@ Kirigami.ApplicationWindow {
             }
         }
     }
+
+    // ESC key shortcut to exit page-initiated fullscreen
+    // This tells the web page to exit fullscreen, which triggers onFullScreenRequested(false)
+    Shortcut {
+        sequence: "Escape"
+        enabled: detachedWindow.isContentFullscreen && detachedWindow.fullscreenWebView
+        onActivated: {
+            if (detachedWindow.fullscreenWebView) {
+                console.log("Detached window: ESC pressed - triggering ExitFullScreen web action");
+                detachedWindow.fullscreenWebView.triggerWebAction(WebEngineView.ExitFullScreen);
+            }
+        }
+    }
 }
