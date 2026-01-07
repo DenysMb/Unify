@@ -1455,7 +1455,7 @@ Kirigami.ApplicationWindow {
     // Function to disable/enable a service
     function setServiceEnabled(serviceId, enabled) {
         var service = findServiceById(serviceId);
-        if (service && service.workspace === currentWorkspace) {
+        if (service) {
             var webView = webViewStack.getWebViewByServiceId(serviceId);
             if (webView) {
                 if (enabled) {
@@ -1468,7 +1468,7 @@ Kirigami.ApplicationWindow {
                     webView.stop();
                     webView.url = "about:blank";
                 }
-                // Update configManager to persist the state
+                // Update configManager to persist the disabled state
                 if (configManager && configManager.setServiceDisabled) {
                     configManager.setServiceDisabled(serviceId, !enabled);
                 }
