@@ -504,6 +504,7 @@ Kirigami.ApplicationWindow {
         }
         onAddWorkspaceRequested: {
             addWorkspaceDialog.isEditMode = false;
+            addWorkspaceDialog.initialIsolatedStorage = false;
             addWorkspaceDialog.clearFields();
             addWorkspaceDialog.open();
         }
@@ -518,6 +519,12 @@ Kirigami.ApplicationWindow {
                     addWorkspaceDialog.initialIcon = iconMap[addWorkspaceDialog.initialName] || "folder";
                 } else {
                     addWorkspaceDialog.initialIcon = "folder";
+                }
+                // Pre-fill isolated storage status
+                if (configManager && configManager.isWorkspaceIsolated) {
+                    addWorkspaceDialog.initialIsolatedStorage = configManager.isWorkspaceIsolated(addWorkspaceDialog.initialName);
+                } else {
+                    addWorkspaceDialog.initialIsolatedStorage = false;
                 }
                 addWorkspaceDialog.populateFields(addWorkspaceDialog.initialName);
                 addWorkspaceDialog.open();
@@ -631,7 +638,7 @@ Kirigami.ApplicationWindow {
     WorkspaceDialog {
         id: addWorkspaceDialog
         property int editingIndex: -1
-        onAcceptedWorkspace: function (workspaceName, iconName) {
+        onAcceptedWorkspace: function (workspaceName, iconName, isolatedStorage) {
             if (isEditMode) {
                 if (editingIndex >= 0 && editingIndex < root.workspaces.length && configManager) {
                     var oldWorkspaceName = root.workspaces[editingIndex];
@@ -639,10 +646,11 @@ Kirigami.ApplicationWindow {
                     // Always set/update icon regardless of rename
                     if (configManager.setWorkspaceIcon)
                         configManager.setWorkspaceIcon(workspaceName, iconName || "folder");
+                    // Note: isolated storage cannot be changed after creation
                 }
             } else {
                 if (configManager) {
-                    configManager.addWorkspace(workspaceName);
+                    configManager.addWorkspace(workspaceName, isolatedStorage);
                     if (configManager.setWorkspaceIcon)
                         configManager.setWorkspaceIcon(workspaceName, iconName || "folder");
                     // Switch to the newly created workspace
@@ -905,6 +913,7 @@ Kirigami.ApplicationWindow {
                             currentWorkspace: root.currentWorkspace
                             disabledServices: root.disabledServices
                             webProfile: persistentProfile
+                            workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                             onTitleUpdated: root.updateBadgeFromTitle
                             onAudibleServicesChanged: {
                                 root.serviceAudibleStates = audibleServices;
@@ -1024,6 +1033,7 @@ Kirigami.ApplicationWindow {
                         currentWorkspace: root.currentWorkspace
                         disabledServices: root.disabledServices
                         webProfile: persistentProfile
+                        workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                         onTitleUpdated: root.updateBadgeFromTitle
                         onAudibleServicesChanged: {
                             root.serviceAudibleStates = audibleServices;

@@ -19,6 +19,8 @@ Item {
     property WebEngineProfile webProfile
     // Callback to update badge from title
     property var onTitleUpdated: null
+    // Workspace isolated storage info (provided by Main.qml)
+    property var workspaceIsolatedStorage: ({})
 
     // Signal to propagate service URL update requests
     signal updateServiceUrlRequested(string serviceId, string newUrl)
@@ -27,6 +29,7 @@ Item {
     property string currentServiceId: ""
     property var webViewCache: ({}) // serviceId -> WebView component instance
     property var isolatedProfiles: ({}) // serviceId -> WebEngineProfile for isolated services
+    property var workspaceProfiles: ({}) // workspaceName -> WebEngineProfile for isolated workspaces
     property bool isInitialized: false
 
     // Track which services are currently playing audio
@@ -219,6 +222,41 @@ Item {
         return profile;
     }
 
+    function getOrCreateWorkspaceProfile(workspaceName, userAgent) {
+        // Check if we already have an isolated profile for this workspace
+        if (workspaceProfiles[workspaceName]) {
+            console.log("Reusing existing workspace profile for:", workspaceName);
+            return workspaceProfiles[workspaceName];
+        }
+
+        console.log("Creating NEW workspace isolated profile for:", workspaceName);
+
+        // Create a new isolated profile for this workspace
+        // Note: storageName MUST be set at creation time and cannot be changed later
+        // Use a sanitized workspace name for the storage path
+        var sanitizedName = workspaceName.replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase();
+        var profile = isolatedProfileComponent.createObject(root, {
+            "storageName": "unify-workspace-" + sanitizedName,
+            "httpUserAgent": userAgent || ""
+        });
+
+        if (profile) {
+            var profiles = root.workspaceProfiles;
+            profiles[workspaceName] = profile;
+            root.workspaceProfiles = profiles;
+            console.log("Created workspace profile for:", workspaceName, "storageName:", profile.storageName, "offTheRecord:", profile.offTheRecord);
+        } else {
+            console.error("Failed to create workspace profile component for:", workspaceName);
+        }
+
+        return profile;
+    }
+
+    // Helper to check if a workspace has isolated storage
+    function isWorkspaceIsolated(workspaceName) {
+        return workspaceIsolatedStorage && workspaceIsolatedStorage.hasOwnProperty(workspaceName) && workspaceIsolatedStorage[workspaceName] === true;
+    }
+
     function createWebViewForService(serviceId) {
         // Don't create if profile is not ready
         if (!root.webProfile) {
@@ -258,15 +296,31 @@ Item {
         // Create the instance with delayed URL loading for disabled services
         var initialUrl = root.isDisabled(serviceData.id) ? "about:blank" : serviceData.url;
 
-        // Determine which profile to use: isolated or shared
+        // Determine which profile to use based on priority:
+        // 1. Service-level isolated profile (highest priority)
+        // 2. Workspace-level isolated profile
+        // 3. Shared profile (default)
         var profileToUse = root.webProfile;
+        var userAgent = root.webProfile ? root.webProfile.httpUserAgent : "";
+        var isolationType = "shared";
+        
         if (serviceData.isolatedProfile) {
-            // Pass the user agent from the shared profile to maintain consistency
-            var userAgent = root.webProfile ? root.webProfile.httpUserAgent : "";
+            // Service-level isolation takes priority
             profileToUse = getOrCreateIsolatedProfile(serviceData.id, userAgent);
+            isolationType = "service-isolated";
             if (!profileToUse) {
                 console.error("Failed to create isolated profile for service:", serviceId);
                 profileToUse = root.webProfile; // Fallback to shared profile
+                isolationType = "shared";
+            }
+        } else if (serviceData.workspace && isWorkspaceIsolated(serviceData.workspace)) {
+            // Workspace-level isolation
+            profileToUse = getOrCreateWorkspaceProfile(serviceData.workspace, userAgent);
+            isolationType = "workspace-isolated:" + serviceData.workspace;
+            if (!profileToUse) {
+                console.error("Failed to create workspace profile for:", serviceData.workspace);
+                profileToUse = root.webProfile; // Fallback to shared profile
+                isolationType = "shared";
             }
         }
 
@@ -322,7 +376,7 @@ Item {
         cache[serviceId] = instance;
         root.webViewCache = cache;
 
-        console.log("Created WebView for service:", serviceId, "at index:", nextIndex, serviceData.isolatedProfile ? "(isolated)" : "(shared)");
+        console.log("Created WebView for service:", serviceId, "at index:", nextIndex, "(" + isolationType + ")");
     }
 
     function updateWebViewForService(serviceId, serviceData) {

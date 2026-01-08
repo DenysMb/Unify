@@ -86,6 +86,44 @@ void ConfigManager::setWorkspaceIcon(const QString &workspace, const QString &ic
     }
 }
 
+QVariantMap ConfigManager::workspaceIsolatedStorage() const
+{
+    QVariantMap map;
+    for (auto it = m_workspaceIsolatedStorage.constBegin(); it != m_workspaceIsolatedStorage.constEnd(); ++it) {
+        map.insert(it.key(), it.value());
+    }
+    return map;
+}
+
+bool ConfigManager::isWorkspaceIsolated(const QString &workspace) const
+{
+    return m_workspaceIsolatedStorage.value(workspace, false);
+}
+
+void ConfigManager::setWorkspaceIsolatedStorage(const QString &workspace, bool isolated)
+{
+    if (workspace.isEmpty()) {
+        return;
+    }
+
+    // Protect special workspaces from isolated storage changes
+    if (isSpecialWorkspace(workspace)) {
+        qDebug() << "Cannot change isolated storage for special workspace:" << workspace;
+        return;
+    }
+
+    const auto it = m_workspaceIsolatedStorage.find(workspace);
+    if (it == m_workspaceIsolatedStorage.end() || it.value() != isolated) {
+        if (!isolated) {
+            m_workspaceIsolatedStorage.remove(workspace);
+        } else {
+            m_workspaceIsolatedStorage.insert(workspace, isolated);
+        }
+        Q_EMIT workspaceIsolatedStorageChanged();
+        saveSettings();
+    }
+}
+
 QVariantMap ConfigManager::disabledServices() const
 {
     return m_disabledServices;
@@ -192,20 +230,20 @@ void ConfigManager::addService(const QVariantMap &service)
     // Find the correct position to insert - after the last service of the same workspace
     const QString targetWorkspace = newService[QStringLiteral("workspace")].toString();
     int insertPosition = -1;
-    
+
     for (int i = 0; i < m_services.size(); ++i) {
         QVariantMap existingService = m_services[i].toMap();
         if (existingService[QStringLiteral("workspace")].toString() == targetWorkspace) {
             insertPosition = i + 1;
         }
     }
-    
+
     if (insertPosition >= 0 && insertPosition <= m_services.size()) {
         m_services.insert(insertPosition, newService);
     } else {
         m_services.append(newService);
     }
-    
+
     updateWorkspacesList();
     Q_EMIT servicesChanged();
     saveSettings();
@@ -220,17 +258,17 @@ void ConfigManager::updateService(const QString &serviceId, const QVariantMap &s
         if (existingService[QStringLiteral("id")].toString() == serviceId) {
             QVariantMap updatedService = service;
             updatedService[QStringLiteral("id")] = serviceId; // Preserve the ID
-            
+
             // Preserve the favorite status if it exists in the original service
             if (existingService.contains(QStringLiteral("favorite"))) {
                 updatedService[QStringLiteral("favorite")] = existingService[QStringLiteral("favorite")];
             }
-            
+
             // Preserve the isolatedProfile flag - it cannot be changed after creation
             if (existingService.contains(QStringLiteral("isolatedProfile"))) {
                 updatedService[QStringLiteral("isolatedProfile")] = existingService[QStringLiteral("isolatedProfile")];
             }
-            
+
             m_services[i] = updatedService;
             updateWorkspacesList();
             Q_EMIT servicesChanged();
@@ -276,14 +314,21 @@ void ConfigManager::moveService(int fromIndex, int toIndex)
     qDebug() << "Moved service from index" << fromIndex << "to" << toIndex;
 }
 
-void ConfigManager::addWorkspace(const QString &workspaceName)
+void ConfigManager::addWorkspace(const QString &workspaceName, bool isolatedStorage)
 {
     if (!workspaceName.isEmpty() && !m_workspaces.contains(workspaceName)) {
         m_workspaces.append(workspaceName);
+
+        // Set isolated storage if requested
+        if (isolatedStorage) {
+            m_workspaceIsolatedStorage.insert(workspaceName, true);
+            Q_EMIT workspaceIsolatedStorageChanged();
+        }
+
         Q_EMIT workspacesChanged();
         saveSettings();
 
-        qDebug() << "Added workspace:" << workspaceName;
+        qDebug() << "Added workspace:" << workspaceName << (isolatedStorage ? "(isolated)" : "(shared)");
     }
 }
 
@@ -310,6 +355,12 @@ void ConfigManager::removeWorkspace(const QString &workspaceName)
         if (m_workspaceIcons.contains(workspaceName)) {
             m_workspaceIcons.remove(workspaceName);
             Q_EMIT workspaceIconsChanged();
+        }
+
+        // Remove isolated storage mapping if present
+        if (m_workspaceIsolatedStorage.contains(workspaceName)) {
+            m_workspaceIsolatedStorage.remove(workspaceName);
+            Q_EMIT workspaceIsolatedStorageChanged();
         }
 
         // If current workspace was removed, switch to first available or create Personal
@@ -368,6 +419,14 @@ void ConfigManager::renameWorkspace(const QString &oldName, const QString &newNa
             Q_EMIT workspaceIconsChanged();
         }
 
+        // Move isolated storage mapping along with the rename
+        if (m_workspaceIsolatedStorage.contains(oldName)) {
+            const bool isolated = m_workspaceIsolatedStorage.value(oldName);
+            m_workspaceIsolatedStorage.remove(oldName);
+            m_workspaceIsolatedStorage.insert(newName, isolated);
+            Q_EMIT workspaceIsolatedStorageChanged();
+        }
+
         Q_EMIT servicesChanged();
         Q_EMIT workspacesChanged();
         saveSettings();
@@ -393,6 +452,14 @@ void ConfigManager::saveSettings()
             iconMap.insert(it.key(), it.value());
         }
         m_settings.setValue(QStringLiteral("icons"), iconMap);
+    }
+    // Persist workspace isolated storage map
+    {
+        QVariantMap isolatedMap;
+        for (auto it = m_workspaceIsolatedStorage.constBegin(); it != m_workspaceIsolatedStorage.constEnd(); ++it) {
+            isolatedMap.insert(it.key(), it.value());
+        }
+        m_settings.setValue(QStringLiteral("isolatedStorage"), isolatedMap);
     }
     m_settings.endGroup();
 
@@ -437,6 +504,14 @@ void ConfigManager::loadSettings()
         m_workspaceIcons.clear();
         for (auto it = iconMap.constBegin(); it != iconMap.constEnd(); ++it) {
             m_workspaceIcons.insert(it.key(), it.value().toString());
+        }
+    }
+    // Load workspace isolated storage map
+    {
+        const QVariantMap isolatedMap = m_settings.value(QStringLiteral("isolatedStorage"), QVariantMap()).toMap();
+        m_workspaceIsolatedStorage.clear();
+        for (auto it = isolatedMap.constBegin(); it != isolatedMap.constEnd(); ++it) {
+            m_workspaceIsolatedStorage.insert(it.key(), it.value().toBool());
         }
     }
     m_settings.endGroup();
