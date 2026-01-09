@@ -11,12 +11,15 @@ Kirigami.Dialog {
     property bool isEditMode: false
     property string initialName: ""
     property string initialIcon: "folder"
+    property bool initialIsolatedStorage: false
 
     // Selected icon state
     property string selectedIconName: initialIcon || "folder"
+    // Isolated storage state
+    property bool isolatedStorage: initialIsolatedStorage
 
-    // New signal carrying name and icon
-    signal acceptedWorkspace(string name, string icon)
+    // New signal carrying name, icon, and isolated storage
+    signal acceptedWorkspace(string name, string icon, bool isolatedStorage)
     signal deleteRequested
 
     title: isEditMode ? i18n("Edit Workspace") : i18n("Add Workspace")
@@ -36,10 +39,12 @@ Kirigami.Dialog {
     function populateFields(name) {
         workspaceNameField.text = name || "";
         root.selectedIconName = root.initialIcon || "folder";
+        root.isolatedStorage = root.initialIsolatedStorage;
     }
     function clearFields() {
         workspaceNameField.text = "";
         root.selectedIconName = "folder";
+        root.isolatedStorage = false;
     }
 
     onAccepted: {
@@ -49,7 +54,7 @@ Kirigami.Dialog {
             console.log("Workspace name cannot be empty");
             return;
         }
-        acceptedWorkspace(workspaceName, iconName);
+        acceptedWorkspace(workspaceName, iconName, root.isolatedStorage);
         clearFields();
     }
     onRejected: {
@@ -75,6 +80,28 @@ Kirigami.Dialog {
             onClicked: iconDialog.open()
             Controls.ToolTip.visible: hovered
             Controls.ToolTip.text: i18n("Choose icon")
+        }
+
+        // Isolated storage checkbox - only show when creating new workspace
+        Controls.CheckBox {
+            id: isolatedStorageCheckBox
+            Kirigami.FormData.label: i18n("Isolated Storage:")
+            text: i18n("Use isolated storage for this workspace")
+            checked: root.isolatedStorage
+            visible: !root.isEditMode
+            onCheckedChanged: root.isolatedStorage = checked
+            Controls.ToolTip.visible: hovered
+            Controls.ToolTip.delay: 500
+            Controls.ToolTip.text: i18n("Services in this workspace will have separate cookies, storage, and authentication from other workspaces. This cannot be changed after creation.")
+        }
+
+        // Info label for edit mode
+        Controls.Label {
+            visible: root.isEditMode && root.initialIsolatedStorage
+            Kirigami.FormData.label: i18n("Isolated Storage:")
+            text: i18n("Enabled (cannot be changed)")
+            font.italic: true
+            opacity: 0.7
         }
 
         // Separator before destructive actions (only in edit mode)

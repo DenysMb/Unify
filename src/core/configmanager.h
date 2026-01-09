@@ -15,6 +15,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(QStringList workspaces READ workspaces NOTIFY workspacesChanged)
     Q_PROPERTY(QString currentWorkspace READ currentWorkspace WRITE setCurrentWorkspace NOTIFY currentWorkspaceChanged)
     Q_PROPERTY(QVariantMap workspaceIcons READ workspaceIcons NOTIFY workspaceIconsChanged)
+    Q_PROPERTY(QVariantMap workspaceIsolatedStorage READ workspaceIsolatedStorage NOTIFY workspaceIsolatedStorageChanged)
     Q_PROPERTY(QVariantMap disabledServices READ disabledServices WRITE setDisabledServices NOTIFY disabledServicesChanged)
     Q_PROPERTY(bool horizontalSidebar READ horizontalSidebar WRITE setHorizontalSidebar NOTIFY horizontalSidebarChanged)
     Q_PROPERTY(bool alwaysShowWorkspacesBar READ alwaysShowWorkspacesBar WRITE setAlwaysShowWorkspacesBar NOTIFY alwaysShowWorkspacesBarChanged)
@@ -36,7 +37,7 @@ public:
     Q_INVOKABLE void removeService(const QString &serviceId);
     Q_INVOKABLE void moveService(int fromIndex, int toIndex);
 
-    Q_INVOKABLE void addWorkspace(const QString &workspaceName);
+    Q_INVOKABLE void addWorkspace(const QString &workspaceName, bool isolatedStorage = false);
     Q_INVOKABLE void removeWorkspace(const QString &workspaceName);
     Q_INVOKABLE void renameWorkspace(const QString &oldName, const QString &newName);
 
@@ -44,6 +45,11 @@ public:
     QVariantMap workspaceIcons() const;
     Q_INVOKABLE QString workspaceIcon(const QString &workspace) const;
     Q_INVOKABLE void setWorkspaceIcon(const QString &workspace, const QString &iconName);
+
+    // Per-workspace isolated storage mapping
+    QVariantMap workspaceIsolatedStorage() const;
+    Q_INVOKABLE bool isWorkspaceIsolated(const QString &workspace) const;
+    Q_INVOKABLE void setWorkspaceIsolatedStorage(const QString &workspace, bool isolated);
 
     // Disabled services management
     QVariantMap disabledServices() const;
@@ -86,6 +92,7 @@ Q_SIGNALS:
     void workspacesChanged();
     void currentWorkspaceChanged();
     void workspaceIconsChanged();
+    void workspaceIsolatedStorageChanged();
     void disabledServicesChanged();
     void horizontalSidebarChanged();
     void alwaysShowWorkspacesBarChanged();
@@ -100,6 +107,7 @@ private:
     QString m_currentWorkspace;
     QHash<QString, QString> m_lastServiceByWorkspace; // workspace -> serviceId
     QHash<QString, QString> m_workspaceIcons; // workspace -> icon name
+    QHash<QString, bool> m_workspaceIsolatedStorage; // workspace -> isolated storage flag
     QVariantMap m_disabledServices; // serviceId -> bool (true if disabled)
     bool m_horizontalSidebar = false;
     bool m_alwaysShowWorkspacesBar = false;
