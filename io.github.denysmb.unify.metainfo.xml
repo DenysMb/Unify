@@ -69,6 +69,19 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.4.0" date="2026-01-09">
+      <description>
+        <p>New features:</p>
+        <ul>
+          <li>Added workspace-level isolated storage - workspaces can now have separate cookies, authentication, and data (e.g., Personal vs Work)</li>
+          <li>Added page-initiated fullscreen support (press ESC to exit)</li>
+        </ul>
+        <p>Bug fixes:</p>
+        <ul>
+          <li>Fixed service disabling from any workspace</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.3.1" date="2026-01-05">
       <description>
         <p>Bug fixes:</p>
