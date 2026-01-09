@@ -23,6 +23,9 @@ Item {
     // Signal to propagate service URL update requests
     signal updateServiceUrlRequested(string serviceId, string newUrl)
 
+    // Signal to propagate fullscreen requests to main window
+    signal fullscreenRequested(var webEngineView, bool toggleOn)
+
     // Internal properties
     property string currentServiceId: ""
     property var webViewCache: ({}) // serviceId -> WebView component instance
@@ -289,6 +292,11 @@ Item {
         // Connect the updateServiceUrlRequested signal
         instance.updateServiceUrlRequested.connect(function (svcId, newUrl) {
             root.updateServiceUrlRequested(svcId, newUrl);
+        });
+
+        // Connect the fullscreen request signal
+        instance.fullscreenRequested.connect(function (webEngineView, toggleOn) {
+            root.fullscreenRequested(webEngineView, toggleOn);
         });
 
         // Monitor audio playback state changes

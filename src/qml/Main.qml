@@ -53,6 +53,13 @@ Kirigami.ApplicationWindow {
     // Object to track detached service IDs and their window instances
     property var detachedServices: ({})
 
+    // Fullscreen state tracking for page-initiated fullscreen (e.g., YouTube videos)
+    property bool isContentFullscreen: false
+    property var fullscreenWebView: null
+    property var fullscreenOriginalParent: null
+    property bool wasWindowFullScreenBeforeContent: false
+    property color fullscreenOriginalBgColor: "transparent"
+
     // Temporary property to track which service is being edited (to avoid changing currentServiceId)
     property string editingServiceId: ""
 
@@ -765,6 +772,15 @@ Kirigami.ApplicationWindow {
         if (trayIconManager) {
             trayIconManager.windowVisible = (root.visibility !== Window.Hidden && root.visibility !== Window.Minimized);
         }
+
+        // If window exits fullscreen (e.g. via OS gesture or Alt-Tab) while we are in content fullscreen mode,
+        // we need to tell the web content to exit fullscreen too.
+        if (isContentFullscreen && visibility !== Window.FullScreen && visibility !== Window.Minimized && visibility !== Window.Hidden) {
+            console.log("Window exited fullscreen (OS/User action) - syncing web content");
+            if (fullscreenWebView) {
+                fullscreenWebView.triggerWebAction(WebEngineView.ExitFullScreen);
+            }
+        }
     }
 
     // Helper property to track horizontal sidebar setting
@@ -933,6 +949,13 @@ Kirigami.ApplicationWindow {
                                     configManager.updateService(serviceId, updatedService);
                                 }
                             }
+                            onFullscreenRequested: function (webEngineView, toggleOn) {
+                                if (toggleOn) {
+                                    root.enterContentFullscreen(webEngineView);
+                                } else {
+                                    root.exitContentFullscreen();
+                                }
+                            }
                             Component.onCompleted: {
                                 root.webViewStack = webViewStackVertical;
                             }
@@ -1050,6 +1073,13 @@ Kirigami.ApplicationWindow {
                                     favorite: service.favorite
                                 };
                                 configManager.updateService(serviceId, updatedService);
+                            }
+                        }
+                        onFullscreenRequested: function (webEngineView, toggleOn) {
+                            if (toggleOn) {
+                                root.enterContentFullscreen(webEngineView);
+                            } else {
+                                root.exitContentFullscreen();
                             }
                         }
                         Component.onCompleted: {
@@ -1565,5 +1595,105 @@ Kirigami.ApplicationWindow {
         configManager.moveService(currentIndex, targetIndex);
         console.log("Moved service down:", service.title);
         return true;
+    }
+
+    // Function to enter fullscreen mode for a WebEngineView
+    // Reparents the WebView to the fullscreen container to fill the entire screen
+    function enterContentFullscreen(webEngineView) {
+        if (isContentFullscreen || !webEngineView) {
+            return;
+        }
+
+        // Store state for restoration
+        fullscreenWebView = webEngineView;
+        fullscreenOriginalParent = webEngineView.parent;
+        wasWindowFullScreenBeforeContent = (root.visibility === Window.FullScreen);
+
+        // Store original background color and set to black to prevent white flash
+        fullscreenOriginalBgColor = webEngineView.backgroundColor;
+        webEngineView.backgroundColor = "black";
+
+        // Show the fullscreen container first (black background visible immediately)
+        isContentFullscreen = true;
+
+        // Make window fullscreen if not already
+        if (!wasWindowFullScreenBeforeContent) {
+            root.showFullScreen();
+        }
+
+        // Reparent WebView to fullscreen container
+        webEngineView.parent = fullscreenContainer;
+        webEngineView.anchors.fill = fullscreenContainer;
+        webEngineView.z = 1;  // Above the black background
+
+        // Ensure the WebEngineView has focus to receive ESC key
+        webEngineView.forceActiveFocus();
+
+        console.log("Entered content fullscreen mode");
+    }
+
+    // Function to exit fullscreen mode and restore the WebView
+    function exitContentFullscreen() {
+        if (!isContentFullscreen || !fullscreenWebView) {
+            return;
+        }
+
+        // Restore original background color
+        fullscreenWebView.backgroundColor = fullscreenOriginalBgColor;
+
+        // Restore WebView to original parent
+        if (fullscreenOriginalParent) {
+            fullscreenWebView.parent = fullscreenOriginalParent;
+            fullscreenWebView.anchors.fill = fullscreenOriginalParent;
+        }
+
+        // Hide fullscreen container
+        isContentFullscreen = false;
+
+        // Restore window state if we made it fullscreen
+        if (!wasWindowFullScreenBeforeContent) {
+            root.showNormal();
+        }
+
+        // Clear state
+        fullscreenWebView = null;
+        fullscreenOriginalParent = null;
+        wasWindowFullScreenBeforeContent = false;
+        fullscreenOriginalBgColor = "transparent";
+
+        console.log("Exited content fullscreen mode");
+    }
+
+    // Fullscreen container that overlays the entire window
+    // Used for page-initiated fullscreen (e.g., YouTube video fullscreen)
+    Item {
+        id: fullscreenContainer
+        parent: root.contentItem
+        anchors.fill: parent
+        visible: root.isContentFullscreen
+        z: 999999  // Always on top of everything
+
+        // Black background to hide anything behind and prevent white flash
+        Rectangle {
+            id: fullscreenBackground
+            anchors.fill: parent
+            color: "black"
+            z: 0
+        }
+
+        // WebEngineView will be reparented here with z: 1
+    }
+
+    // ESC key shortcut to exit page-initiated fullscreen
+    // This tells the web page to exit fullscreen, which triggers onFullScreenRequested(false)
+    Shortcut {
+        sequence: "Escape"
+        enabled: root.isContentFullscreen && root.fullscreenWebView
+        onActivated: {
+            if (root.fullscreenWebView) {
+                console.log("ESC pressed - triggering ExitFullScreen web action");
+                root.fullscreenWebView.triggerWebAction(WebEngineView.ExitFullScreen);
+            }
+        }
     }
 }

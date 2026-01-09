@@ -38,6 +38,9 @@ Item {
     // Signal to request updating service URL
     signal updateServiceUrlRequested(string serviceId, string newUrl)
 
+    // Signal for fullscreen requests (to be handled by parent window)
+    signal fullscreenRequested(var webEngineView, bool toggleOn)
+
     // Public function to trigger printing
     function printPage() {
         var pdfPath = printHandler.getTempPdfPath(view.serviceTitle);
@@ -187,9 +190,6 @@ Item {
         // Ensure page-initiated fullscreen is supported
         settings.fullScreenSupportEnabled: true
 
-        // Track window state so we can restore it properly
-        property bool _wasWindowFullScreenBeforeRequest: false
-
         // Handle permission requests: auto-grant required permissions
         onPermissionRequested: function (permission) {
             var requiredPermissions = [WebEnginePermission.PermissionType.Geolocation, WebEnginePermission.PermissionType.MediaAudioCapture, WebEnginePermission.PermissionType.MediaVideoCapture, WebEnginePermission.PermissionType.MediaAudioVideoCapture, WebEnginePermission.PermissionType.Notifications, WebEnginePermission.PermissionType.DesktopVideoCapture, WebEnginePermission.PermissionType.DesktopAudioVideoCapture, WebEnginePermission.PermissionType.MouseLock, WebEnginePermission.PermissionType.ClipboardReadWrite];
@@ -308,22 +308,11 @@ Item {
         }
 
         // Handle page-initiated fullscreen requests (e.g., video players)
+        // Emits signal to parent window which handles the actual fullscreen logic
         onFullScreenRequested: function (request) {
-            // Accept and sync the application window visibility
             request.accept();
-            var win = view.window; // owning Window
-            if (!win)
-                return;
-
-            if (request.toggleOn) {
-                view._wasWindowFullScreenBeforeRequest = (win.visibility === Window.FullScreen);
-                if (!view._wasWindowFullScreenBeforeRequest)
-                    win.showFullScreen();
-            } else {
-                if (!view._wasWindowFullScreenBeforeRequest)
-                    win.showNormal();
-                view._wasWindowFullScreenBeforeRequest = false;
-            }
+            // Emit signal to parent for handling fullscreen at window level
+            view.fullscreenRequested(webView, request.toggleOn);
         }
 
         // Handle desktop media requests for screen/window sharing (Qt 6.7+)
