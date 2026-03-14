@@ -84,6 +84,10 @@ public:
     Q_INVOKABLE void setServiceFavorite(const QString &serviceId, bool favorite);
     Q_INVOKABLE bool isServiceFavorite(const QString &serviceId) const;
 
+    // Zoom factor management (per service)
+    Q_INVOKABLE void setServiceZoomFactor(const QString &serviceId, qreal zoomFactor);
+    Q_INVOKABLE qreal serviceZoomFactor(const QString &serviceId) const;
+
     // Special workspaces
     Q_INVOKABLE bool isSpecialWorkspace(const QString &workspaceName) const;
 

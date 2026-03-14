@@ -28,6 +28,9 @@ Item {
     // Signal to propagate fullscreen requests to main window
     signal fullscreenRequested(var webEngineView, bool toggleOn)
 
+    // Signal to propagate zoom factor changes
+    signal serviceZoomFactorChanged(string serviceId, real zoomFactor)
+
     // Internal properties
     property string currentServiceId: ""
     property var webViewCache: ({}) // serviceId -> WebView component instance
@@ -144,6 +147,21 @@ Item {
             return webViewCache[currentServiceId];
         }
         return null;
+    }
+
+    // Set zoom factor for a specific service
+    function setZoomFactor(serviceId, zoomFactor) {
+        if (webViewCache[serviceId]) {
+            webViewCache[serviceId].zoomFactor = zoomFactor;
+        }
+    }
+
+    // Get zoom factor for a specific service
+    function getZoomFactor(serviceId) {
+        if (webViewCache[serviceId]) {
+            return webViewCache[serviceId].zoomFactor;
+        }
+        return 1.0;
     }
 
     // Detach a ServiceWebView from the stack (for reparenting to external window)
@@ -335,7 +353,8 @@ Item {
             "webProfile": profileToUse,
             "isServiceDisabled": root.isDisabled(serviceData.id),
             "onTitleUpdated": root.onTitleUpdated,
-            "stackIndex": nextIndex
+            "stackIndex": nextIndex,
+            "zoomFactor": serviceData.zoomFactor || 1.0
         });
 
         if (!instance) {
@@ -351,6 +370,11 @@ Item {
         // Connect the fullscreen request signal
         instance.fullscreenRequested.connect(function (webEngineView, toggleOn) {
             root.fullscreenRequested(webEngineView, toggleOn);
+        });
+
+        // Connect the zoom factor change signal
+        instance.zoomFactorUpdated.connect(function (svcId, zoomFactor) {
+            root.serviceZoomFactorChanged(svcId, zoomFactor);
         });
 
         // Monitor audio playback state changes

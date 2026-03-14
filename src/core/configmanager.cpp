@@ -642,3 +642,30 @@ bool ConfigManager::isServiceFavorite(const QString &serviceId) const
     }
     return false;
 }
+
+void ConfigManager::setServiceZoomFactor(const QString &serviceId, qreal zoomFactor)
+{
+    for (int i = 0; i < m_services.size(); ++i) {
+        QVariantMap service = m_services[i].toMap();
+        if (service[QStringLiteral("id")].toString() == serviceId) {
+            service[QStringLiteral("zoomFactor")] = zoomFactor;
+            m_services[i] = service;
+            Q_EMIT servicesChanged();
+            saveSettings();
+            qDebug() << "Service" << serviceId << "zoom factor set to" << zoomFactor;
+            return;
+        }
+    }
+    qDebug() << "Service not found for zoom factor update:" << serviceId;
+}
+
+qreal ConfigManager::serviceZoomFactor(const QString &serviceId) const
+{
+    for (const QVariant &varService : m_services) {
+        QVariantMap service = varService.toMap();
+        if (service[QStringLiteral("id")].toString() == serviceId) {
+            return service.value(QStringLiteral("zoomFactor"), 1.0).toReal();
+        }
+    }
+    return 1.0;
+}

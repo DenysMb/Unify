@@ -20,6 +20,7 @@ Item {
     property alias contents: webView
     property var onTitleUpdated: null
     property int stackIndex: 0
+    property real zoomFactor: 1.0
 
     // Audio playback indicator - exposes WebEngineView's recentlyAudible property
     readonly property bool isPlayingAudio: webView.recentlyAudible
@@ -41,6 +42,9 @@ Item {
     // Signal for fullscreen requests (to be handled by parent window)
     signal fullscreenRequested(var webEngineView, bool toggleOn)
 
+    // Signal for zoom factor changes (renamed to avoid conflict with property change signal)
+    signal zoomFactorUpdated(string serviceId, real zoomFactor)
+
     // Public function to trigger printing
     function printPage() {
         var pdfPath = printHandler.getTempPdfPath(view.serviceTitle);
@@ -51,6 +55,11 @@ Item {
     property bool profileReady: webProfile !== null
     property bool urlLoaded: false
     property bool hasLoadedOnce: false  // Track if service has completed loading at least once
+
+    // Emit zoom factor change signal
+    onZoomFactorChanged: {
+        view.zoomFactorUpdated(view.serviceId, view.zoomFactor);
+    }
 
     // Helper function to extract and normalize host from URL
     function normalizeHost(url) {
@@ -174,6 +183,21 @@ Item {
 
         // Start with about:blank, URL will be set when profile is ready
         url: "about:blank"
+
+        // Zoom factor (1.0 = 100%)
+        zoomFactor: view.zoomFactor
+
+        // Handle Ctrl+Scroll for zoom
+        WheelHandler {
+            acceptedModifiers: Qt.ControlModifier
+            onWheel: function(event) {
+                var delta = event.angleDelta.y;
+                var zoomDelta = delta > 0 ? 0.1 : -0.1;
+                var newZoom = Math.max(0.25, Math.min(5.0, view.zoomFactor + zoomDelta));
+                view.zoomFactor = newZoom;
+                event.accepted = true;
+            }
+        }
 
         // Enable settings required for screen sharing, media capture, notifications and OAuth
         settings.screenCaptureEnabled: true

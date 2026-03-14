@@ -46,6 +46,15 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Update zoom factor when current service changes
+    onCurrentServiceIdChanged: {
+        if (currentServiceId && configManager) {
+            currentZoomFactor = configManager.serviceZoomFactor(currentServiceId);
+        } else {
+            currentZoomFactor = 1.0;
+        }
+    }
+
     // Object to track disabled service IDs (using object instead of Set for QML compatibility)
     // Now loaded from and saved to configManager
     property var disabledServices: configManager ? configManager.disabledServices : ({})
@@ -71,6 +80,9 @@ Kirigami.ApplicationWindow {
 
     // Object to track media metadata for services playing audio
     property var serviceMediaMetadata: ({})
+
+    // Current zoom factor for the selected service (default 1.0 = 100%)
+    property real currentZoomFactor: 1.0
 
     // Computed property for the currently playing service info (first audible service)
     // Kept for backward compatibility
@@ -225,6 +237,17 @@ Kirigami.ApplicationWindow {
             return;
         var isFavorite = configManager.isServiceFavorite(id);
         configManager.setServiceFavorite(id, !isFavorite);
+    }
+
+    // Function to set zoom factor for current service
+    function setZoomFactor(zoomFactor) {
+        if (!configManager || !currentServiceId)
+            return;
+        configManager.setServiceZoomFactor(currentServiceId, zoomFactor);
+        currentZoomFactor = zoomFactor;
+        if (webViewStack) {
+            webViewStack.setZoomFactor(currentServiceId, zoomFactor);
+        }
     }
 
     // Function to switch workspace and select first service
@@ -847,6 +870,54 @@ Kirigami.ApplicationWindow {
                 }
             },
             Kirigami.Action {
+                visible: root.currentServiceId !== ""
+                displayHint: Kirigami.DisplayHint.KeepVisible
+                displayComponent: RowLayout {
+                    spacing: Kirigami.Units.smallSpacing
+
+                    Controls.ToolButton {
+                        icon.name: "zoom-out"
+                        enabled: root.currentServiceId !== "" && root.currentZoomFactor > 0.25
+                        onClicked: {
+                            var newZoom = Math.max(0.25, root.currentZoomFactor - 0.25);
+                            root.setZoomFactor(newZoom);
+                        }
+                        Controls.ToolTip.text: i18n("Zoom Out")
+                        Controls.ToolTip.visible: hovered
+                        Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
+                    }
+
+                    Controls.Label {
+                        text: Math.round(root.currentZoomFactor * 100) + "%"
+                        Layout.minimumWidth: Kirigami.Units.gridUnit * 3
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    Controls.ToolButton {
+                        icon.name: "zoom-in"
+                        enabled: root.currentServiceId !== "" && root.currentZoomFactor < 5.0
+                        onClicked: {
+                            var newZoom = Math.min(5.0, root.currentZoomFactor + 0.25);
+                            root.setZoomFactor(newZoom);
+                        }
+                        Controls.ToolTip.text: i18n("Zoom In")
+                        Controls.ToolTip.visible: hovered
+                        Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
+                    }
+
+                    Controls.ToolButton {
+                        icon.name: "zoom-original"
+                        enabled: root.currentServiceId !== "" && root.currentZoomFactor !== 1.0
+                        onClicked: {
+                            root.setZoomFactor(1.0);
+                        }
+                        Controls.ToolTip.text: i18n("Reset Zoom")
+                        Controls.ToolTip.visible: hovered
+                        Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
+                    }
+                }
+            },
+            Kirigami.Action {
                 text: i18n("Add Service")
                 icon.name: "list-add"
                 onTriggered: {
@@ -978,6 +1049,12 @@ Kirigami.ApplicationWindow {
                                     root.exitContentFullscreen();
                                 }
                             }
+                            onServiceZoomFactorChanged: function (serviceId, zoomFactor) {
+                                if (configManager && serviceId === root.currentServiceId) {
+                                    configManager.setServiceZoomFactor(serviceId, zoomFactor);
+                                    root.currentZoomFactor = zoomFactor;
+                                }
+                            }
                             Component.onCompleted: {
                                 root.webViewStack = webViewStackVertical;
                             }
@@ -1103,6 +1180,12 @@ Kirigami.ApplicationWindow {
                                 root.enterContentFullscreen(webEngineView);
                             } else {
                                 root.exitContentFullscreen();
+                            }
+                        }
+                        onServiceZoomFactorChanged: function (serviceId, zoomFactor) {
+                            if (configManager && serviceId === root.currentServiceId) {
+                                configManager.setServiceZoomFactor(serviceId, zoomFactor);
+                                root.currentZoomFactor = zoomFactor;
                             }
                         }
                         Component.onCompleted: {
