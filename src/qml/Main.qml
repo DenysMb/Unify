@@ -791,6 +791,19 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Handle window close - minimize to tray or quit based on setting
+    onClosing: function(close) {
+        if (configManager && configManager.systemTrayEnabled) {
+            // Minimize to tray instead of quitting
+            close.accepted = false
+            root.hide()
+            if (trayIconManager) {
+                trayIconManager.windowVisible = false
+            }
+        }
+        // If tray is disabled, let the app quit normally (close.accepted = true by default)
+    }
+
     // Helper property to track horizontal sidebar setting
     property bool isHorizontalSidebar: configManager ? configManager.horizontalSidebar : false
 

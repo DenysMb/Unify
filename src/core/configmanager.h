@@ -20,6 +20,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(bool horizontalSidebar READ horizontalSidebar WRITE setHorizontalSidebar NOTIFY horizontalSidebarChanged)
     Q_PROPERTY(bool alwaysShowWorkspacesBar READ alwaysShowWorkspacesBar WRITE setAlwaysShowWorkspacesBar NOTIFY alwaysShowWorkspacesBarChanged)
     Q_PROPERTY(bool confirmDownloads READ confirmDownloads WRITE setConfirmDownloads NOTIFY confirmDownloadsChanged)
+    Q_PROPERTY(bool systemTrayEnabled READ systemTrayEnabled WRITE setSystemTrayEnabled NOTIFY systemTrayEnabledChanged)
 
 public:
     explicit ConfigManager(QObject *parent = nullptr);
@@ -69,6 +70,9 @@ public:
     bool confirmDownloads() const;
     void setConfirmDownloads(bool enabled);
 
+    bool systemTrayEnabled() const;
+    void setSystemTrayEnabled(bool enabled);
+
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
 
@@ -97,6 +101,7 @@ Q_SIGNALS:
     void horizontalSidebarChanged();
     void alwaysShowWorkspacesBarChanged();
     void confirmDownloadsChanged();
+    void systemTrayEnabledChanged();
 
 private:
     void updateWorkspacesList();
@@ -112,6 +117,7 @@ private:
     bool m_horizontalSidebar = false;
     bool m_alwaysShowWorkspacesBar = false;
     bool m_confirmDownloads = true;
+    bool m_systemTrayEnabled = true;
 };
 
 #endif // CONFIGMANAGER_H

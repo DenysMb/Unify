@@ -213,6 +213,20 @@ void ConfigManager::setConfirmDownloads(bool enabled)
     }
 }
 
+bool ConfigManager::systemTrayEnabled() const
+{
+    return m_systemTrayEnabled;
+}
+
+void ConfigManager::setSystemTrayEnabled(bool enabled)
+{
+    if (m_systemTrayEnabled != enabled) {
+        m_systemTrayEnabled = enabled;
+        Q_EMIT systemTrayEnabledChanged();
+        saveSettings();
+    }
+}
+
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
@@ -481,6 +495,7 @@ void ConfigManager::saveSettings()
     m_settings.beginGroup(QStringLiteral("Display"));
     m_settings.setValue(QStringLiteral("horizontalSidebar"), m_horizontalSidebar);
     m_settings.setValue(QStringLiteral("alwaysShowWorkspacesBar"), m_alwaysShowWorkspacesBar);
+    m_settings.setValue(QStringLiteral("systemTrayEnabled"), m_systemTrayEnabled);
     m_settings.endGroup();
 
     m_settings.sync();
@@ -535,6 +550,7 @@ void ConfigManager::loadSettings()
     m_horizontalSidebar = m_settings.value(QStringLiteral("horizontalSidebar"), false).toBool();
     m_alwaysShowWorkspacesBar = m_settings.value(QStringLiteral("alwaysShowWorkspacesBar"), false).toBool();
     m_confirmDownloads = m_settings.value(QStringLiteral("confirmDownloads"), true).toBool();
+    m_systemTrayEnabled = m_settings.value(QStringLiteral("systemTrayEnabled"), true).toBool();
     m_settings.endGroup();
 
     // Only update workspaces list if it's empty (first run)
