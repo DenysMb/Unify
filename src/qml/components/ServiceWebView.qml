@@ -187,15 +187,10 @@ Item {
         // Zoom factor (1.0 = 100%)
         zoomFactor: view.zoomFactor
 
-        // Handle Ctrl+Scroll for zoom
-        WheelHandler {
-            acceptedModifiers: Qt.ControlModifier
-            onWheel: function(event) {
-                var delta = event.angleDelta.y;
-                var zoomDelta = delta > 0 ? 0.1 : -0.1;
-                var newZoom = Math.max(0.25, Math.min(5.0, view.zoomFactor + zoomDelta));
-                view.zoomFactor = newZoom;
-                event.accepted = true;
+        // Sync internal zoom changes (from Ctrl+Scroll) back to our property
+        onZoomFactorChanged: {
+            if (webView.zoomFactor !== view.zoomFactor) {
+                view.zoomFactor = webView.zoomFactor;
             }
         }
 
