@@ -92,13 +92,12 @@ WebEngineView {
             return;
         }
 
-        webView.runJavaScript("window.__unifyCtrlPressed || false", function (ctrlPressed) {
-            if (ctrlPressed) {
-                Qt.openUrlExternally(requestedUrl);
-            } else {
-                webView.newTabRequested(requestedUrl);
-            }
-        });
+        var ctrlPressed = typeof keyEventFilter !== 'undefined' && keyEventFilter && keyEventFilter.ctrlPressed;
+        if (ctrlPressed) {
+            Qt.openUrlExternally(requestedUrl);
+        } else {
+            webView.newTabRequested(requestedUrl);
+        }
     }
 
     onFullScreenRequested: function (request) {
