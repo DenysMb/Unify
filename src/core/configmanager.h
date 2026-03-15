@@ -18,6 +18,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(QVariantMap workspaceIsolatedStorage READ workspaceIsolatedStorage NOTIFY workspaceIsolatedStorageChanged)
     Q_PROPERTY(QVariantMap disabledServices READ disabledServices WRITE setDisabledServices NOTIFY disabledServicesChanged)
     Q_PROPERTY(QVariantMap mutedServices READ mutedServices WRITE setMutedServices NOTIFY mutedServicesChanged)
+    Q_PROPERTY(QVariantMap serviceTabs READ serviceTabs NOTIFY serviceTabsChanged)
     Q_PROPERTY(bool globalMute READ globalMute WRITE setGlobalMute NOTIFY globalMuteChanged)
     Q_PROPERTY(bool horizontalSidebar READ horizontalSidebar WRITE setHorizontalSidebar NOTIFY horizontalSidebarChanged)
     Q_PROPERTY(bool alwaysShowWorkspacesBar READ alwaysShowWorkspacesBar WRITE setAlwaysShowWorkspacesBar NOTIFY alwaysShowWorkspacesBarChanged)
@@ -65,6 +66,12 @@ public:
     void setMutedServices(const QVariantMap &mutedServices);
     Q_INVOKABLE void setServiceMuted(const QString &serviceId, bool muted);
     Q_INVOKABLE bool isServiceMuted(const QString &serviceId) const;
+
+    // Service tabs management
+    QVariantMap serviceTabs() const;
+    Q_INVOKABLE QVariantList getTabsForService(const QString &serviceId) const;
+    Q_INVOKABLE void setTabsForService(const QString &serviceId, const QVariantList &tabs);
+    Q_INVOKABLE void clearTabsForService(const QString &serviceId);
 
     bool globalMute() const;
     void setGlobalMute(bool enabled);
@@ -116,6 +123,7 @@ Q_SIGNALS:
     void workspaceIsolatedStorageChanged();
     void disabledServicesChanged();
     void mutedServicesChanged();
+    void serviceTabsChanged();
     void globalMuteChanged();
     void horizontalSidebarChanged();
     void alwaysShowWorkspacesBarChanged();
@@ -135,6 +143,7 @@ private:
     QHash<QString, bool> m_workspaceIsolatedStorage; // workspace -> isolated storage flag
     QVariantMap m_disabledServices; // serviceId -> bool (true if disabled)
     QVariantMap m_mutedServices; // serviceId -> bool (true if muted)
+    QVariantMap m_serviceTabs; // serviceId -> QVariantList of tabs
     bool m_globalMute = false;
     bool m_horizontalSidebar = false;
     bool m_alwaysShowWorkspacesBar = false;

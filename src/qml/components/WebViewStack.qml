@@ -12,6 +12,7 @@ Item {
     property var services: [] // array of { id, title, url }
     property var disabledServices: ({})
     property var mutedServices: ({})
+    property var serviceTabs: ({})
     property bool globalMute: false
     // Number of services visible in the current workspace (for empty state logic)
     property int filteredCount: 0
@@ -32,6 +33,9 @@ Item {
 
     // Signal to propagate zoom factor changes
     signal serviceZoomFactorChanged(string serviceId, real zoomFactor)
+
+    // Signal to propagate tab changes for persistence
+    signal tabsUpdated(string serviceId, var tabs)
 
     // Internal properties
     property string currentServiceId: ""
@@ -382,7 +386,8 @@ Item {
             "globalMute": root.globalMute,
             "onTitleUpdated": root.onTitleUpdated,
             "stackIndex": nextIndex,
-            "zoomFactor": serviceData.zoomFactor || 1.0
+            "zoomFactor": serviceData.zoomFactor || 1.0,
+            "restoredTabs": root.serviceTabs && root.serviceTabs[serviceData.id] ? root.serviceTabs[serviceData.id] : []
         });
 
         if (!instance) {
@@ -429,6 +434,11 @@ Item {
             root.mediaMetadata = meta;
             root.serviceMediaMetadataUpdated(svcId, metadata);
             console.log("🎵 Updated mediaMetadata:", JSON.stringify(root.mediaMetadata));
+        });
+
+        // Monitor tab changes for persistence
+        instance.serviceTabsUpdated.connect(function (svcId, tabs) {
+            root.tabsUpdated(svcId, tabs);
         });
 
         // Store in cache

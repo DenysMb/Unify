@@ -216,6 +216,49 @@ bool ConfigManager::isServiceMuted(const QString &serviceId) const
     return m_mutedServices.contains(serviceId) && m_mutedServices.value(serviceId).toBool();
 }
 
+QVariantMap ConfigManager::serviceTabs() const
+{
+    return m_serviceTabs;
+}
+
+QVariantList ConfigManager::getTabsForService(const QString &serviceId) const
+{
+    if (m_serviceTabs.contains(serviceId)) {
+        return m_serviceTabs.value(serviceId).toList();
+    }
+    return QVariantList();
+}
+
+void ConfigManager::setTabsForService(const QString &serviceId, const QVariantList &tabs)
+{
+    if (serviceId.isEmpty()) {
+        return;
+    }
+
+    if (tabs.isEmpty()) {
+        if (m_serviceTabs.contains(serviceId)) {
+            m_serviceTabs.remove(serviceId);
+            Q_EMIT serviceTabsChanged();
+            saveSettings();
+        }
+    } else {
+        m_serviceTabs.insert(serviceId, tabs);
+        Q_EMIT serviceTabsChanged();
+        saveSettings();
+        qDebug() << "Saved" << tabs.size() << "tabs for service:" << serviceId;
+    }
+}
+
+void ConfigManager::clearTabsForService(const QString &serviceId)
+{
+    if (m_serviceTabs.contains(serviceId)) {
+        m_serviceTabs.remove(serviceId);
+        Q_EMIT serviceTabsChanged();
+        saveSettings();
+        qDebug() << "Cleared tabs for service:" << serviceId;
+    }
+}
+
 bool ConfigManager::globalMute() const
 {
     return m_globalMute;
@@ -570,6 +613,11 @@ void ConfigManager::saveSettings()
     m_settings.setValue(QStringLiteral("list"), m_mutedServices);
     m_settings.endGroup();
 
+    // Persist service tabs
+    m_settings.beginGroup(QStringLiteral("ServiceTabs"));
+    m_settings.setValue(QStringLiteral("tabs"), m_serviceTabs);
+    m_settings.endGroup();
+
     // Persist display settings
     m_settings.beginGroup(QStringLiteral("Display"));
     m_settings.setValue(QStringLiteral("horizontalSidebar"), m_horizontalSidebar);
@@ -629,6 +677,11 @@ void ConfigManager::loadSettings()
     // Load muted services
     m_settings.beginGroup(QStringLiteral("MutedServices"));
     m_mutedServices = m_settings.value(QStringLiteral("list"), QVariantMap()).toMap();
+    m_settings.endGroup();
+
+    // Load service tabs
+    m_settings.beginGroup(QStringLiteral("ServiceTabs"));
+    m_serviceTabs = m_settings.value(QStringLiteral("tabs"), QVariantMap()).toMap();
     m_settings.endGroup();
 
     // Load display settings

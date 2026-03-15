@@ -1084,6 +1084,7 @@ Kirigami.ApplicationWindow {
                             disabledServices: root.disabledServices
                             mutedServices: root.mutedServices
                             globalMute: root.globalMute
+                            serviceTabs: configManager ? configManager.serviceTabs : ({})
                             webProfile: persistentProfile
                             workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                             onTitleUpdated: root.updateBadgeFromTitle
@@ -1125,6 +1126,11 @@ Kirigami.ApplicationWindow {
                                 if (configManager && serviceId === root.currentServiceId) {
                                     configManager.setServiceZoomFactor(serviceId, zoomFactor);
                                     root.currentZoomFactor = zoomFactor;
+                                }
+                            }
+                            onTabsUpdated: function (serviceId, tabs) {
+                                if (configManager) {
+                                    configManager.setTabsForService(serviceId, tabs);
                                 }
                             }
                             Component.onCompleted: {
@@ -1223,6 +1229,7 @@ Kirigami.ApplicationWindow {
                         disabledServices: root.disabledServices
                         mutedServices: root.mutedServices
                         globalMute: root.globalMute
+                        serviceTabs: configManager ? configManager.serviceTabs : ({})
                         webProfile: persistentProfile
                         workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                         onTitleUpdated: root.updateBadgeFromTitle
@@ -1264,6 +1271,11 @@ Kirigami.ApplicationWindow {
                             if (configManager && serviceId === root.currentServiceId) {
                                 configManager.setServiceZoomFactor(serviceId, zoomFactor);
                                 root.currentZoomFactor = zoomFactor;
+                            }
+                        }
+                        onServiceTabsChanged: function (serviceId, tabs) {
+                            if (configManager) {
+                                configManager.setTabsForService(serviceId, tabs);
                             }
                         }
                         Component.onCompleted: {

@@ -10,504 +10,329 @@ import "Services.js" as Services
 Item {
     id: view
 
-    // Public API
     property string serviceTitle: ""
     property string serviceId: ""
     property url initialUrl: "about:blank"
     property url configuredUrl: "about:blank"
     property WebEngineProfile webProfile
     property bool isServiceDisabled: false
-    property alias contents: webView
     property var onTitleUpdated: null
     property int stackIndex: 0
     property real zoomFactor: 1.0
     property bool isMuted: false
     property bool globalMute: false
+    property var restoredTabs: []
 
-    // Audio playback indicator - exposes WebEngineView's recentlyAudible property
-    readonly property bool isPlayingAudio: webView.recentlyAudible
+    property alias contents: view
+    property int currentTabIndex: 0
+    property var tabs: []
+    property var tabViews: ({})
 
-    // Media metadata properties for "Now Playing" feature
+    readonly property bool isPlayingAudio: {
+        for (var tabId in tabViews) {
+            if (tabViews[tabId] && tabViews[tabId].recentlyAudible) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     property string mediaTitle: ""
     property string mediaArtist: ""
     property string mediaAlbum: ""
 
-    // Signal emitted when audio playback state changes
     signal audioStateChanged(string serviceId, bool isPlaying)
-
-    // Signal emitted when media metadata changes
     signal mediaMetadataChanged(string serviceId, var metadata)
-
-    // Signal to request updating service URL
     signal updateServiceUrlRequested(string serviceId, string newUrl)
-
-    // Signal for fullscreen requests (to be handled by parent window)
     signal fullscreenRequested(var webEngineView, bool toggleOn)
-
-    // Signal for zoom factor changes (renamed to avoid conflict with property change signal)
     signal zoomFactorUpdated(string serviceId, real zoomFactor)
+    signal serviceTabsUpdated(string serviceId, var tabs)
 
-    // Public function to trigger printing
-    function printPage() {
-        var pdfPath = printHandler.getTempPdfPath(view.serviceTitle);
-        webView.printToPdf(pdfPath);
-    }
-
-    // Internal state tracking
     property bool profileReady: webProfile !== null
-    property bool urlLoaded: false
-    property bool hasLoadedOnce: false  // Track if service has completed loading at least once
+    property bool hasLoadedOnce: false
 
-    // Emit zoom factor change signal
     onZoomFactorChanged: {
         view.zoomFactorUpdated(view.serviceId, view.zoomFactor);
     }
 
-    // Helper function to extract and normalize host from URL
-    function normalizeHost(url) {
-        if (!url)
-            return "";
-        try {
-            // Extract host from URL
-            var match = url.match(/^https?:\/\/([^\/]+)/);
-            if (!match)
-                return "";
-            var host = match[1].toLowerCase();
-            // Remove 'www.' prefix for comparison
-            if (host.startsWith("www.")) {
-                host = host.substring(4);
-            }
-            // Handle common subdomains that should be considered same origin
-            // e.g., consent.youtube.com, accounts.google.com should match youtube.com, google.com
-            var parts = host.split(".");
-            if (parts.length > 2) {
-                // Keep only the last two parts (domain + TLD)
-                host = parts.slice(-2).join(".");
-            }
-            return host;
-        } catch (e) {
-            return "";
-        }
-    }
-
-    // Check if current URL is outside the service's base URL
-    property bool isNavigatedAway: {
-        if (!hasLoadedOnce || isServiceDisabled)
-            return false;
-        var currentUrl = webView.url.toString();
-        var baseUrl = configuredUrl.toString();
-        if (!currentUrl || !baseUrl || currentUrl === "about:blank" || baseUrl === "about:blank")
-            return false;
-        // Normalize hosts for comparison
-        var currentHost = normalizeHost(currentUrl);
-        var baseHost = normalizeHost(baseUrl);
-        if (!currentHost || !baseHost)
-            return false;
-        return currentHost !== baseHost;
-    }
-
-    // Anti-detection script for Google OAuth compatibility
-    // Injected via runJavaScript on each page load
-
-    // Monitor profile readiness
     onProfileReadyChanged: {
-        if (profileReady && !urlLoaded && !isServiceDisabled && initialUrl.toString() !== "about:blank") {
-            console.log("Profile ready, loading URL for:", serviceTitle);
-            loadUrlWhenReady();
+        if (profileReady && !isServiceDisabled) {
+            initializeTabs();
         }
     }
 
-    // Delay URL loading to ensure profile is fully initialized
-    function loadUrlWhenReady() {
-        if (!webProfile) {
-            console.warn("Cannot load URL - profile not ready for:", serviceTitle);
+    onRestoredTabsChanged: {
+        if (profileReady && !isServiceDisabled && restoredTabs.length > 0) {
+            initializeTabs();
+        }
+    }
+
+    function generateTabId() {
+        return "tab_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+    }
+
+    function initializeTabs() {
+        if (tabs.length > 0) {
             return;
         }
 
-        if (webView.url.toString() === "about:blank" && initialUrl.toString() !== "about:blank") {
-            urlLoadTimer.start();
+        if (restoredTabs && restoredTabs.length > 0) {
+            for (var i = 0; i < restoredTabs.length; i++) {
+                var tab = restoredTabs[i];
+                createTab(tab.url, tab.title, i === 0);
+            }
+        } else if (initialUrl.toString() !== "about:blank") {
+            createTab(initialUrl, serviceTitle, true);
         }
     }
 
-    // Timer to delay URL loading slightly
-    Timer {
-        id: urlLoadTimer
-        interval: 50
-        repeat: false
-        onTriggered: {
-            if (!view.isServiceDisabled && view.initialUrl.toString() !== "about:blank") {
-                console.log("Timer triggered, loading:", view.initialUrl, "for:", view.serviceTitle);
-                webView.url = view.initialUrl;
-                view.urlLoaded = true;
+    function createTab(url, title, isActive) {
+        var tabId = generateTabId();
+        var newTab = {
+            id: tabId,
+            url: url.toString(),
+            title: title || i18n("Loading..."),
+            isActive: isActive
+        };
+
+        var newTabs = tabs.slice();
+        if (isActive) {
+            for (var i = 0; i < newTabs.length; i++) {
+                newTabs[i].isActive = false;
             }
+            currentTabIndex = newTabs.length;
         }
+        newTabs.push(newTab);
+        tabs = newTabs;
+
+        createWebViewForTab(tabId, url);
+
+        if (isActive) {
+            showTab(tabId);
+        }
+
+        saveTabs();
+        return tabId;
     }
 
-    // Timeout timer to detect stuck loading
-    Timer {
-        id: loadTimeoutTimer
-        interval: 30000  // 30 seconds timeout
-        repeat: false
-        onTriggered: {
-            if (webView.loading) {
-                console.warn("Load timeout for:", view.serviceTitle, "- stopping and retrying");
-                webView.stop();
-                // Retry after a short delay
-                retryTimer.start();
-            }
-        }
-    }
-
-    Timer {
-        id: retryTimer
-        interval: 1000
-        repeat: false
-        onTriggered: {
-            if (!view.isServiceDisabled && view.initialUrl.toString() !== "about:blank") {
-                console.log("Retrying load for:", view.serviceTitle);
-                webView.reload();
-            }
-        }
-    }
-
-    // Show either the WebView or placeholder based on service state
-    WebEngineView {
-        id: webView
-        anchors.fill: parent
-        visible: !view.isServiceDisabled
-        z: 0
-
-        // Set background color to match theme, preventing white flash
-        backgroundColor: Kirigami.Theme.backgroundColor
-
-        // Use provided persistent profile
-        profile: view.webProfile
-
-        // Start with about:blank, URL will be set when profile is ready
-        url: "about:blank"
-
-        // Zoom factor (1.0 = 100%)
-        zoomFactor: view.zoomFactor
-
-        // Audio mute - muted if either per-service mute or global mute is enabled
-        audioMuted: view.isMuted || view.globalMute
-
-        // Sync internal zoom changes (from Ctrl+Scroll) back to our property
-        onZoomFactorChanged: {
-            if (webView.zoomFactor !== view.zoomFactor) {
-                view.zoomFactor = webView.zoomFactor;
-            }
+    function createWebViewForTab(tabId, url) {
+        var component = Qt.createComponent("TabWebView.qml");
+        if (component.status !== Component.Ready) {
+            console.error("Failed to create TabWebView component:", component.errorString());
+            return null;
         }
 
-        // Enable settings required for screen sharing, media capture, notifications and OAuth
-        settings.screenCaptureEnabled: true
-        settings.webRTCPublicInterfacesOnly: false
-        settings.javascriptCanAccessClipboard: true
-        settings.allowWindowActivationFromJavaScript: true
-        settings.showScrollBars: false
-        settings.javascriptEnabled: true
-        settings.localStorageEnabled: true
-        settings.localContentCanAccessRemoteUrls: false
-        settings.localContentCanAccessFileUrls: false
-        settings.allowRunningInsecureContent: false
-        settings.dnsPrefetchEnabled: true
-        // Ensure page-initiated fullscreen is supported
-        settings.fullScreenSupportEnabled: true
-
-        // Handle permission requests: auto-grant required permissions
-        onPermissionRequested: function (permission) {
-            var requiredPermissions = [WebEnginePermission.PermissionType.Geolocation, WebEnginePermission.PermissionType.MediaAudioCapture, WebEnginePermission.PermissionType.MediaVideoCapture, WebEnginePermission.PermissionType.MediaAudioVideoCapture, WebEnginePermission.PermissionType.Notifications, WebEnginePermission.PermissionType.DesktopVideoCapture, WebEnginePermission.PermissionType.DesktopAudioVideoCapture, WebEnginePermission.PermissionType.MouseLock, WebEnginePermission.PermissionType.ClipboardReadWrite];
-
-            if (requiredPermissions.indexOf(permission.permissionType) >= 0) {
-                permission.grant();
-                console.log("✅ Permission granted:", permission.permissionType, "for", view.serviceTitle);
-            } else {
-                permission.deny();
-                console.log("⛔ Permission denied:", permission.permissionType, "for", view.serviceTitle);
-            }
-        }
-
-        onLinkHovered: function (hoveredUrl) {
-            if (hoveredUrl.toString() !== "")
-            // reserved for status handling
-            {}
-        }
-
-        onLoadingChanged: function (loadRequest) {
-            // Inject anti-detection script as early as possible
-            if (loadRequest.status === WebEngineView.LoadStartedStatus) {
-                webView.runJavaScript(AntiDetection.getScript());
-                loadTimeoutTimer.restart();
-            }
-            if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
-                loadTimeoutTimer.stop();
-                view.hasLoadedOnce = true;
-                console.log("Service loaded: " + view.serviceTitle + " - " + webView.url);
-                // Re-inject after load to ensure it's applied
-                webView.runJavaScript(AntiDetection.getScript());
-            }
-            if (loadRequest.status === WebEngineView.LoadFailedStatus) {
-                loadTimeoutTimer.stop();
-                console.warn("Service load failed: " + view.serviceTitle + " - " + loadRequest.errorString);
-            }
-            if (loadRequest.status === WebEngineView.LoadStoppedStatus) {
-                loadTimeoutTimer.stop();
-                console.log("Service load stopped: " + view.serviceTitle);
-            }
-        }
-
-        // Monitor title changes to extract notification badges
-        onTitleChanged: {
-            if (view.onTitleUpdated && typeof view.onTitleUpdated === "function") {
-                view.onTitleUpdated(view.serviceId, webView.title);
-            }
-        }
-
-        // Monitor audio playback state changes
-        onRecentlyAudibleChanged: {
-            console.log("🔊 Audio state changed for", view.serviceTitle, ":", webView.recentlyAudible);
-            view.audioStateChanged(view.serviceId, webView.recentlyAudible);
-
-            if (webView.recentlyAudible) {
-                // Try to fetch metadata immediately to avoid delay
-                fetchMediaMetadata();
-                // Then start polling for metadata changes (e.g., track changes)
-                mediaMetadataTimer.start();
-            } else {
-                mediaMetadataTimer.stop();
-                view.mediaTitle = "";
-                view.mediaArtist = "";
-                view.mediaAlbum = "";
-                view.mediaMetadataChanged(view.serviceId, null);
-            }
-        }
-
-        // Handle popup windows - Ctrl+Click opens directly in browser, otherwise overlay
-        onNewWindowRequested: function (request) {
-            console.log("🪟 Link requested:", request.requestedUrl, "from service:", view.serviceTitle);
-
-            var requestedUrl = request.requestedUrl;
-
-            // Check for OAuth/Auth popup
-            if (Services.isOAuthUrl(requestedUrl)) {
-                console.log("🔐 Auth popup detected - opening in separate window");
-
-                // Create a new window instance for this popup request
-                var popup = popupComponent.createObject(null, {
-                    "parentService": view.serviceTitle,
-                    "webProfile": view.webProfile
-                    // Do NOT set requestedUrl here, let openIn handle it
-                });
-
-                if (popup) {
-                    // Destroy the popup when it closes to free resources
-                    popup.closing.connect(function () {
-                        popup.destroy();
-                    });
-
-                    // Ensure window is visible before attaching
-                    popup.show();
-
-                    if (popup.webView) {
-                        console.log("🔐 calling request.openIn(popup.webView)");
-                        request.openIn(popup.webView);
-                    } else {
-                        console.warn("🔐 popup.webView is null!");
-                    }
-                    return;
-                } else {
-                    console.error("❌ Failed to create auth popup window");
-                }
-            }
-
-            webView.runJavaScript("window.__unifyCtrlPressed || false", function (ctrlPressed) {
-                if (ctrlPressed) {
-                    console.log("🌐 Ctrl+Click - opening directly in browser");
-                    Qt.openUrlExternally(requestedUrl);
-                } else {
-                    console.log("🔗 Opening link in overlay for user choice");
-                    internalLinkOverlay.open(requestedUrl);
-                }
-            });
-        }
-
-        // Handle page-initiated fullscreen requests (e.g., video players)
-        // Emits signal to parent window which handles the actual fullscreen logic
-        onFullScreenRequested: function (request) {
-            request.accept();
-            // Emit signal to parent for handling fullscreen at window level
-            view.fullscreenRequested(webView, request.toggleOn);
-        }
-
-        // Handle desktop media requests for screen/window sharing (Qt 6.7+)
-        onDesktopMediaRequested: function (request) {
-            console.log("🖥️ Desktop media requested for:", view.serviceTitle);
-            console.log("   Windows available:", request.windowsModel.rowCount());
-            console.log("   Screens available:", request.screensModel.rowCount());
-            desktopMediaDialog.show(request);
-        }
-
-        // Handle print requests from main frame
-        onPrintRequested: function () {
-            view.printPage();
-        }
-
-        // Handle print requests from any frame (iframes, popups) - Qt 6.8+
-        onPrintRequestedByFrame: function (frame) {
-            var pdfPath = printHandler.getTempPdfPath(view.serviceTitle);
-            frame.printToPdf(function (pdfData) {
-                if (pdfData && pdfData.byteLength > 0) {
-                    // Save the PDF data to a file
-                    if (fileUtils.saveBinaryFile(pdfPath, pdfData)) {
-                        printHandler.printPdf(pdfPath);
-                    }
-                }
-            });
-        }
-
-        // Handle PDF printing finished
-        onPdfPrintingFinished: function (filePath, success) {
-            if (success) {
-                printHandler.printPdf(filePath);
-            }
-        }
-    }
-
-    // Function to fetch media metadata from navigator.mediaSession
-    function fetchMediaMetadata() {
-        webView.runJavaScript("(function() {" + "    if (navigator.mediaSession && navigator.mediaSession.metadata) {" + "        return JSON.stringify({" + "            title: navigator.mediaSession.metadata.title || ''," + "            artist: navigator.mediaSession.metadata.artist || ''," + "            album: navigator.mediaSession.metadata.album || ''" + "        });" + "    }" + "    return null;" + "})();", function (result) {
-            if (result && result !== "null") {
-                try {
-                    var metadata = JSON.parse(result);
-                    var changed = (view.mediaTitle !== metadata.title || view.mediaArtist !== metadata.artist || view.mediaAlbum !== metadata.album);
-
-                    view.mediaTitle = metadata.title || "";
-                    view.mediaArtist = metadata.artist || "";
-                    view.mediaAlbum = metadata.album || "";
-
-                    if (changed) {
-                        console.log("🎵 Media metadata for", view.serviceTitle, ":", metadata.artist, "-", metadata.title);
-                        view.mediaMetadataChanged(view.serviceId, metadata);
-                    }
-                } catch (e) {
-                    console.warn("Failed to parse media metadata:", e);
-                }
-            }
+        var tabView = component.createObject(tabContainer, {
+            "tabId": tabId,
+            "serviceId": view.serviceId,
+            "initialUrl": url,
+            "webProfile": view.webProfile,
+            "zoomFactor": view.zoomFactor,
+            "isMuted": view.isMuted,
+            "globalMute": view.globalMute,
+            "visible": false
         });
+
+        if (!tabView) {
+            console.error("Failed to create TabWebView instance");
+            return null;
+        }
+
+        tabView.tabTitleChanged.connect(function(title) {
+            updateTabTitle(tabId, title);
+        });
+
+        tabView.audioStateChanged.connect(function(svcId, isPlaying) {
+            checkAudioState();
+        });
+
+        tabView.fullscreenRequested.connect(function(webEngineView, toggleOn) {
+            view.fullscreenRequested(webEngineView, toggleOn);
+        });
+
+        tabView.newTabRequested.connect(function(url) {
+            var newTabId = createTab(url, "", false);
+            showTab(newTabId);
+        });
+
+        var newTabViews = Object.assign({}, tabViews);
+        newTabViews[tabId] = tabView;
+        tabViews = newTabViews;
+
+        return tabView;
     }
 
-    Timer {
-        id: mediaMetadataTimer
-        interval: 1500
-        repeat: true
-        onTriggered: {
-            fetchMediaMetadata();
+    function updateTabTitle(tabId, title) {
+        for (var i = 0; i < tabs.length; i++) {
+            if (tabs[i].id === tabId) {
+                var newTabs = tabs.slice();
+                newTabs[i].title = title;
+                tabs = newTabs;
+                saveTabs();
+                break;
+            }
+        }
+
+        if (tabs[currentTabIndex] && tabs[currentTabIndex].id === tabId) {
+            if (view.onTitleUpdated && typeof view.onTitleUpdated === "function") {
+                view.onTitleUpdated(view.serviceId, title);
+            }
         }
     }
 
-    // Initialize URL loading when component is ready
+    function showTab(tabId) {
+        for (var i = 0; i < tabs.length; i++) {
+            if (tabs[i].id === tabId) {
+                var newTabs = tabs.slice();
+                for (var j = 0; j < newTabs.length; j++) {
+                    newTabs[j].isActive = (j === i);
+                }
+                tabs = newTabs;
+                currentTabIndex = i;
+                break;
+            }
+        }
+
+        for (var id in tabViews) {
+            if (tabViews.hasOwnProperty(id)) {
+                tabViews[id].visible = (id === tabId);
+            }
+        }
+
+        if (tabViews[tabId]) {
+            view.hasLoadedOnce = true;
+        }
+    }
+
+    function closeTab(tabId) {
+        if (tabs.length <= 1) {
+            return;
+        }
+
+        var closedIndex = -1;
+        for (var i = 0; i < tabs.length; i++) {
+            if (tabs[i].id === tabId) {
+                closedIndex = i;
+                break;
+            }
+        }
+
+        if (closedIndex === -1 || closedIndex === 0) return;
+
+        var wasActive = tabs[closedIndex].isActive;
+
+        if (tabViews[tabId]) {
+            tabViews[tabId].destroy();
+            var newTabViews = Object.assign({}, tabViews);
+            delete newTabViews[tabId];
+            tabViews = newTabViews;
+        }
+
+        var newTabs = tabs.slice();
+        newTabs.splice(closedIndex, 1);
+        tabs = newTabs;
+
+        if (wasActive && tabs.length > 0) {
+            var newActiveIndex = Math.min(closedIndex, tabs.length - 1);
+            showTab(tabs[newActiveIndex].id);
+        }
+
+        currentTabIndex = Math.min(currentTabIndex, tabs.length - 1);
+        saveTabs();
+    }
+
+    function checkAudioState() {
+        var isPlaying = false;
+        for (var tabId in tabViews) {
+            if (tabViews[tabId] && tabViews[tabId].recentlyAudible) {
+                isPlaying = true;
+                break;
+            }
+        }
+        view.audioStateChanged(view.serviceId, isPlaying);
+    }
+
+    function saveTabs() {
+        var tabsToSave = [];
+        for (var i = 0; i < tabs.length; i++) {
+            tabsToSave.push({
+                url: tabs[i].url,
+                title: tabs[i].title,
+                isActive: tabs[i].isActive
+            });
+        }
+        view.serviceTabsUpdated(view.serviceId, tabsToSave);
+    }
+
+    function getCurrentWebView() {
+        if (tabs.length === 0 || currentTabIndex >= tabs.length) {
+            return null;
+        }
+        var currentTab = tabs[currentTabIndex];
+        return tabViews[currentTab.id] || null;
+    }
+
+    function printPage() {
+        var currentWebView = getCurrentWebView();
+        if (currentWebView && currentWebView.printPage) {
+            currentWebView.printPage();
+        }
+    }
+
+    function refreshCurrent() {
+        var currentWebView = getCurrentWebView();
+        if (currentWebView && currentWebView.reload) {
+            currentWebView.reload();
+        }
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: 0
+
+        ServiceTabBar {
+            id: tabBar
+            Layout.fillWidth: true
+            tabs: view.tabs
+            activeIndex: view.currentTabIndex
+            onTabSelected: function(index) {
+                if (index >= 0 && index < view.tabs.length) {
+                    view.showTab(view.tabs[index].id);
+                }
+            }
+            onTabClosed: function(index) {
+                if (index >= 0 && index < view.tabs.length) {
+                    view.closeTab(view.tabs[index].id);
+                }
+            }
+        }
+
+        Item {
+            id: tabContainer
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            Kirigami.PlaceholderMessage {
+                anchors.centerIn: parent
+                width: parent.width - Kirigami.Units.gridUnit * 4
+                visible: view.isServiceDisabled
+                z: 1
+                text: i18n("Service Disabled")
+                explanation: i18n("This service is currently disabled. Enable it to use this web service.")
+                icon.name: "offline"
+            }
+
+            Kirigami.LoadingPlaceholder {
+                anchors.centerIn: parent
+                visible: !view.isServiceDisabled && !view.hasLoadedOnce && view.tabs.length > 0
+                text: i18n("Loading %1...", view.serviceTitle)
+            }
+        }
+    }
+
     Component.onCompleted: {
-        if (webProfile && !isServiceDisabled && initialUrl.toString() !== "about:blank") {
-            loadUrlWhenReady();
-        }
-    }
-
-    // Placeholder for disabled services
-    Kirigami.PlaceholderMessage {
-        anchors.centerIn: parent
-        width: parent.width - Kirigami.Units.gridUnit * 4
-        visible: view.isServiceDisabled
-        z: 1
-        text: i18n("Service Disabled")
-        explanation: i18n("This service is currently disabled. Enable it to use this web service.")
-        icon.name: "offline"
-    }
-
-    // Inline message shown when navigated away from service URL
-    Kirigami.InlineMessage {
-        id: navigatedAwayMessage
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.margins: Kirigami.Units.smallSpacing
-        z: 10
-        visible: view.isNavigatedAway
-        type: Kirigami.MessageType.Information
-        text: i18n("You are browsing outside of %1", view.serviceTitle)
-        actions: [
-            Kirigami.Action {
-                text: i18n("Return to %1", view.serviceTitle)
-                icon.name: "go-home"
-                onTriggered: {
-                    webView.url = view.configuredUrl;
-                }
-            },
-            Kirigami.Action {
-                text: i18n("Set as New URL")
-                icon.name: "document-save"
-                onTriggered: {
-                    view.updateServiceUrlRequested(view.serviceId, webView.url.toString());
-                }
-            }
-        ]
-    }
-
-    Component {
-        id: popupComponent
-        PopupWindow {}
-    }
-
-    DesktopMediaDialog {
-        id: desktopMediaDialog
-    }
-
-    InternalLinkOverlay {
-        id: internalLinkOverlay
-        anchors.fill: parent
-        parentService: view.serviceTitle
-        webProfile: view.webProfile
-        z: 50
-
-        onOpenInServiceView: function (urlToOpen) {
-            console.log("🔗 Opening in service view:", urlToOpen);
-            webView.url = urlToOpen;
-        }
-    }
-
-    // Loading overlay - only shows on initial load, not on subsequent navigations
-    // This prevents the white flash when switching to a service that already loaded in background
-    Rectangle {
-        anchors.fill: parent
-        visible: !view.isServiceDisabled && !view.hasLoadedOnce && webView.loading
-        z: 2
-        color: Kirigami.Theme.backgroundColor
-
-        Kirigami.LoadingPlaceholder {
-            anchors.centerIn: parent
-            text: i18n("Loading %1...", view.serviceTitle)
-        }
-
-        // Show progress bar at the top
-        Rectangle {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            height: 3
-            color: Kirigami.Theme.backgroundColor
-
-            Rectangle {
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                anchors.left: parent.left
-                width: parent.width * (webView.loadProgress / 100)
-                color: Kirigami.Theme.highlightColor
-
-                Behavior on width {
-                    NumberAnimation {
-                        duration: Kirigami.Units.shortDuration
-                    }
-                }
-            }
+        if (webProfile && !isServiceDisabled) {
+            initializeTabs();
         }
     }
 }
