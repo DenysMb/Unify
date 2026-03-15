@@ -171,6 +171,66 @@ bool ConfigManager::isServiceDisabled(const QString &serviceId) const
     return m_disabledServices.contains(serviceId) && m_disabledServices.value(serviceId).toBool();
 }
 
+QVariantMap ConfigManager::mutedServices() const
+{
+    return m_mutedServices;
+}
+
+void ConfigManager::setMutedServices(const QVariantMap &mutedServices)
+{
+    if (m_mutedServices != mutedServices) {
+        m_mutedServices = mutedServices;
+        Q_EMIT mutedServicesChanged();
+        saveSettings();
+    }
+}
+
+void ConfigManager::setServiceMuted(const QString &serviceId, bool muted)
+{
+    if (serviceId.isEmpty()) {
+        return;
+    }
+
+    bool changed = false;
+    if (muted) {
+        if (!m_mutedServices.contains(serviceId) || m_mutedServices.value(serviceId).toBool() != true) {
+            m_mutedServices.insert(serviceId, true);
+            changed = true;
+        }
+    } else {
+        if (m_mutedServices.contains(serviceId)) {
+            m_mutedServices.remove(serviceId);
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        Q_EMIT mutedServicesChanged();
+        saveSettings();
+        qDebug() << "Service" << serviceId << (muted ? "muted" : "unmuted");
+    }
+}
+
+bool ConfigManager::isServiceMuted(const QString &serviceId) const
+{
+    return m_mutedServices.contains(serviceId) && m_mutedServices.value(serviceId).toBool();
+}
+
+bool ConfigManager::globalMute() const
+{
+    return m_globalMute;
+}
+
+void ConfigManager::setGlobalMute(bool enabled)
+{
+    if (m_globalMute != enabled) {
+        m_globalMute = enabled;
+        Q_EMIT globalMuteChanged();
+        saveSettings();
+        qDebug() << "Global mute" << (enabled ? "enabled" : "disabled");
+    }
+}
+
 bool ConfigManager::horizontalSidebar() const
 {
     return m_horizontalSidebar;
@@ -505,12 +565,18 @@ void ConfigManager::saveSettings()
     m_settings.setValue(QStringLiteral("list"), m_disabledServices);
     m_settings.endGroup();
 
+    // Persist muted services
+    m_settings.beginGroup(QStringLiteral("MutedServices"));
+    m_settings.setValue(QStringLiteral("list"), m_mutedServices);
+    m_settings.endGroup();
+
     // Persist display settings
     m_settings.beginGroup(QStringLiteral("Display"));
     m_settings.setValue(QStringLiteral("horizontalSidebar"), m_horizontalSidebar);
     m_settings.setValue(QStringLiteral("alwaysShowWorkspacesBar"), m_alwaysShowWorkspacesBar);
     m_settings.setValue(QStringLiteral("systemTrayEnabled"), m_systemTrayEnabled);
     m_settings.setValue(QStringLiteral("showZoomInHeader"), m_showZoomInHeader);
+    m_settings.setValue(QStringLiteral("globalMute"), m_globalMute);
     m_settings.endGroup();
 
     m_settings.sync();
@@ -560,6 +626,11 @@ void ConfigManager::loadSettings()
     m_disabledServices = m_settings.value(QStringLiteral("list"), QVariantMap()).toMap();
     m_settings.endGroup();
 
+    // Load muted services
+    m_settings.beginGroup(QStringLiteral("MutedServices"));
+    m_mutedServices = m_settings.value(QStringLiteral("list"), QVariantMap()).toMap();
+    m_settings.endGroup();
+
     // Load display settings
     m_settings.beginGroup(QStringLiteral("Display"));
     m_horizontalSidebar = m_settings.value(QStringLiteral("horizontalSidebar"), false).toBool();
@@ -567,6 +638,7 @@ void ConfigManager::loadSettings()
     m_confirmDownloads = m_settings.value(QStringLiteral("confirmDownloads"), true).toBool();
     m_systemTrayEnabled = m_settings.value(QStringLiteral("systemTrayEnabled"), true).toBool();
     m_showZoomInHeader = m_settings.value(QStringLiteral("showZoomInHeader"), true).toBool();
+    m_globalMute = m_settings.value(QStringLiteral("globalMute"), false).toBool();
     m_settings.endGroup();
 
     // Only update workspaces list if it's empty (first run)

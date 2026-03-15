@@ -21,6 +21,8 @@ Item {
     property var onTitleUpdated: null
     property int stackIndex: 0
     property real zoomFactor: 1.0
+    property bool isMuted: false
+    property bool globalMute: false
 
     // Audio playback indicator - exposes WebEngineView's recentlyAudible property
     readonly property bool isPlayingAudio: webView.recentlyAudible
@@ -186,6 +188,9 @@ Item {
 
         // Zoom factor (1.0 = 100%)
         zoomFactor: view.zoomFactor
+
+        // Audio mute - muted if either per-service mute or global mute is enabled
+        audioMuted: view.isMuted || view.globalMute
 
         // Sync internal zoom changes (from Ctrl+Scroll) back to our property
         onZoomFactorChanged: {

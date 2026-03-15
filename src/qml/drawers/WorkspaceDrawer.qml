@@ -164,6 +164,22 @@ Kirigami.Action { separator: true }
             }
         `, drawer));
 
+        // Mute All toggle
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+              text: configManager && configManager.globalMute ? i18n("Unmute All") : i18n("Mute All")
+              icon.name: configManager && configManager.globalMute ? "player-volume" : "player-volume-muted"
+              checkable: true
+              checked: configManager && configManager.globalMute
+              onTriggered: {
+                  if (configManager) {
+                      configManager.globalMute = !configManager.globalMute
+                  }
+              }
+            }
+        `, drawer));
+
         // Show Zoom in Header toggle
         acts.push(Qt.createQmlObject(`
             import org.kde.kirigami as Kirigami

@@ -17,6 +17,8 @@ class ConfigManager : public QObject
     Q_PROPERTY(QVariantMap workspaceIcons READ workspaceIcons NOTIFY workspaceIconsChanged)
     Q_PROPERTY(QVariantMap workspaceIsolatedStorage READ workspaceIsolatedStorage NOTIFY workspaceIsolatedStorageChanged)
     Q_PROPERTY(QVariantMap disabledServices READ disabledServices WRITE setDisabledServices NOTIFY disabledServicesChanged)
+    Q_PROPERTY(QVariantMap mutedServices READ mutedServices WRITE setMutedServices NOTIFY mutedServicesChanged)
+    Q_PROPERTY(bool globalMute READ globalMute WRITE setGlobalMute NOTIFY globalMuteChanged)
     Q_PROPERTY(bool horizontalSidebar READ horizontalSidebar WRITE setHorizontalSidebar NOTIFY horizontalSidebarChanged)
     Q_PROPERTY(bool alwaysShowWorkspacesBar READ alwaysShowWorkspacesBar WRITE setAlwaysShowWorkspacesBar NOTIFY alwaysShowWorkspacesBarChanged)
     Q_PROPERTY(bool confirmDownloads READ confirmDownloads WRITE setConfirmDownloads NOTIFY confirmDownloadsChanged)
@@ -59,7 +61,14 @@ public:
     Q_INVOKABLE void setServiceDisabled(const QString &serviceId, bool disabled);
     Q_INVOKABLE bool isServiceDisabled(const QString &serviceId) const;
 
-    // Horizontal sidebar mode
+    QVariantMap mutedServices() const;
+    void setMutedServices(const QVariantMap &mutedServices);
+    Q_INVOKABLE void setServiceMuted(const QString &serviceId, bool muted);
+    Q_INVOKABLE bool isServiceMuted(const QString &serviceId) const;
+
+    bool globalMute() const;
+    void setGlobalMute(bool enabled);
+
     bool horizontalSidebar() const;
     void setHorizontalSidebar(bool enabled);
 
@@ -106,6 +115,8 @@ Q_SIGNALS:
     void workspaceIconsChanged();
     void workspaceIsolatedStorageChanged();
     void disabledServicesChanged();
+    void mutedServicesChanged();
+    void globalMuteChanged();
     void horizontalSidebarChanged();
     void alwaysShowWorkspacesBarChanged();
     void confirmDownloadsChanged();
@@ -123,6 +134,8 @@ private:
     QHash<QString, QString> m_workspaceIcons; // workspace -> icon name
     QHash<QString, bool> m_workspaceIsolatedStorage; // workspace -> isolated storage flag
     QVariantMap m_disabledServices; // serviceId -> bool (true if disabled)
+    QVariantMap m_mutedServices; // serviceId -> bool (true if muted)
+    bool m_globalMute = false;
     bool m_horizontalSidebar = false;
     bool m_alwaysShowWorkspacesBar = false;
     bool m_confirmDownloads = true;

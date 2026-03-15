@@ -78,6 +78,12 @@ Kirigami.ApplicationWindow {
     // Object to track services currently playing audio
     property var serviceAudibleStates: ({})
 
+    // Object to track muted services
+    property var mutedServices: configManager ? configManager.mutedServices : ({})
+
+    // Global mute state
+    property bool globalMute: configManager ? configManager.globalMute : false
+
     // Object to track media metadata for services playing audio
     property var serviceMediaMetadata: ({})
 
@@ -237,6 +243,21 @@ Kirigami.ApplicationWindow {
             return;
         var isFavorite = configManager.isServiceFavorite(id);
         configManager.setServiceFavorite(id, !isFavorite);
+    }
+
+    // Function to toggle mute status of a service
+    function handleToggleMute(id) {
+        if (!configManager)
+            return;
+        var isMuted = configManager.isServiceMuted(id);
+        configManager.setServiceMuted(id, !isMuted);
+    }
+
+    // Function to toggle global mute
+    function handleToggleGlobalMute() {
+        if (!configManager)
+            return;
+        configManager.globalMute = !configManager.globalMute;
     }
 
     // Function to set zoom factor for current service
@@ -720,6 +741,12 @@ Kirigami.ApplicationWindow {
             // Update local disabledServices when configManager changes
             root.disabledServices = configManager.disabledServices;
         }
+        function onMutedServicesChanged() {
+            root.mutedServices = configManager.mutedServices;
+        }
+        function onGlobalMuteChanged() {
+            root.globalMute = configManager.globalMute;
+        }
         function onCurrentWorkspaceChanged() {
             // Sync QML currentWorkspace when ConfigManager changes it (e.g., after workspace deletion)
             if (configManager.currentWorkspace !== root.currentWorkspace) {
@@ -844,6 +871,12 @@ Kirigami.ApplicationWindow {
 
         // Add actions to the page header
         actions: [
+            Kirigami.Action {
+                visible: root.globalMute
+                text: i18n("Unmute All")
+                icon.name: "player-volume-muted"
+                onTriggered: root.handleToggleGlobalMute()
+            },
             Kirigami.Action {
                 visible: root.nowPlayingInfo !== null
                 displayHint: Kirigami.DisplayHint.KeepVisible
@@ -984,6 +1017,7 @@ Kirigami.ApplicationWindow {
                         horizontal: false
                         services: root.filteredServices
                         disabledServices: root.disabledServices
+                        mutedServices: root.mutedServices
                         detachedServices: root.detachedServices
                         notificationCounts: root.serviceNotificationCounts
                         audibleServices: root.serviceAudibleStates
@@ -1032,6 +1066,9 @@ Kirigami.ApplicationWindow {
                         onToggleFavoriteRequested: function (id) {
                             root.handleToggleFavorite(id);
                         }
+                        onToggleMuteRequested: function (id) {
+                            root.handleToggleMute(id);
+                        }
                     }
 
                     Rectangle {
@@ -1045,6 +1082,8 @@ Kirigami.ApplicationWindow {
                             filteredCount: root.filteredServices.length
                             currentWorkspace: root.currentWorkspace
                             disabledServices: root.disabledServices
+                            mutedServices: root.mutedServices
+                            globalMute: root.globalMute
                             webProfile: persistentProfile
                             workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                             onTitleUpdated: root.updateBadgeFromTitle
@@ -1117,6 +1156,7 @@ Kirigami.ApplicationWindow {
                     horizontal: true
                     services: root.filteredServices
                     disabledServices: root.disabledServices
+                    mutedServices: root.mutedServices
                     detachedServices: root.detachedServices
                     notificationCounts: root.serviceNotificationCounts
                     audibleServices: root.serviceAudibleStates
@@ -1165,6 +1205,9 @@ Kirigami.ApplicationWindow {
                     onToggleFavoriteRequested: function (id) {
                         root.handleToggleFavorite(id);
                     }
+                    onToggleMuteRequested: function (id) {
+                        root.handleToggleMute(id);
+                    }
                 }
 
                 Rectangle {
@@ -1178,6 +1221,8 @@ Kirigami.ApplicationWindow {
                         filteredCount: root.filteredServices.length
                         currentWorkspace: root.currentWorkspace
                         disabledServices: root.disabledServices
+                        mutedServices: root.mutedServices
+                        globalMute: root.globalMute
                         webProfile: persistentProfile
                         workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                         onTitleUpdated: root.updateBadgeFromTitle

@@ -11,6 +11,8 @@ Item {
     // Public API
     property var services: [] // array of { id, title, url }
     property var disabledServices: ({})
+    property var mutedServices: ({})
+    property bool globalMute: false
     // Number of services visible in the current workspace (for empty state logic)
     property int filteredCount: 0
     // Current workspace name (for customizing empty state message)
@@ -61,6 +63,30 @@ Item {
                 var view = webViewCache[serviceId];
                 if (view) {
                     view.isServiceDisabled = isDisabled(serviceId);
+                }
+            }
+        }
+    }
+
+    // Update all webviews when mutedServices changes
+    onMutedServicesChanged: {
+        for (var serviceId in webViewCache) {
+            if (webViewCache.hasOwnProperty(serviceId)) {
+                var view = webViewCache[serviceId];
+                if (view) {
+                    view.isMuted = mutedServices && mutedServices.hasOwnProperty(serviceId);
+                }
+            }
+        }
+    }
+
+    // Update all webviews when globalMute changes
+    onGlobalMuteChanged: {
+        for (var serviceId in webViewCache) {
+            if (webViewCache.hasOwnProperty(serviceId)) {
+                var view = webViewCache[serviceId];
+                if (view) {
+                    view.globalMute = root.globalMute;
                 }
             }
         }
@@ -352,6 +378,8 @@ Item {
             "configuredUrl": serviceData.url,
             "webProfile": profileToUse,
             "isServiceDisabled": root.isDisabled(serviceData.id),
+            "isMuted": root.mutedServices && root.mutedServices.hasOwnProperty(serviceData.id),
+            "globalMute": root.globalMute,
             "onTitleUpdated": root.onTitleUpdated,
             "stackIndex": nextIndex,
             "zoomFactor": serviceData.zoomFactor || 1.0

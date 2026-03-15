@@ -10,6 +10,7 @@ Rectangle {
 
     property var services: []
     property var disabledServices: ({})
+    property var mutedServices: ({})
     property var detachedServices: ({})
     property var notificationCounts: ({})
     property var audibleServices: ({})
@@ -31,6 +32,7 @@ Rectangle {
     signal disableService(string id)
     signal detachService(string id)
     signal toggleFavoriteRequested(string id)
+    signal toggleMuteRequested(string id)
 
     Connections {
         target: typeof configManager !== "undefined" ? configManager : null
@@ -155,6 +157,7 @@ Rectangle {
                         disabledVisual: (root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)) || (root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id))
                         notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
                         isPlayingAudio: root.audibleServices && root.audibleServices.hasOwnProperty(modelData.id)
+                        isMuted: root.mutedServices && root.mutedServices.hasOwnProperty(modelData.id)
                         isDisabled: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
                         isDetached: root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id)
                         isFavorite: {
@@ -174,6 +177,9 @@ Rectangle {
                         onDetachServiceRequested: root.detachService(modelData.id)
                         onToggleFavoriteRequested: {
                             root.toggleFavoriteRequested(modelData.id);
+                        }
+                        onToggleMuteRequested: {
+                            root.toggleMuteRequested(modelData.id);
                         }
                     }
                 }
@@ -276,6 +282,7 @@ Rectangle {
                         disabledVisual: (root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)) || (root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id))
                         notificationCount: (root.notificationCounts && root.notificationCounts.hasOwnProperty(modelData.id)) ? root.notificationCounts[modelData.id] : 0
                         isPlayingAudio: root.audibleServices && root.audibleServices.hasOwnProperty(modelData.id)
+                        isMuted: root.mutedServices && root.mutedServices.hasOwnProperty(modelData.id)
                         isDisabled: root.disabledServices && root.disabledServices.hasOwnProperty(modelData.id)
                         isDetached: root.detachedServices && root.detachedServices.hasOwnProperty(modelData.id)
                         isFavorite: {
@@ -295,6 +302,9 @@ Rectangle {
                         onDetachServiceRequested: root.detachService(modelData.id)
                         onToggleFavoriteRequested: {
                             root.toggleFavoriteRequested(modelData.id);
+                        }
+                        onToggleMuteRequested: {
+                            root.toggleMuteRequested(modelData.id);
                         }
                     }
                 }
