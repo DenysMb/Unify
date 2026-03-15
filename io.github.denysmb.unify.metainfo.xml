@@ -69,6 +69,19 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.5.0" date="2026-03-15">
+      <description>
+        <p>This release introduces major enhancements to service management, zoom controls, audio handling, and system tray functionality:</p>
+        <ul>
+          <li>Added tabbed browsing support for services with improved navigation</li>
+          <li>Added per-service zoom controls with persistence and dropdown menu</li>
+          <li>Added configurable zoom controls visibility toggle</li>
+          <li>Added per-service and global audio mute functionality</li>
+          <li>Added system tray icon visibility toggle</li>
+          <li>Replaced internal link overlay with cleaner tab context menu</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.4.0" date="2026-01-09">
       <description>
         <p>New features:</p>
