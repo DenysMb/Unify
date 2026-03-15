@@ -93,8 +93,7 @@ Rectangle {
                     }
 
                     Item {
-                        Layout.preferredWidth: Kirigami.Units.iconSizes.small
-                        Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                        Layout.preferredWidth: Kirigami.Units.smallSpacing
                         visible: tabItem.index === 0
                     }
 
