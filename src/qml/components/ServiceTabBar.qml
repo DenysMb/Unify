@@ -12,6 +12,8 @@ Rectangle {
 
     signal tabSelected(int index)
     signal tabClosed(int index)
+    signal openInServiceRequested(int index)
+    signal openInBrowserRequested(int index)
 
     implicitHeight: showTabBar ? Kirigami.Units.gridUnit * 2 : 0
     height: implicitHeight
@@ -29,9 +31,6 @@ Rectangle {
     RowLayout {
         id: tabRow
         anchors.fill: parent
-        anchors.leftMargin: Kirigami.Units.smallSpacing
-        anchors.rightMargin: Kirigami.Units.smallSpacing
-        spacing: 1
 
         Repeater {
             model: tabBar.tabs
@@ -55,21 +54,48 @@ Rectangle {
                     anchors.rightMargin: Kirigami.Units.smallSpacing
                     spacing: Kirigami.Units.smallSpacing
 
-                    Kirigami.Icon {
-                        source: "internet-services"
-                        Layout.preferredWidth: Kirigami.Units.iconSizes.small
-                        Layout.preferredHeight: Kirigami.Units.iconSizes.small
-                        color: tabItem.index === tabBar.activeIndex ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
+                    Controls.ToolButton {
+                        id: tabIcon
+                        Layout.preferredWidth: tabItem.index > 0 ? -1 : 0
+                        icon.name: "overflow-menu"
+                        icon.width: Kirigami.Units.iconSizes.small
+                        icon.height: Kirigami.Units.iconSizes.small
+                        opacity: tabItem.index > 0 ? (hovered ? 1 : 0.7) : 0.5
+                        visible: tabItem.index > 0
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (tabItem.index !== tabBar.activeIndex) {
-                                    tabBar.tabSelected(tabItem.index)
+                        onClicked: {
+                            tabContextMenu.popup()
+                        }
+
+                        onPressAndHold: {
+                            tabContextMenu.popup()
+                        }
+
+                        Controls.Menu {
+                            id: tabContextMenu
+
+                            Controls.MenuItem {
+                                text: i18n("Open in Main Service Tab")
+                                icon.name: "debug-run"
+                                onTriggered: {
+                                    tabBar.openInServiceRequested(tabItem.index)
+                                }
+                            }
+
+                            Controls.MenuItem {
+                                text: i18n("Open in External Browser")
+                                icon.name: "internet-web-browser-symbolic"
+                                onTriggered: {
+                                    tabBar.openInBrowserRequested(tabItem.index)
                                 }
                             }
                         }
+                    }
+
+                    Item {
+                        Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                        Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                        visible: tabItem.index === 0
                     }
 
                     Controls.Label {
@@ -93,8 +119,6 @@ Rectangle {
 
                     Controls.ToolButton {
                         id: closeButton
-                        Layout.preferredWidth: Kirigami.Units.iconSizes.small + Kirigami.Units.smallSpacing
-                        Layout.preferredHeight: Kirigami.Units.iconSizes.small + Kirigami.Units.smallSpacing
                         icon.name: "tab-close"
                         icon.width: Kirigami.Units.iconSizes.small
                         icon.height: Kirigami.Units.iconSizes.small

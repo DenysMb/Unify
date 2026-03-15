@@ -305,6 +305,26 @@ Item {
                     view.closeTab(view.tabs[index].id);
                 }
             }
+            onOpenInServiceRequested: function(index) {
+                if (index > 0 && index < view.tabs.length) {
+                    var tab = view.tabs[index];
+                    if (view.tabs.length > 0 && view.tabs[0]) {
+                        var mainTabView = view.tabViews[view.tabs[0].id];
+                        if (mainTabView) {
+                            mainTabView.url = tab.url;
+                        }
+                    }
+                    view.showTab(view.tabs[0].id);
+                    view.closeTab(tab.id);
+                }
+            }
+            onOpenInBrowserRequested: function(index) {
+                if (index >= 0 && index < view.tabs.length) {
+                    var tab = view.tabs[index];
+                    Qt.openUrlExternally(tab.url);
+                    view.closeTab(tab.id);
+                }
+            }
         }
 
         Item {
