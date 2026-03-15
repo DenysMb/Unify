@@ -52,6 +52,13 @@ Item {
     property bool hasLoadedOnce: false
 
     onZoomFactorChanged: {
+        for (var tabId in tabViews) {
+            if (tabViews.hasOwnProperty(tabId) && tabViews[tabId]) {
+                if (Math.abs(tabViews[tabId].zoomFactor - view.zoomFactor) > 0.001) {
+                    tabViews[tabId].zoomFactor = view.zoomFactor;
+                }
+            }
+        }
         view.zoomFactorUpdated(view.serviceId, view.zoomFactor);
     }
 
@@ -127,7 +134,6 @@ Item {
             "serviceId": view.serviceId,
             "initialUrl": url,
             "webProfile": view.webProfile,
-            "zoomFactor": view.zoomFactor,
             "isMuted": view.isMuted,
             "globalMute": view.globalMute,
             "visible": false
@@ -137,6 +143,9 @@ Item {
             console.error("Failed to create TabWebView instance");
             return null;
         }
+
+        // Set zoom after creation (zoomFactor is a FINAL property)
+        tabView.zoomFactor = view.zoomFactor;
 
         tabView.tabTitleChanged.connect(function(title) {
             updateTabTitle(tabId, title);
@@ -153,6 +162,12 @@ Item {
         tabView.newTabRequested.connect(function(url) {
             var newTabId = createTab(url, "", false);
             showTab(newTabId);
+        });
+
+        tabView.zoomUpdated.connect(function(zoomFactor) {
+            if (Math.abs(view.zoomFactor - zoomFactor) > 0.001) {
+                view.zoomFactor = zoomFactor;
+            }
         });
 
         var newTabViews = Object.assign({}, tabViews);

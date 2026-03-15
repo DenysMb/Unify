@@ -20,14 +20,18 @@ WebEngineView {
     signal audioStateChanged(string serviceId, bool isPlaying)
     signal fullscreenRequested(var webEngineView, bool toggleOn)
     signal newTabRequested(url url)
+    signal zoomUpdated(real zoomFactor)
 
     anchors.fill: parent
     visible: false
     backgroundColor: Kirigami.Theme.backgroundColor
     profile: webView.webProfile
     url: webView.initialUrl
-    zoomFactor: 1.0
     audioMuted: webView.isMuted || webView.globalMute
+
+    onZoomFactorChanged: {
+        webView.zoomUpdated(webView.zoomFactor);
+    }
 
     settings.screenCaptureEnabled: true
     settings.webRTCPublicInterfacesOnly: false
