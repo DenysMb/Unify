@@ -11,6 +11,9 @@ Item {
     // Public API
     property var services: [] // array of { id, title, url }
     property var disabledServices: ({})
+    property var mutedServices: ({})
+    property var serviceTabs: ({})
+    property bool globalMute: false
     // Number of services visible in the current workspace (for empty state logic)
     property int filteredCount: 0
     // Current workspace name (for customizing empty state message)
@@ -27,6 +30,12 @@ Item {
 
     // Signal to propagate fullscreen requests to main window
     signal fullscreenRequested(var webEngineView, bool toggleOn)
+
+    // Signal to propagate zoom factor changes
+    signal serviceZoomFactorChanged(string serviceId, real zoomFactor)
+
+    // Signal to propagate tab changes for persistence
+    signal tabsUpdated(string serviceId, var tabs)
 
     // Internal properties
     property string currentServiceId: ""
@@ -58,6 +67,30 @@ Item {
                 var view = webViewCache[serviceId];
                 if (view) {
                     view.isServiceDisabled = isDisabled(serviceId);
+                }
+            }
+        }
+    }
+
+    // Update all webviews when mutedServices changes
+    onMutedServicesChanged: {
+        for (var serviceId in webViewCache) {
+            if (webViewCache.hasOwnProperty(serviceId)) {
+                var view = webViewCache[serviceId];
+                if (view) {
+                    view.isMuted = mutedServices && mutedServices.hasOwnProperty(serviceId);
+                }
+            }
+        }
+    }
+
+    // Update all webviews when globalMute changes
+    onGlobalMuteChanged: {
+        for (var serviceId in webViewCache) {
+            if (webViewCache.hasOwnProperty(serviceId)) {
+                var view = webViewCache[serviceId];
+                if (view) {
+                    view.globalMute = root.globalMute;
                 }
             }
         }
@@ -144,6 +177,21 @@ Item {
             return webViewCache[currentServiceId];
         }
         return null;
+    }
+
+    // Set zoom factor for a specific service
+    function setZoomFactor(serviceId, zoomFactor) {
+        if (webViewCache[serviceId]) {
+            webViewCache[serviceId].zoomFactor = zoomFactor;
+        }
+    }
+
+    // Get zoom factor for a specific service
+    function getZoomFactor(serviceId) {
+        if (webViewCache[serviceId]) {
+            return webViewCache[serviceId].zoomFactor;
+        }
+        return 1.0;
     }
 
     // Detach a ServiceWebView from the stack (for reparenting to external window)
@@ -334,8 +382,12 @@ Item {
             "configuredUrl": serviceData.url,
             "webProfile": profileToUse,
             "isServiceDisabled": root.isDisabled(serviceData.id),
+            "isMuted": root.mutedServices && root.mutedServices.hasOwnProperty(serviceData.id),
+            "globalMute": root.globalMute,
             "onTitleUpdated": root.onTitleUpdated,
-            "stackIndex": nextIndex
+            "stackIndex": nextIndex,
+            "zoomFactor": serviceData.zoomFactor || 1.0,
+            "restoredTabs": root.serviceTabs && root.serviceTabs[serviceData.id] ? root.serviceTabs[serviceData.id] : []
         });
 
         if (!instance) {
@@ -351,6 +403,11 @@ Item {
         // Connect the fullscreen request signal
         instance.fullscreenRequested.connect(function (webEngineView, toggleOn) {
             root.fullscreenRequested(webEngineView, toggleOn);
+        });
+
+        // Connect the zoom factor change signal
+        instance.zoomFactorUpdated.connect(function (svcId, zoomFactor) {
+            root.serviceZoomFactorChanged(svcId, zoomFactor);
         });
 
         // Monitor audio playback state changes
@@ -377,6 +434,11 @@ Item {
             root.mediaMetadata = meta;
             root.serviceMediaMetadataUpdated(svcId, metadata);
             console.log("🎵 Updated mediaMetadata:", JSON.stringify(root.mediaMetadata));
+        });
+
+        // Monitor tab changes for persistence
+        instance.serviceTabsUpdated.connect(function (svcId, tabs) {
+            root.tabsUpdated(svcId, tabs);
         });
 
         // Store in cache

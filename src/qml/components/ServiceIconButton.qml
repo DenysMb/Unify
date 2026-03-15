@@ -20,6 +20,7 @@ Controls.Button {
     property bool active: false
     property int notificationCount: 0
     property bool isPlayingAudio: false
+    property bool isMuted: false
     property bool isDisabled: false
     property bool isDetached: false
     property bool isFavorite: false
@@ -29,6 +30,7 @@ Controls.Button {
 
     signal editServiceRequested
     signal toggleFavoriteRequested
+    signal toggleMuteRequested
     signal moveUpRequested
     signal moveDownRequested
     signal refreshServiceRequested
@@ -189,6 +191,12 @@ Controls.Button {
             icon.name: "view-refresh"
             enabled: !root.isDisabled && !root.isDetached
             onTriggered: root.refreshServiceRequested()
+        }
+
+        Controls.MenuItem {
+            text: root.isMuted ? i18n("Unmute Service") : i18n("Mute Service")
+            icon.name: root.isMuted ? "player-volume" : "player-volume-muted"
+            onTriggered: root.toggleMuteRequested()
         }
 
         Controls.MenuSeparator {
@@ -394,7 +402,7 @@ Controls.Button {
 
         Rectangle {
             id: audioIndicatorWrapper
-            visible: root.isPlayingAudio
+            visible: root.isPlayingAudio && !root.isMuted
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.margins: -Kirigami.Units.smallSpacing / 2
@@ -413,6 +421,27 @@ Controls.Button {
                 height: Kirigami.Units.iconSizes.small
                 source: "player-volume"
                 color: Kirigami.Theme.highlightedTextColor
+            }
+        }
+
+        // Muted indicator (shown in top-left corner when muted)
+        Rectangle {
+            id: mutedIndicatorWrapper
+            visible: root.isMuted
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.margins: -Kirigami.Units.smallSpacing / 2
+            height: Kirigami.Units.gridUnit
+            width: height
+            radius: height / 2
+            color: Kirigami.Theme.neutralTextColor
+
+            Kirigami.Icon {
+                anchors.centerIn: parent
+                width: Kirigami.Units.iconSizes.small
+                height: Kirigami.Units.iconSizes.small
+                source: "player-volume-muted"
+                color: Kirigami.Theme.backgroundColor
             }
         }
     }

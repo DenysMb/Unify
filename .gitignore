@@ -18,3 +18,4 @@ repo
 AGENTS.md
 CLAUDE.md
 .cache
+.qmlls.ini

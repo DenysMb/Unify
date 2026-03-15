@@ -37,10 +37,11 @@ ecm_target_qml_sources(unify
     qml/components/ServicesSidebar.qml
     qml/components/EmptyState.qml
     qml/components/ServiceWebView.qml
+    qml/components/ServiceTabBar.qml
+    qml/components/TabWebView.qml
     qml/components/DetachedServiceWindow.qml
     qml/components/PopupWindow.qml
     qml/components/WebViewStack.qml
-    qml/components/InternalLinkOverlay.qml
     qml/components/WorkspacesBar.qml
     qml/components/NowPlayingIndicator.qml
     qml/dialogs/ServiceDialog.qml

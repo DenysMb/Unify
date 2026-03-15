@@ -141,6 +141,67 @@ Kirigami.Action { separator: true }
             }
         `, drawer));
 
+        // System Tray toggle
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+              text: configManager && configManager.systemTrayEnabled ? i18n("Hide Tray Icon") : i18n("Show Tray Icon")
+              icon.name: configManager && configManager.systemTrayEnabled ? "object-hidden" : "object-visible"
+              checkable: true
+              checked: configManager && configManager.systemTrayEnabled
+              onTriggered: {
+                  if (configManager) {
+                      configManager.systemTrayEnabled = !configManager.systemTrayEnabled
+                  }
+                  if (trayIconManager) {
+                      if (configManager && configManager.systemTrayEnabled) {
+                          trayIconManager.show()
+                      } else {
+                          trayIconManager.hide()
+                      }
+                  }
+              }
+            }
+        `, drawer));
+
+        // Mute All toggle
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+              text: configManager && configManager.globalMute ? i18n("Unmute All") : i18n("Mute All")
+              icon.name: configManager && configManager.globalMute ? "player-volume" : "player-volume-muted"
+              checkable: true
+              checked: configManager && configManager.globalMute
+              onTriggered: {
+                  if (configManager) {
+                      configManager.globalMute = !configManager.globalMute
+                  }
+              }
+            }
+        `, drawer));
+
+        // Show Zoom in Header toggle
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+              text: i18n("Show Zoom Controls")
+              icon.name: "zoom-select"
+              checkable: true
+              checked: configManager && configManager.showZoomInHeader
+              onTriggered: {
+                  if (configManager) {
+                      configManager.showZoomInHeader = !configManager.showZoomInHeader
+                      if (!configManager.showZoomInHeader && drawer.Kirigami.ApplicationWindow.window) {
+                          drawer.Kirigami.ApplicationWindow.window.showPassiveNotification(
+                              i18n("You can still zoom using Ctrl + Mouse Scroll"),
+                              3000
+                          )
+                      }
+                  }
+              }
+            }
+        `, drawer));
+
         // separator
         acts.push(Qt.createQmlObject(`import org.kde.kirigami as Kirigami
 Kirigami.Action { separator: true }
@@ -317,7 +378,7 @@ Kirigami.Action { separator: true }
                     Layout.fillWidth: true
                     wrapMode: QQC2.Label.WordWrap
                     textFormat: QQC2.Label.RichText
-                    text: i18n("• <b>Right-click</b> a service icon to access quick actions (edit, disable, delete)<br>" + "• <b>Disabled services</b> won't load until re-enabled, saving resources<br>" + "• The app keeps running in the <b>system tray</b> when you close the window<br>" + "• <b>Notification badges</b> appear on service icons when there are unread messages")
+                    text: i18n("• <b>Right-click</b> a service icon to access quick actions (edit, disable, delete)<br>" + "• <b>Disabled services</b> won't load until re-enabled, saving resources<br>" + "• Enable <b>System Tray</b> to keep the app running in the background when you close the window<br>" + "• <b>Notification badges</b> appear on service icons when there are unread messages")
                 }
             }
         }

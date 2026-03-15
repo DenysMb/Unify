@@ -212,8 +212,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Show the tray icon
-    trayIconManager->show();
+    // Show the tray icon only if enabled in settings
+    if (configManager->systemTrayEnabled()) {
+        trayIconManager->show();
+    }
 
     return app.exec();
 }

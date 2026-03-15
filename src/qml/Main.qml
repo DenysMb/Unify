@@ -46,6 +46,15 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Update zoom factor when current service changes
+    onCurrentServiceIdChanged: {
+        if (currentServiceId && configManager) {
+            currentZoomFactor = configManager.serviceZoomFactor(currentServiceId);
+        } else {
+            currentZoomFactor = 1.0;
+        }
+    }
+
     // Object to track disabled service IDs (using object instead of Set for QML compatibility)
     // Now loaded from and saved to configManager
     property var disabledServices: configManager ? configManager.disabledServices : ({})
@@ -69,8 +78,17 @@ Kirigami.ApplicationWindow {
     // Object to track services currently playing audio
     property var serviceAudibleStates: ({})
 
+    // Object to track muted services
+    property var mutedServices: configManager ? configManager.mutedServices : ({})
+
+    // Global mute state
+    property bool globalMute: configManager ? configManager.globalMute : false
+
     // Object to track media metadata for services playing audio
     property var serviceMediaMetadata: ({})
+
+    // Current zoom factor for the selected service (default 1.0 = 100%)
+    property real currentZoomFactor: 1.0
 
     // Computed property for the currently playing service info (first audible service)
     // Kept for backward compatibility
@@ -225,6 +243,32 @@ Kirigami.ApplicationWindow {
             return;
         var isFavorite = configManager.isServiceFavorite(id);
         configManager.setServiceFavorite(id, !isFavorite);
+    }
+
+    // Function to toggle mute status of a service
+    function handleToggleMute(id) {
+        if (!configManager)
+            return;
+        var isMuted = configManager.isServiceMuted(id);
+        configManager.setServiceMuted(id, !isMuted);
+    }
+
+    // Function to toggle global mute
+    function handleToggleGlobalMute() {
+        if (!configManager)
+            return;
+        configManager.globalMute = !configManager.globalMute;
+    }
+
+    // Function to set zoom factor for current service
+    function setZoomFactor(zoomFactor) {
+        if (!configManager || !currentServiceId)
+            return;
+        configManager.setServiceZoomFactor(currentServiceId, zoomFactor);
+        currentZoomFactor = zoomFactor;
+        if (webViewStack) {
+            webViewStack.setZoomFactor(currentServiceId, zoomFactor);
+        }
     }
 
     // Function to switch workspace and select first service
@@ -697,6 +741,12 @@ Kirigami.ApplicationWindow {
             // Update local disabledServices when configManager changes
             root.disabledServices = configManager.disabledServices;
         }
+        function onMutedServicesChanged() {
+            root.mutedServices = configManager.mutedServices;
+        }
+        function onGlobalMuteChanged() {
+            root.globalMute = configManager.globalMute;
+        }
         function onCurrentWorkspaceChanged() {
             // Sync QML currentWorkspace when ConfigManager changes it (e.g., after workspace deletion)
             if (configManager.currentWorkspace !== root.currentWorkspace) {
@@ -791,6 +841,19 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Handle window close - minimize to tray or quit based on setting
+    onClosing: function(close) {
+        if (configManager && configManager.systemTrayEnabled) {
+            // Minimize to tray instead of quitting
+            close.accepted = false
+            root.hide()
+            if (trayIconManager) {
+                trayIconManager.windowVisible = false
+            }
+        }
+        // If tray is disabled, let the app quit normally (close.accepted = true by default)
+    }
+
     // Helper property to track horizontal sidebar setting
     property bool isHorizontalSidebar: configManager ? configManager.horizontalSidebar : false
 
@@ -808,6 +871,12 @@ Kirigami.ApplicationWindow {
 
         // Add actions to the page header
         actions: [
+            Kirigami.Action {
+                visible: root.globalMute
+                text: i18n("Unmute All")
+                icon.name: "player-volume-muted"
+                onTriggered: root.handleToggleGlobalMute()
+            },
             Kirigami.Action {
                 visible: root.nowPlayingInfo !== null
                 displayHint: Kirigami.DisplayHint.KeepVisible
@@ -831,6 +900,87 @@ Kirigami.ApplicationWindow {
                     if (root.currentServiceId !== "" && root.webViewStack) {
                         root.webViewStack.refreshByServiceId(root.currentServiceId);
                     }
+                }
+            },
+            Kirigami.Action {
+                visible: root.currentServiceId !== "" && configManager && configManager.showZoomInHeader
+                displayHint: Kirigami.DisplayHint.KeepVisible
+                displayComponent: Controls.ToolButton {
+                    text: Math.round(root.currentZoomFactor * 100) + "%"
+                    icon.name: root.currentZoomFactor === 1.0 ? "zoom" : (root.currentZoomFactor > 1.0 ? "zoom-in" : "zoom-out")
+                    enabled: root.currentServiceId !== ""
+                    onClicked: zoomMenu.popup()
+                    width: Kirigami.Units.gridUnit * 5
+
+                    Controls.ToolTip.text: i18n("Zoom: %1%", Math.round(root.currentZoomFactor * 100))
+                    Controls.ToolTip.visible: hovered
+                    Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
+
+                    Controls.Menu {
+                        id: zoomMenu
+
+                        ColumnLayout {
+                            spacing: Kirigami.Units.smallSpacing
+
+                            RowLayout {
+                                spacing: Kirigami.Units.smallSpacing
+                                Layout.fillWidth: true
+
+                                Controls.ToolButton {
+                                    icon.name: "zoom-out"
+                                    enabled: root.currentZoomFactor > 0.25
+                                    onClicked: {
+                                        var newZoom = Math.max(0.25, root.currentZoomFactor - 0.25);
+                                        root.setZoomFactor(newZoom);
+                                    }
+                                    Controls.ToolTip.text: i18n("Zoom Out")
+                                    Controls.ToolTip.visible: hovered
+                                }
+
+                                Controls.Label {
+                                    text: Math.round(root.currentZoomFactor * 100) + "%"
+                                    Layout.minimumWidth: Kirigami.Units.gridUnit * 2
+                                    Layout.fillWidth: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+
+                                Controls.ToolButton {
+                                    icon.name: "zoom-in"
+                                    enabled: root.currentZoomFactor < 5.0
+                                    onClicked: {
+                                        var newZoom = Math.min(5.0, root.currentZoomFactor + 0.25);
+                                        root.setZoomFactor(newZoom);
+                                    }
+                                    Controls.ToolTip.text: i18n("Zoom In")
+                                    Controls.ToolTip.visible: hovered
+                                }
+                            }
+
+                            Controls.Button {
+                                text: i18n("Reset Zoom")
+                                icon.name: "zoom-original"
+                                enabled: root.currentZoomFactor !== 1.0
+                                Layout.fillWidth: true
+                                onClicked: {
+                                    root.setZoomFactor(1.0);
+                                    zoomMenu.close();
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            Kirigami.Action {
+                visible: root.currentServiceId !== "" && configManager && !configManager.showZoomInHeader && root.currentZoomFactor !== 1.0
+                displayHint: Kirigami.DisplayHint.KeepVisible
+                displayComponent: Controls.ToolButton {
+                    text: i18n("Reset Zoom")
+                    icon.name: "zoom-original"
+                    onClicked: root.setZoomFactor(1.0)
+
+                    Controls.ToolTip.text: i18n("Zoom: %1% - Click to reset", Math.round(root.currentZoomFactor * 100))
+                    Controls.ToolTip.visible: hovered
+                    Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
                 }
             },
             Kirigami.Action {
@@ -867,6 +1017,7 @@ Kirigami.ApplicationWindow {
                         horizontal: false
                         services: root.filteredServices
                         disabledServices: root.disabledServices
+                        mutedServices: root.mutedServices
                         detachedServices: root.detachedServices
                         notificationCounts: root.serviceNotificationCounts
                         audibleServices: root.serviceAudibleStates
@@ -915,6 +1066,9 @@ Kirigami.ApplicationWindow {
                         onToggleFavoriteRequested: function (id) {
                             root.handleToggleFavorite(id);
                         }
+                        onToggleMuteRequested: function (id) {
+                            root.handleToggleMute(id);
+                        }
                     }
 
                     Rectangle {
@@ -928,6 +1082,9 @@ Kirigami.ApplicationWindow {
                             filteredCount: root.filteredServices.length
                             currentWorkspace: root.currentWorkspace
                             disabledServices: root.disabledServices
+                            mutedServices: root.mutedServices
+                            globalMute: root.globalMute
+                            serviceTabs: configManager ? configManager.serviceTabs : ({})
                             webProfile: persistentProfile
                             workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                             onTitleUpdated: root.updateBadgeFromTitle
@@ -965,6 +1122,17 @@ Kirigami.ApplicationWindow {
                                     root.exitContentFullscreen();
                                 }
                             }
+                            onServiceZoomFactorChanged: function (serviceId, zoomFactor) {
+                                if (configManager && serviceId === root.currentServiceId) {
+                                    configManager.setServiceZoomFactor(serviceId, zoomFactor);
+                                    root.currentZoomFactor = zoomFactor;
+                                }
+                            }
+                            onTabsUpdated: function (serviceId, tabs) {
+                                if (configManager) {
+                                    configManager.setTabsForService(serviceId, tabs);
+                                }
+                            }
                             Component.onCompleted: {
                                 root.webViewStack = webViewStackVertical;
                             }
@@ -994,6 +1162,7 @@ Kirigami.ApplicationWindow {
                     horizontal: true
                     services: root.filteredServices
                     disabledServices: root.disabledServices
+                    mutedServices: root.mutedServices
                     detachedServices: root.detachedServices
                     notificationCounts: root.serviceNotificationCounts
                     audibleServices: root.serviceAudibleStates
@@ -1042,6 +1211,9 @@ Kirigami.ApplicationWindow {
                     onToggleFavoriteRequested: function (id) {
                         root.handleToggleFavorite(id);
                     }
+                    onToggleMuteRequested: function (id) {
+                        root.handleToggleMute(id);
+                    }
                 }
 
                 Rectangle {
@@ -1055,6 +1227,9 @@ Kirigami.ApplicationWindow {
                         filteredCount: root.filteredServices.length
                         currentWorkspace: root.currentWorkspace
                         disabledServices: root.disabledServices
+                        mutedServices: root.mutedServices
+                        globalMute: root.globalMute
+                        serviceTabs: configManager ? configManager.serviceTabs : ({})
                         webProfile: persistentProfile
                         workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                         onTitleUpdated: root.updateBadgeFromTitle
@@ -1090,6 +1265,17 @@ Kirigami.ApplicationWindow {
                                 root.enterContentFullscreen(webEngineView);
                             } else {
                                 root.exitContentFullscreen();
+                            }
+                        }
+                        onServiceZoomFactorChanged: function (serviceId, zoomFactor) {
+                            if (configManager && serviceId === root.currentServiceId) {
+                                configManager.setServiceZoomFactor(serviceId, zoomFactor);
+                                root.currentZoomFactor = zoomFactor;
+                            }
+                        }
+                        onServiceTabsChanged: function (serviceId, tabs) {
+                            if (configManager) {
+                                configManager.setTabsForService(serviceId, tabs);
                             }
                         }
                         Component.onCompleted: {
