@@ -872,48 +872,68 @@ Kirigami.ApplicationWindow {
             Kirigami.Action {
                 visible: root.currentServiceId !== ""
                 displayHint: Kirigami.DisplayHint.KeepVisible
-                displayComponent: RowLayout {
-                    spacing: Kirigami.Units.smallSpacing
+                displayComponent: Controls.ToolButton {
+                    text: Math.round(root.currentZoomFactor * 100) + "%"
+                    icon.name: root.currentZoomFactor === 1.0 ? "zoom" : (root.currentZoomFactor > 1.0 ? "zoom-in" : "zoom-out")
+                    enabled: root.currentServiceId !== ""
+                    onClicked: zoomMenu.popup()
+                    width: Kirigami.Units.gridUnit * 5
 
-                    Controls.ToolButton {
-                        icon.name: "zoom-out"
-                        enabled: root.currentServiceId !== "" && root.currentZoomFactor > 0.25
-                        onClicked: {
-                            var newZoom = Math.max(0.25, root.currentZoomFactor - 0.25);
-                            root.setZoomFactor(newZoom);
+                    Controls.ToolTip.text: i18n("Zoom: %1%", Math.round(root.currentZoomFactor * 100))
+                    Controls.ToolTip.visible: hovered
+                    Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
+
+                    Controls.Menu {
+                        id: zoomMenu
+
+                        ColumnLayout {
+                            spacing: Kirigami.Units.smallSpacing
+
+                            RowLayout {
+                                spacing: Kirigami.Units.smallSpacing
+                                Layout.fillWidth: true
+
+                                Controls.ToolButton {
+                                    icon.name: "zoom-out"
+                                    enabled: root.currentZoomFactor > 0.25
+                                    onClicked: {
+                                        var newZoom = Math.max(0.25, root.currentZoomFactor - 0.25);
+                                        root.setZoomFactor(newZoom);
+                                    }
+                                    Controls.ToolTip.text: i18n("Zoom Out")
+                                    Controls.ToolTip.visible: hovered
+                                }
+
+                                Controls.Label {
+                                    text: Math.round(root.currentZoomFactor * 100) + "%"
+                                    Layout.minimumWidth: Kirigami.Units.gridUnit * 2
+                                    Layout.fillWidth: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+
+                                Controls.ToolButton {
+                                    icon.name: "zoom-in"
+                                    enabled: root.currentZoomFactor < 5.0
+                                    onClicked: {
+                                        var newZoom = Math.min(5.0, root.currentZoomFactor + 0.25);
+                                        root.setZoomFactor(newZoom);
+                                    }
+                                    Controls.ToolTip.text: i18n("Zoom In")
+                                    Controls.ToolTip.visible: hovered
+                                }
+                            }
+
+                            Controls.Button {
+                                text: i18n("Reset Zoom")
+                                icon.name: "zoom-original"
+                                enabled: root.currentZoomFactor !== 1.0
+                                Layout.fillWidth: true
+                                onClicked: {
+                                    root.setZoomFactor(1.0);
+                                    zoomMenu.close();
+                                }
+                            }
                         }
-                        Controls.ToolTip.text: i18n("Zoom Out")
-                        Controls.ToolTip.visible: hovered
-                        Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
-                    }
-
-                    Controls.Label {
-                        text: Math.round(root.currentZoomFactor * 100) + "%"
-                        Layout.minimumWidth: Kirigami.Units.gridUnit * 3
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    Controls.ToolButton {
-                        icon.name: "zoom-in"
-                        enabled: root.currentServiceId !== "" && root.currentZoomFactor < 5.0
-                        onClicked: {
-                            var newZoom = Math.min(5.0, root.currentZoomFactor + 0.25);
-                            root.setZoomFactor(newZoom);
-                        }
-                        Controls.ToolTip.text: i18n("Zoom In")
-                        Controls.ToolTip.visible: hovered
-                        Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
-                    }
-
-                    Controls.ToolButton {
-                        icon.name: "zoom-original"
-                        enabled: root.currentServiceId !== "" && root.currentZoomFactor !== 1.0
-                        onClicked: {
-                            root.setZoomFactor(1.0);
-                        }
-                        Controls.ToolTip.text: i18n("Reset Zoom")
-                        Controls.ToolTip.visible: hovered
-                        Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
                     }
                 }
             },
