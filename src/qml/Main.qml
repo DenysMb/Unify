@@ -870,7 +870,7 @@ Kirigami.ApplicationWindow {
                 }
             },
             Kirigami.Action {
-                visible: root.currentServiceId !== ""
+                visible: root.currentServiceId !== "" && configManager && configManager.showZoomInHeader
                 displayHint: Kirigami.DisplayHint.KeepVisible
                 displayComponent: Controls.ToolButton {
                     text: Math.round(root.currentZoomFactor * 100) + "%"
@@ -935,6 +935,19 @@ Kirigami.ApplicationWindow {
                             }
                         }
                     }
+                }
+            },
+            Kirigami.Action {
+                visible: root.currentServiceId !== "" && configManager && !configManager.showZoomInHeader && root.currentZoomFactor !== 1.0
+                displayHint: Kirigami.DisplayHint.KeepVisible
+                displayComponent: Controls.ToolButton {
+                    text: i18n("Reset Zoom")
+                    icon.name: "zoom-original"
+                    onClicked: root.setZoomFactor(1.0)
+
+                    Controls.ToolTip.text: i18n("Zoom: %1% - Click to reset", Math.round(root.currentZoomFactor * 100))
+                    Controls.ToolTip.visible: hovered
+                    Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
                 }
             },
             Kirigami.Action {

@@ -164,6 +164,28 @@ Kirigami.Action { separator: true }
             }
         `, drawer));
 
+        // Show Zoom in Header toggle
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+              text: i18n("Show Zoom Controls")
+              icon.name: "zoom-select"
+              checkable: true
+              checked: configManager && configManager.showZoomInHeader
+              onTriggered: {
+                  if (configManager) {
+                      configManager.showZoomInHeader = !configManager.showZoomInHeader
+                      if (!configManager.showZoomInHeader && drawer.Kirigami.ApplicationWindow.window) {
+                          drawer.Kirigami.ApplicationWindow.window.showPassiveNotification(
+                              i18n("You can still zoom using Ctrl + Mouse Scroll"),
+                              3000
+                          )
+                      }
+                  }
+              }
+            }
+        `, drawer));
+
         // separator
         acts.push(Qt.createQmlObject(`import org.kde.kirigami as Kirigami
 Kirigami.Action { separator: true }

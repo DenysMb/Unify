@@ -227,6 +227,20 @@ void ConfigManager::setSystemTrayEnabled(bool enabled)
     }
 }
 
+bool ConfigManager::showZoomInHeader() const
+{
+    return m_showZoomInHeader;
+}
+
+void ConfigManager::setShowZoomInHeader(bool enabled)
+{
+    if (m_showZoomInHeader != enabled) {
+        m_showZoomInHeader = enabled;
+        Q_EMIT showZoomInHeaderChanged();
+        saveSettings();
+    }
+}
+
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
@@ -496,6 +510,7 @@ void ConfigManager::saveSettings()
     m_settings.setValue(QStringLiteral("horizontalSidebar"), m_horizontalSidebar);
     m_settings.setValue(QStringLiteral("alwaysShowWorkspacesBar"), m_alwaysShowWorkspacesBar);
     m_settings.setValue(QStringLiteral("systemTrayEnabled"), m_systemTrayEnabled);
+    m_settings.setValue(QStringLiteral("showZoomInHeader"), m_showZoomInHeader);
     m_settings.endGroup();
 
     m_settings.sync();
@@ -551,6 +566,7 @@ void ConfigManager::loadSettings()
     m_alwaysShowWorkspacesBar = m_settings.value(QStringLiteral("alwaysShowWorkspacesBar"), false).toBool();
     m_confirmDownloads = m_settings.value(QStringLiteral("confirmDownloads"), true).toBool();
     m_systemTrayEnabled = m_settings.value(QStringLiteral("systemTrayEnabled"), true).toBool();
+    m_showZoomInHeader = m_settings.value(QStringLiteral("showZoomInHeader"), true).toBool();
     m_settings.endGroup();
 
     // Only update workspaces list if it's empty (first run)

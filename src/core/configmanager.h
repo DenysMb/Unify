@@ -21,6 +21,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(bool alwaysShowWorkspacesBar READ alwaysShowWorkspacesBar WRITE setAlwaysShowWorkspacesBar NOTIFY alwaysShowWorkspacesBarChanged)
     Q_PROPERTY(bool confirmDownloads READ confirmDownloads WRITE setConfirmDownloads NOTIFY confirmDownloadsChanged)
     Q_PROPERTY(bool systemTrayEnabled READ systemTrayEnabled WRITE setSystemTrayEnabled NOTIFY systemTrayEnabledChanged)
+    Q_PROPERTY(bool showZoomInHeader READ showZoomInHeader WRITE setShowZoomInHeader NOTIFY showZoomInHeaderChanged)
 
 public:
     explicit ConfigManager(QObject *parent = nullptr);
@@ -73,6 +74,9 @@ public:
     bool systemTrayEnabled() const;
     void setSystemTrayEnabled(bool enabled);
 
+    bool showZoomInHeader() const;
+    void setShowZoomInHeader(bool enabled);
+
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
 
@@ -106,6 +110,7 @@ Q_SIGNALS:
     void alwaysShowWorkspacesBarChanged();
     void confirmDownloadsChanged();
     void systemTrayEnabledChanged();
+    void showZoomInHeaderChanged();
 
 private:
     void updateWorkspacesList();
@@ -122,6 +127,7 @@ private:
     bool m_alwaysShowWorkspacesBar = false;
     bool m_confirmDownloads = true;
     bool m_systemTrayEnabled = true;
+    bool m_showZoomInHeader = true;
 };
 
 #endif // CONFIGMANAGER_H
