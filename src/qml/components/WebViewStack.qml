@@ -22,6 +22,8 @@ Item {
     property WebEngineProfile webProfile
     // Callback to update badge from title
     property var onTitleUpdated: null
+    // Callback to update badge from content (querySelector)
+    property var notificationCountCallback: null
     // Workspace isolated storage info (provided by Main.qml)
     property var workspaceIsolatedStorage: ({})
 
@@ -36,6 +38,9 @@ Item {
 
     // Signal to propagate tab changes for persistence
     signal tabsUpdated(string serviceId, var tabs)
+
+    // Signal to propagate notification count from content extraction
+    signal notificationCountUpdated(string serviceId, int count)
 
     // Internal properties
     property string currentServiceId: ""
@@ -385,6 +390,8 @@ Item {
             "isMuted": root.mutedServices && root.mutedServices.hasOwnProperty(serviceData.id),
             "globalMute": root.globalMute,
             "onTitleUpdated": root.onTitleUpdated,
+            "notificationCountCallback": root.notificationCountCallback,
+            "querySelector": serviceData.querySelector || "",
             "stackIndex": nextIndex,
             "zoomFactor": serviceData.zoomFactor || 1.0,
             "restoredTabs": root.serviceTabs && root.serviceTabs[serviceData.id] ? root.serviceTabs[serviceData.id] : []
@@ -394,6 +401,8 @@ Item {
             console.error("Failed to create ServiceWebView instance");
             return;
         }
+
+
 
         // Connect the updateServiceUrlRequested signal
         instance.updateServiceUrlRequested.connect(function (svcId, newUrl) {
@@ -439,6 +448,15 @@ Item {
         // Monitor tab changes for persistence
         instance.serviceTabsUpdated.connect(function (svcId, tabs) {
             root.tabsUpdated(svcId, tabs);
+        });
+
+        // Monitor notification count from content extraction
+        instance.notificationCountFromContent.connect(function (svcId, count) {
+            root.notificationCountUpdated(svcId, count);
+            // Also call the callback directly
+            if (root.notificationCountCallback && typeof root.notificationCountCallback === "function") {
+                root.notificationCountCallback(svcId, count);
+            }
         });
 
         // Store in cache

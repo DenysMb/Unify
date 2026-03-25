@@ -178,6 +178,20 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // Function to update badge from content (querySelector)
+    function updateBadgeFromContent(serviceId, count) {
+        if (count !== undefined && count !== null && count > 0) {
+            var newCounts = Object.assign({}, serviceNotificationCounts);
+            newCounts[serviceId] = count;
+            serviceNotificationCounts = newCounts;
+        } else {
+            // Remove badge if count is 0 or invalid
+            var newCounts = Object.assign({}, serviceNotificationCounts);
+            delete newCounts[serviceId];
+            serviceNotificationCounts = newCounts;
+        }
+    }
+
     // Function to generate random UUID
     function generateUUID() {
         return Services.generateUUID();
@@ -1088,6 +1102,7 @@ Kirigami.ApplicationWindow {
                             webProfile: persistentProfile
                             workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                             onTitleUpdated: root.updateBadgeFromTitle
+                            notificationCountCallback: root.updateBadgeFromContent
                             onAudibleServicesChanged: {
                                 root.serviceAudibleStates = audibleServices;
                             }
@@ -1233,6 +1248,7 @@ Kirigami.ApplicationWindow {
                         webProfile: persistentProfile
                         workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                         onTitleUpdated: root.updateBadgeFromTitle
+                        notificationCountCallback: root.updateBadgeFromContent
                         onAudibleServicesChanged: {
                             root.serviceAudibleStates = audibleServices;
                         }

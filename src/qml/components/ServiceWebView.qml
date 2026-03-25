@@ -17,11 +17,13 @@ Item {
     property WebEngineProfile webProfile
     property bool isServiceDisabled: false
     property var onTitleUpdated: null
+    property var notificationCountCallback: null
     property int stackIndex: 0
     property real zoomFactor: 1.0
     property bool isMuted: false
     property bool globalMute: false
     property var restoredTabs: []
+    property string querySelector: ""
 
     property alias contents: view
     property int currentTabIndex: 0
@@ -47,6 +49,7 @@ Item {
     signal fullscreenRequested(var webEngineView, bool toggleOn)
     signal zoomFactorUpdated(string serviceId, real zoomFactor)
     signal serviceTabsUpdated(string serviceId, var tabs)
+    signal notificationCountFromContent(string serviceId, int count)
 
     property bool profileReady: webProfile !== null
     property bool hasLoadedOnce: false
@@ -136,6 +139,7 @@ Item {
             "webProfile": view.webProfile,
             "isMuted": view.isMuted,
             "globalMute": view.globalMute,
+            "querySelector": view.querySelector,
             "visible": false
         });
 
@@ -168,6 +172,10 @@ Item {
             if (Math.abs(view.zoomFactor - zoomFactor) > 0.001) {
                 view.zoomFactor = zoomFactor;
             }
+        });
+
+        tabView.notificationCountFromContent.connect(function(svcId, count) {
+            view.notificationCountFromContent(svcId, count);
         });
 
         var newTabViews = Object.assign({}, tabViews);
