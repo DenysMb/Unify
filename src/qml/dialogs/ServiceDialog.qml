@@ -17,7 +17,8 @@ Kirigami.Dialog {
             image: "",
             workspace: "",
             useFavicon: false,
-            isolatedProfile: false
+            isolatedProfile: false,
+            querySelector: ""
         })
 
     signal acceptedData(var data)
@@ -63,6 +64,7 @@ Kirigami.Dialog {
         serviceNameField.text = service.title || "";
         iconUrlField.text = service.image || "";
         serviceUrlField.text = service.url || "";
+        querySelectorField.text = service.querySelector || "";
 
         // Filter out special workspaces when finding the index
         var filteredWorkspaces = [];
@@ -87,6 +89,7 @@ Kirigami.Dialog {
         serviceNameField.text = "";
         iconUrlField.text = "";
         serviceUrlField.text = "";
+        querySelectorField.text = "";
         root.googleFaviconUrl = "";
         root.iconHorseFaviconUrl = "";
         root.googleFaviconLoading = false;
@@ -172,7 +175,8 @@ Kirigami.Dialog {
             workspace: filteredWorkspaces[workspaceComboBox.currentIndex],
             useFavicon: root.useFavicon,
             isolatedProfile: root.isolatedProfile,
-            faviconSource: root.useFavicon ? root.selectedFaviconSource : -1
+            faviconSource: root.useFavicon ? root.selectedFaviconSource : -1,
+            querySelector: querySelectorField.text.trim()
         };
         acceptedData(data);
         clearFields();
@@ -431,6 +435,15 @@ Kirigami.Dialog {
             enabled: !root.isEditMode
             Controls.ToolTip.visible: hovered
             Controls.ToolTip.text: root.isEditMode ? i18n("This option cannot be changed after the service is created. Delete and recreate the service if you need to change this setting.") : i18n("When enabled, this service will have its own separate cookies, login sessions, and data. Useful for having multiple accounts of the same service.")
+        }
+
+        Controls.TextField {
+            id: querySelectorField
+            Kirigami.FormData.label: i18n("Notification Selector:")
+            placeholderText: i18n("e.g., document.querySelector('span.counter')")
+            Layout.fillWidth: true
+            Controls.ToolTip.visible: hovered
+            Controls.ToolTip.text: i18n("CSS selector to extract notification count from page content. Use document.querySelector() syntax. Example: document.querySelector('a[data-testid=\"navigation-link:almost-all-mail\"] span.navigation-counter-item').textContent")
         }
 
         // Separator before destructive actions (only in edit mode)
