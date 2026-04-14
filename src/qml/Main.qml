@@ -1703,12 +1703,12 @@ Kirigami.ApplicationWindow {
                 if (enabled) {
                     // Re-enable service
                     delete disabledServices[serviceId];
-                    webView.url = service.url;
+                    webView.loadUrl(service.url);
                 } else {
                     // Disable service
                     disabledServices[serviceId] = true;
-                    webView.stop();
-                    webView.url = "about:blank";
+                    webView.stopCurrent();
+                    webView.loadBlank();
                 }
                 // Update configManager to persist the disabled state
                 if (configManager && configManager.setServiceDisabled) {
