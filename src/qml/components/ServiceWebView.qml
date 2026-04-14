@@ -309,6 +309,29 @@ Item {
         }
     }
 
+    function stopCurrent() {
+        for (var tabId in tabViews) {
+            if (tabViews.hasOwnProperty(tabId) && tabViews[tabId] && tabViews[tabId].stop) {
+                tabViews[tabId].stop();
+            }
+        }
+    }
+
+    function loadUrl(url) {
+        var currentWebView = getCurrentWebView();
+        if (currentWebView) {
+            currentWebView.url = url;
+        }
+    }
+
+    function loadBlank() {
+        for (var tabId in tabViews) {
+            if (tabViews.hasOwnProperty(tabId) && tabViews[tabId]) {
+                tabViews[tabId].url = "about:blank";
+            }
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
