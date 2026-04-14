@@ -1,0 +1,59 @@
+name: Update Flathub Manifest
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-flathub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get latest release info
+        id: release
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const release = context.payload.release;
+            console.log('tag_name=' + release.tag_name);
+            console.log('sha=' + release.sha);
+            core.setOutput('tag', release.tag_name);
+            core.setOutput('sha', release.sha);
+
+      - name: Clone flathub repository
+        uses: actions/checkout@v4
+        with:
+          repository: flathub/io.github.denysmb.unify
+          token: ${{ secrets.FLATHUB_PAT }}
+          ref: master
+
+      - name: Update manifest
+        run: |
+          TAG="${{ steps.release.outputs.tag }}"
+          SHA="${{ steps.release.outputs.sha }}"
+          
+          echo "Updating to version $TAG (commit: $SHA)"
+          
+          # Update tag and commit in JSON using jq
+          jq --arg tag "$TAG" --arg sha "$SHA" \
+            '.modules[0].sources[0].tag = $tag | .modules[0].sources[0].commit = $sha' \
+            io.github.denysmb.unify.json > tmp.json && mv tmp.json io.github.denysmb.unify.json
+          
+          # Verify changes
+          echo "Updated manifest:"
+          cat io.github.denysmb.unify.json | jq '.modules[0].sources[0]'
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.FLATHUB_PAT }}
+          branch: release/${{ steps.release.outputs.tag }}
+          delete-branch: true
+          title: "chore: release ${{ steps.release.outputs.tag }}"
+          body: |
+            Automated release update for version ${{ steps.release.outputs.tag }}
+            
+            - Updated tag: ${{ steps.release.outputs.tag }}
+            - Updated commit: ${{ steps.release.outputs.sha }}
+          commit-message: "chore: release ${{ steps.release.outputs.tag }}"
+          base: master
