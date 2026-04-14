@@ -156,8 +156,8 @@ Item {
     function refreshByServiceId(serviceId) {
         if (webViewCache[serviceId]) {
             var wv = webViewCache[serviceId];
-            if (wv.contents && wv.contents.reload) {
-                wv.contents.reload();
+            if (wv.contents && wv.contents.refreshCurrent) {
+                wv.contents.refreshCurrent();
             }
         }
     }
