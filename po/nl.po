@@ -315,6 +315,35 @@ msgstr ""
 msgid "${ws}"
 msgstr "${ws}"
 
+#: src/qml/drawers/WorkspaceDrawer.qml:116
+#, kde-format
+msgid "Sidebar Size"
+msgstr ""
+
+#: src/qml/drawers/WorkspaceDrawer.qml:120
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Tiny"
+msgstr ""
+
+#: src/qml/drawers/WorkspaceDrawer.qml:130
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Small"
+msgstr ""
+
+#: src/qml/drawers/WorkspaceDrawer.qml:140
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Normal"
+msgstr ""
+
+#: src/qml/drawers/WorkspaceDrawer.qml:150
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Big"
+msgstr ""
+
 #: src/trayiconmanager.cpp:57
 #, kde-format
 msgid "Show Unify"
