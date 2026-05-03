@@ -164,6 +164,22 @@ Kirigami.Action { separator: true }
             }
         `, drawer));
 
+        // Launch on System Start toggle
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+              text: i18n("Launch on System Start")
+              icon.name: "system-run-symbolic"
+              checkable: true
+              checked: configManager && configManager.autostartEnabled
+              onTriggered: {
+                  if (configManager) {
+                      configManager.autostartEnabled = !configManager.autostartEnabled
+                  }
+              }
+            }
+        `, drawer));
+
         // Mute All toggle
         acts.push(Qt.createQmlObject(`
             import org.kde.kirigami as Kirigami

@@ -25,6 +25,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(bool confirmDownloads READ confirmDownloads WRITE setConfirmDownloads NOTIFY confirmDownloadsChanged)
     Q_PROPERTY(bool systemTrayEnabled READ systemTrayEnabled WRITE setSystemTrayEnabled NOTIFY systemTrayEnabledChanged)
     Q_PROPERTY(bool showZoomInHeader READ showZoomInHeader WRITE setShowZoomInHeader NOTIFY showZoomInHeaderChanged)
+    Q_PROPERTY(bool autostartEnabled READ autostartEnabled WRITE setAutostartEnabled NOTIFY autostartEnabledChanged)
 
 public:
     explicit ConfigManager(QObject *parent = nullptr);
@@ -93,6 +94,12 @@ public:
     bool showZoomInHeader() const;
     void setShowZoomInHeader(bool enabled);
 
+    // Autostart: writes/removes a .desktop file in ~/.config/autostart/ so
+    // the desktop session launches Unify on login. The source of truth is the
+    // filesystem (no QSettings entry) — read by checking file existence.
+    bool autostartEnabled() const;
+    void setAutostartEnabled(bool enabled);
+
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
 
@@ -130,6 +137,7 @@ Q_SIGNALS:
     void confirmDownloadsChanged();
     void systemTrayEnabledChanged();
     void showZoomInHeaderChanged();
+    void autostartEnabledChanged();
 
 private:
     void updateWorkspacesList();
@@ -150,6 +158,7 @@ private:
     bool m_confirmDownloads = true;
     bool m_systemTrayEnabled = true;
     bool m_showZoomInHeader = true;
+    bool m_autostartEnabled = false;
 };
 
 #endif // CONFIGMANAGER_H

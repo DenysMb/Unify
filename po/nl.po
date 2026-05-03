@@ -315,6 +315,11 @@ msgstr ""
 msgid "${ws}"
 msgstr "${ws}"
 
+#: src/qml/drawers/WorkspaceDrawer.qml:170
+#, kde-format
+msgid "Launch on System Start"
+msgstr ""
+
 #: src/trayiconmanager.cpp:57
 #, kde-format
 msgid "Show Unify"
