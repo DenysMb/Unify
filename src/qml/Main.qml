@@ -574,11 +574,14 @@ Kirigami.ApplicationWindow {
         id: drawer
         workspaces: root.workspaces
         currentWorkspace: root.currentWorkspace
-        // Hide the floating auto-handle only when the application header is
-        // hidden AND the sidebar is hosting an integrated hamburger slot. In
-        // every other case keep Kirigami's default handle behaviour intact —
-        // including the hamburger that lives inside the header itself.
-        handleVisible: !(configManager && configManager.hideHeader && root.filteredServices.length > 0)
+        // Hide the floating auto-handle only when the drawer is closed, the
+        // application header is hidden, and the sidebar is hosting our own
+        // integrated hamburger slot. Keep the handle visible whenever the
+        // drawer is open so its standard "Close Drawer" affordance still
+        // sits at the drawer's edge as Kirigami expects, and keep the
+        // default header hamburger intact in every other state.
+        handleVisible: drawer.drawerOpen
+            || !(configManager && configManager.hideHeader && root.filteredServices.length > 0)
         onSwitchToWorkspace: function (name) {
             root.switchToWorkspace(name);
         }
