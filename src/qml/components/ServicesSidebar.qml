@@ -24,6 +24,10 @@ Rectangle {
 
     property int favoriteVersion: 0
 
+    // When true, an integrated hamburger slot is appended to the sidebar so the
+    // global drawer remains reachable while the application header is hidden.
+    property bool showHamburger: false
+
     signal serviceSelected(string id)
     signal editServiceRequested(string id)
     signal moveServiceUp(string id)
@@ -33,6 +37,7 @@ Rectangle {
     signal detachService(string id)
     signal toggleFavoriteRequested(string id)
     signal toggleMuteRequested(string id)
+    signal hamburgerClicked()
 
     Connections {
         target: typeof configManager !== "undefined" ? configManager : null
@@ -52,9 +57,19 @@ Rectangle {
     Controls.ScrollView {
         id: scrollView
         anchors.fill: parent
+        // When the integrated hamburger slot is visible, reserve space for it
+        // along the relevant edge so the scrollable services don't overlap.
         anchors.topMargin: horizontal ? 0 : Kirigami.Units.smallSpacing
-        anchors.bottomMargin: horizontal ? 0 : Kirigami.Units.smallSpacing
-        anchors.leftMargin: horizontal ? Kirigami.Units.smallSpacing : 0
+        anchors.bottomMargin: horizontal
+            ? 0
+            : (root.showHamburger
+               ? root.buttonSize + Kirigami.Units.smallSpacing
+               : Kirigami.Units.smallSpacing)
+        anchors.leftMargin: horizontal
+            ? (root.showHamburger
+               ? root.buttonSize + Kirigami.Units.smallSpacing
+               : Kirigami.Units.smallSpacing)
+            : 0
         anchors.rightMargin: horizontal ? Kirigami.Units.smallSpacing : 0
 
         Controls.ScrollBar.vertical.policy: Controls.ScrollBar.AlwaysOff
@@ -309,6 +324,42 @@ Rectangle {
                     }
                 }
             }
+        }
+    }
+
+    // Integrated hamburger slot — only present while the application header
+    // is hidden. Pinned to the bottom (vertical) or left (horizontal) of the
+    // sidebar so it reads as another sidebar slot rather than a floating
+    // handle. Sized to match the service icons.
+    Item {
+        id: hamburgerSlot
+        visible: root.showHamburger
+        width: root.buttonSize
+        height: root.buttonSize
+
+        anchors.bottom: root.horizontal ? undefined : parent.bottom
+        anchors.horizontalCenter: root.horizontal ? undefined : parent.horizontalCenter
+        anchors.bottomMargin: root.horizontal ? 0 : Kirigami.Units.smallSpacing
+
+        anchors.left: root.horizontal ? parent.left : undefined
+        anchors.verticalCenter: root.horizontal ? parent.verticalCenter : undefined
+        anchors.leftMargin: root.horizontal ? Kirigami.Units.smallSpacing : 0
+
+        Controls.ToolButton {
+            anchors.fill: parent
+            icon.name: "application-menu"
+            // Cap the icon at the standard header size so the menu glyph keeps
+            // a familiar visual weight regardless of the sidebar size preset.
+            icon.width: Math.min(root.iconSize, Kirigami.Units.iconSizes.smallMedium)
+            icon.height: Math.min(root.iconSize, Kirigami.Units.iconSizes.smallMedium)
+            display: Controls.AbstractButton.IconOnly
+            // In a vertical sidebar rotate the glyph 90° so the dots read as
+            // a horizontal triplet — perpendicular to the bar's direction.
+            rotation: root.horizontal ? 0 : 90
+            onClicked: root.hamburgerClicked()
+            Controls.ToolTip.text: i18nc("@info:tooltip", "Menu")
+            Controls.ToolTip.visible: hovered
+            Controls.ToolTip.delay: Kirigami.Units.toolTipDelay
         }
     }
 

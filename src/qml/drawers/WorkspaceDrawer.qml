@@ -202,6 +202,22 @@ Kirigami.Action { separator: true }
             }
         `, drawer));
 
+        // Hide Header toggle (Ctrl+H)
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+              text: i18n("Hide Header (Ctrl+H)")
+              icon.name: "view-hidden"
+              checkable: true
+              checked: configManager && configManager.hideHeader
+              onTriggered: {
+                  if (configManager) {
+                      configManager.hideHeader = !configManager.hideHeader
+                  }
+              }
+            }
+        `, drawer));
+
         // separator
         acts.push(Qt.createQmlObject(`import org.kde.kirigami as Kirigami
 Kirigami.Action { separator: true }
