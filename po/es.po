@@ -327,6 +327,35 @@ msgstr "${ws}"
 msgid "Hide Header (Ctrl+H)"
 msgstr "Ocultar cabecera (Ctrl+H)"
 
+#: src/qml/drawers/WorkspaceDrawer.qml:116
+#, kde-format
+msgid "Sidebar Size"
+msgstr "Tamaño de la barra lateral"
+
+#: src/qml/drawers/WorkspaceDrawer.qml:120
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Tiny"
+msgstr "Muy pequeña"
+
+#: src/qml/drawers/WorkspaceDrawer.qml:130
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Small"
+msgstr "Pequeña"
+
+#: src/qml/drawers/WorkspaceDrawer.qml:140
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Normal"
+msgstr "Normal"
+
+#: src/qml/drawers/WorkspaceDrawer.qml:150
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Big"
+msgstr "Grande"
+
 #: src/trayiconmanager.cpp:57
 #, kde-format
 msgid "Show Unify"
