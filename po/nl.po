@@ -51,6 +51,12 @@ msgctxt "@title:window"
 msgid "Unify"
 msgstr "Unify"
 
+#: src/qml/Main.qml:569
+#, kde-format
+msgctxt "@title:window"
+msgid "Unify - %1"
+msgstr ""
+
 #: src/qml/Main.qml:456 src/qml/dialogs/ServiceDialog.qml:28
 #, kde-format
 msgid "Add Service"
@@ -318,6 +324,40 @@ msgstr "${ws}"
 #: src/qml/drawers/WorkspaceDrawer.qml:170
 #, kde-format
 msgid "Launch on System Start"
+msgstr ""
+
+#: src/qml/drawers/WorkspaceDrawer.qml:209
+#, kde-format
+msgid "Hide Header (Ctrl+H)"
+msgstr ""
+
+#: src/qml/drawers/WorkspaceDrawer.qml:116
+#, kde-format
+msgid "Sidebar Size"
+msgstr ""
+
+#: src/qml/drawers/WorkspaceDrawer.qml:120
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Tiny"
+msgstr ""
+
+#: src/qml/drawers/WorkspaceDrawer.qml:130
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Small"
+msgstr ""
+
+#: src/qml/drawers/WorkspaceDrawer.qml:140
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Normal"
+msgstr ""
+
+#: src/qml/drawers/WorkspaceDrawer.qml:150
+#, kde-format
+msgctxt "Sidebar size preset"
+msgid "Big"
 msgstr ""
 
 #: src/trayiconmanager.cpp:57

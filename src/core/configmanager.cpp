@@ -409,6 +409,34 @@ void ConfigManager::setAutostartEnabled(bool enabled)
     saveSettings();
 }
 
+bool ConfigManager::hideHeader() const
+{
+    return m_hideHeader;
+}
+
+void ConfigManager::setHideHeader(bool enabled)
+{
+    if (m_hideHeader != enabled) {
+        m_hideHeader = enabled;
+        Q_EMIT hideHeaderChanged();
+        saveSettings();
+    }
+}
+
+QString ConfigManager::sidebarSizePreset() const
+{
+    return m_sidebarSizePreset;
+}
+
+void ConfigManager::setSidebarSizePreset(const QString &preset)
+{
+    if (m_sidebarSizePreset != preset) {
+        m_sidebarSizePreset = preset;
+        Q_EMIT sidebarSizePresetChanged();
+        saveSettings();
+    }
+}
+
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
@@ -691,6 +719,8 @@ void ConfigManager::saveSettings()
     m_settings.setValue(QStringLiteral("showZoomInHeader"), m_showZoomInHeader);
     m_settings.setValue(QStringLiteral("globalMute"), m_globalMute);
     m_settings.setValue(QStringLiteral("autostartEnabled"), m_autostartEnabled);
+    m_settings.setValue(QStringLiteral("hideHeader"), m_hideHeader);
+    m_settings.setValue(QStringLiteral("sidebarSizePreset"), m_sidebarSizePreset);
     m_settings.endGroup();
 
     m_settings.sync();
@@ -759,6 +789,8 @@ void ConfigManager::loadSettings()
     m_showZoomInHeader = m_settings.value(QStringLiteral("showZoomInHeader"), true).toBool();
     m_globalMute = m_settings.value(QStringLiteral("globalMute"), false).toBool();
     m_autostartEnabled = m_settings.value(QStringLiteral("autostartEnabled"), false).toBool();
+    m_hideHeader = m_settings.value(QStringLiteral("hideHeader"), false).toBool();
+    m_sidebarSizePreset = m_settings.value(QStringLiteral("sidebarSizePreset"), QStringLiteral("normal")).toString();
     m_settings.endGroup();
 
     // Only update workspaces list if it's empty (first run)
