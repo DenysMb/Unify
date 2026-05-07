@@ -19,6 +19,12 @@ Kirigami.ApplicationWindow {
     width: 1200
     height: 800
 
+    // Hide the Kirigami page toolbar (the application header) on demand.
+    // Bound to configManager so the choice persists. Toggled with Ctrl+H.
+    pageStack.globalToolBar.style: configManager && configManager.hideHeader
+        ? Kirigami.ApplicationHeaderStyle.None
+        : Kirigami.ApplicationHeaderStyle.Auto
+
     // Sidebar size presets — mapping configManager.sidebarSizePreset to button pixel size.
     readonly property var sidebarSizePresets: ({
         "tiny": Kirigami.Units.gridUnit * 2,
@@ -563,14 +569,26 @@ Kirigami.ApplicationWindow {
 
     // Window title
     // i18nc() makes a string translatable
-    // and provides additional context for the translators
-    title: i18nc("@title:window", "Unify")
+    // and provides additional context for the translators.
+    // When the application header is hidden the active service name is appended
+    // so the user keeps a visual cue of which service is in the foreground.
+    title: configManager && configManager.hideHeader && root.currentServiceId !== ""
+        ? i18nc("@title:window", "Unify - %1", root.currentServiceName)
+        : i18nc("@title:window", "Unify")
 
     // Global drawer (hamburger menu)
     globalDrawer: WorkspaceDrawer {
         id: drawer
         workspaces: root.workspaces
         currentWorkspace: root.currentWorkspace
+        // Hide the floating auto-handle only when the drawer is closed, the
+        // application header is hidden, and the sidebar is hosting our own
+        // integrated hamburger slot. Keep the handle visible whenever the
+        // drawer is open so its standard "Close Drawer" affordance still
+        // sits at the drawer's edge as Kirigami expects, and keep the
+        // default header hamburger intact in every other state.
+        handleVisible: drawer.drawerOpen
+            || !(configManager && configManager.hideHeader && root.filteredServices.length > 0)
         onSwitchToWorkspace: function (name) {
             root.switchToWorkspace(name);
         }
@@ -1047,6 +1065,8 @@ Kirigami.ApplicationWindow {
                         sidebarWidth: root.sidebarWidth
                         buttonSize: root.buttonSize
                         iconSize: root.iconSize
+                        showHamburger: configManager && configManager.hideHeader
+                        onHamburgerClicked: drawer.open()
                         onServiceSelected: function (id) {
                             root.switchToService(id);
                             var svc = root.findServiceById(id);
@@ -1193,6 +1213,8 @@ Kirigami.ApplicationWindow {
                     sidebarWidth: root.sidebarWidth
                     buttonSize: root.buttonSize
                     iconSize: root.iconSize
+                    showHamburger: configManager && configManager.hideHeader
+                    onHamburgerClicked: drawer.open()
                     onServiceSelected: function (id) {
                         root.switchToService(id);
                         var svc = root.findServiceById(id);
@@ -1400,6 +1422,17 @@ Kirigami.ApplicationWindow {
         onActivated: {
             if (root.currentServiceId !== "" && root.webViewStack) {
                 root.webViewStack.refreshByServiceId(root.currentServiceId);
+            }
+        }
+    }
+
+    // Toggle the application header visibility with Ctrl+H
+    Shortcut {
+        sequences: ["Ctrl+H"]
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            if (configManager) {
+                configManager.hideHeader = !configManager.hideHeader;
             }
         }
     }

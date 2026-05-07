@@ -50,6 +50,12 @@ msgctxt "@title:window"
 msgid "Unify"
 msgstr ""
 
+#: src/qml/Main.qml:569
+#, kde-format
+msgctxt "@title:window"
+msgid "Unify - %1"
+msgstr ""
+
 #: src/qml/Main.qml:456 src/qml/dialogs/ServiceDialog.qml:28
 #, kde-format
 msgid "Add Service"
@@ -307,6 +313,11 @@ msgstr ""
 #: src/qml/drawers/WorkspaceDrawer.qml:22
 #, kde-format
 msgid "${ws}"
+msgstr ""
+
+#: src/qml/drawers/WorkspaceDrawer.qml:209
+#, kde-format
+msgid "Hide Header (Ctrl+H)"
 msgstr ""
 
 #: src/qml/drawers/WorkspaceDrawer.qml:116
