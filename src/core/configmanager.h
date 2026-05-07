@@ -25,6 +25,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(bool confirmDownloads READ confirmDownloads WRITE setConfirmDownloads NOTIFY confirmDownloadsChanged)
     Q_PROPERTY(bool systemTrayEnabled READ systemTrayEnabled WRITE setSystemTrayEnabled NOTIFY systemTrayEnabledChanged)
     Q_PROPERTY(bool showZoomInHeader READ showZoomInHeader WRITE setShowZoomInHeader NOTIFY showZoomInHeaderChanged)
+    Q_PROPERTY(bool autostartEnabled READ autostartEnabled WRITE setAutostartEnabled NOTIFY autostartEnabledChanged)
     Q_PROPERTY(bool hideHeader READ hideHeader WRITE setHideHeader NOTIFY hideHeaderChanged)
     Q_PROPERTY(QString sidebarSizePreset READ sidebarSizePreset WRITE setSidebarSizePreset NOTIFY sidebarSizePresetChanged)
 
@@ -95,10 +96,16 @@ public:
     bool showZoomInHeader() const;
     void setShowZoomInHeader(bool enabled);
 
+    // Autostart: writes/removes a .desktop file in ~/.config/autostart/ so
+    // the desktop session launches Unify on login. The source of truth is the
+    // filesystem (no QSettings entry) — read by checking file existence.
+    bool autostartEnabled() const;
+    void setAutostartEnabled(bool enabled);
+
     // Hide the application header (Kirigami page toolbar). Toggleable via Ctrl+H.
     bool hideHeader() const;
     void setHideHeader(bool enabled);
-    
+
     QString sidebarSizePreset() const;
     void setSidebarSizePreset(const QString &preset);
 
@@ -139,6 +146,7 @@ Q_SIGNALS:
     void confirmDownloadsChanged();
     void systemTrayEnabledChanged();
     void showZoomInHeaderChanged();
+    void autostartEnabledChanged();
     void hideHeaderChanged();
     void sidebarSizePresetChanged();
 
@@ -161,6 +169,7 @@ private:
     bool m_confirmDownloads = true;
     bool m_systemTrayEnabled = true;
     bool m_showZoomInHeader = true;
+    bool m_autostartEnabled = false;
     bool m_hideHeader = false;
     QString m_sidebarSizePreset = QStringLiteral("normal");
 };

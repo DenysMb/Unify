@@ -1,10 +1,55 @@
 #include "configmanager.h"
+#include <QCoreApplication>
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusObjectPath>
+#include <QDBusReply>
 #include <QDebug>
 #include <QUuid>
 
 // Define special workspace constants
 const QString ConfigManager::FAVORITES_WORKSPACE = QStringLiteral("__favorites__");
 const QString ConfigManager::ALL_SERVICES_WORKSPACE = QStringLiteral("__all_services__");
+
+namespace
+{
+// Build the commandline the desktop session should run on login. Inside Flatpak
+// the in-sandbox application path is unreachable from the host session, so the
+// portal needs `flatpak run` instead.
+QStringList autostartCommandLine()
+{
+    if (qEnvironmentVariableIsSet("FLATPAK_ID")) {
+        return {QStringLiteral("flatpak"), QStringLiteral("run"), QStringLiteral("io.github.denysmb.unify")};
+    }
+    return {QCoreApplication::applicationFilePath()};
+}
+
+// Ask org.freedesktop.portal.Background to (un)register us for autostart. The
+// portal works inside Flatpak (where ~/.config/autostart isn't writable from
+// the sandbox) and on native installs alike, so this is the single code path.
+bool requestBackgroundPortal(bool autostart)
+{
+    QDBusMessage msg = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.portal.Desktop"),
+                                                      QStringLiteral("/org/freedesktop/portal/desktop"),
+                                                      QStringLiteral("org.freedesktop.portal.Background"),
+                                                      QStringLiteral("RequestBackground"));
+
+    QVariantMap options;
+    options.insert(QStringLiteral("autostart"), autostart);
+    options.insert(QStringLiteral("reason"), QStringLiteral("Launch Unify on system start"));
+    options.insert(QStringLiteral("commandline"), autostartCommandLine());
+
+    msg << QString() // parent_window: empty — no parent dialog handle
+        << options;
+
+    QDBusReply<QDBusObjectPath> reply = QDBusConnection::sessionBus().call(msg);
+    if (!reply.isValid()) {
+        qWarning() << "Background portal RequestBackground failed:" << reply.error().message();
+        return false;
+    }
+    return true;
+}
+} // namespace
 
 ConfigManager::ConfigManager(QObject *parent)
     : QObject(parent)
@@ -344,6 +389,26 @@ void ConfigManager::setShowZoomInHeader(bool enabled)
     }
 }
 
+bool ConfigManager::autostartEnabled() const
+{
+    return m_autostartEnabled;
+}
+
+void ConfigManager::setAutostartEnabled(bool enabled)
+{
+    if (m_autostartEnabled == enabled) {
+        return;
+    }
+
+    if (!requestBackgroundPortal(enabled)) {
+        return;
+    }
+
+    m_autostartEnabled = enabled;
+    Q_EMIT autostartEnabledChanged();
+    saveSettings();
+}
+
 bool ConfigManager::hideHeader() const
 {
     return m_hideHeader;
@@ -653,6 +718,7 @@ void ConfigManager::saveSettings()
     m_settings.setValue(QStringLiteral("systemTrayEnabled"), m_systemTrayEnabled);
     m_settings.setValue(QStringLiteral("showZoomInHeader"), m_showZoomInHeader);
     m_settings.setValue(QStringLiteral("globalMute"), m_globalMute);
+    m_settings.setValue(QStringLiteral("autostartEnabled"), m_autostartEnabled);
     m_settings.setValue(QStringLiteral("hideHeader"), m_hideHeader);
     m_settings.setValue(QStringLiteral("sidebarSizePreset"), m_sidebarSizePreset);
     m_settings.endGroup();
@@ -722,6 +788,7 @@ void ConfigManager::loadSettings()
     m_systemTrayEnabled = m_settings.value(QStringLiteral("systemTrayEnabled"), true).toBool();
     m_showZoomInHeader = m_settings.value(QStringLiteral("showZoomInHeader"), true).toBool();
     m_globalMute = m_settings.value(QStringLiteral("globalMute"), false).toBool();
+    m_autostartEnabled = m_settings.value(QStringLiteral("autostartEnabled"), false).toBool();
     m_hideHeader = m_settings.value(QStringLiteral("hideHeader"), false).toBool();
     m_sidebarSizePreset = m_settings.value(QStringLiteral("sidebarSizePreset"), QStringLiteral("normal")).toString();
     m_settings.endGroup();

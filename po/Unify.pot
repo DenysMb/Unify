@@ -315,6 +315,11 @@ msgstr ""
 msgid "${ws}"
 msgstr ""
 
+#: src/qml/drawers/WorkspaceDrawer.qml:170
+#, kde-format
+msgid "Launch on System Start"
+msgstr ""
+
 #: src/qml/drawers/WorkspaceDrawer.qml:209
 #, kde-format
 msgid "Hide Header (Ctrl+H)"
