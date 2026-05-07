@@ -20,14 +20,13 @@ Kirigami.ApplicationWindow {
     height: 800
 
     // Sidebar size presets — mapping configManager.sidebarSizePreset to button pixel size.
-    // Tiny/Small/Big are derived from the previous fixed Normal value (64) at 40/60/120 %.
     readonly property var sidebarSizePresets: ({
-        "tiny": 26,
-        "small": 38,
-        "normal": 64,
-        "big": 77
+        "tiny": Kirigami.Units.gridUnit * 2,
+        "small": Kirigami.Units.gridUnit * 3,
+        "normal": Kirigami.Units.gridUnit * 4,
+        "big": Kirigami.Units.gridUnit * 5
     })
-    property int buttonSize: sidebarSizePresets[configManager ? configManager.sidebarSizePreset : "normal"] || 64
+    property int buttonSize: sidebarSizePresets[configManager ? configManager.sidebarSizePreset : "normal"] || sidebarSizePresets.normal
     property int iconSize: Math.round(buttonSize * 0.75)
     property int sidebarWidth: buttonSize + Kirigami.Units.smallSpacing * 2
 
