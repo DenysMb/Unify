@@ -109,6 +109,56 @@ Kirigami.Action { separator: true }
             }
         `, drawer));
 
+        // Sidebar Size submenu (Tiny / Small / Normal / Big)
+        acts.push(Qt.createQmlObject(`
+            import org.kde.kirigami as Kirigami
+            Kirigami.Action {
+                text: i18n("Sidebar Size")
+                icon.name: "view-sort-symbolic"
+
+                Kirigami.Action {
+                    text: i18nc("Sidebar size preset", "Tiny")
+                    checkable: true
+                    checked: configManager && configManager.sidebarSizePreset === "tiny"
+                    onTriggered: {
+                        if (configManager) {
+                            configManager.sidebarSizePreset = "tiny"
+                        }
+                    }
+                }
+                Kirigami.Action {
+                    text: i18nc("Sidebar size preset", "Small")
+                    checkable: true
+                    checked: configManager && configManager.sidebarSizePreset === "small"
+                    onTriggered: {
+                        if (configManager) {
+                            configManager.sidebarSizePreset = "small"
+                        }
+                    }
+                }
+                Kirigami.Action {
+                    text: i18nc("Sidebar size preset", "Normal")
+                    checkable: true
+                    checked: configManager && configManager.sidebarSizePreset === "normal"
+                    onTriggered: {
+                        if (configManager) {
+                            configManager.sidebarSizePreset = "normal"
+                        }
+                    }
+                }
+                Kirigami.Action {
+                    text: i18nc("Sidebar size preset", "Big")
+                    checkable: true
+                    checked: configManager && configManager.sidebarSizePreset === "big"
+                    onTriggered: {
+                        if (configManager) {
+                            configManager.sidebarSizePreset = "big"
+                        }
+                    }
+                }
+            }
+        `, drawer));
+
         // Show Workspaces Bar toggle
         acts.push(Qt.createQmlObject(`
             import org.kde.kirigami as Kirigami
