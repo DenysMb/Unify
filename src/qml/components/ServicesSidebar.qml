@@ -353,9 +353,6 @@ Rectangle {
             icon.width: Math.min(root.iconSize, Kirigami.Units.iconSizes.smallMedium)
             icon.height: Math.min(root.iconSize, Kirigami.Units.iconSizes.smallMedium)
             display: Controls.AbstractButton.IconOnly
-            // In a vertical sidebar rotate the glyph 90° so the dots read as
-            // a horizontal triplet — perpendicular to the bar's direction.
-            rotation: root.horizontal ? 0 : 90
             onClicked: root.hamburgerClicked()
             Controls.ToolTip.text: i18nc("@info:tooltip", "Menu")
             Controls.ToolTip.visible: hovered
