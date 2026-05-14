@@ -69,6 +69,16 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.6.0" date="2026-05-14">
+      <description>
+        <p>This release adds sidebar customization, header visibility control, and autostart support:</p>
+        <ul>
+          <li>Added tiny/small/normal/big size presets for the sidebar</li>
+          <li>Added Ctrl+H toggle to hide the application header</li>
+          <li>Added Launch on System Start toggle via Background portal</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.5.1" date="2026-04-14">
       <description>
         <p>Bug fixes and improvements.</p>
