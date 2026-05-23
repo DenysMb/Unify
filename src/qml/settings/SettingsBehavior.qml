@@ -32,14 +32,6 @@ Kirigami.ScrollablePage {
             }
         }
 
-        QQC2.Label {
-            Layout.fillWidth: true
-            wrapMode: QQC2.Label.WordWrap
-            font: Kirigami.Theme.smallFont
-            color: Kirigami.Theme.disabledTextColor
-            text: i18n("When enabled, all services will be muted regardless of their individual mute state.")
-        }
-
         Kirigami.Separator {
             Kirigami.FormData.label: i18nc("@title:group", "Downloads:")
             Kirigami.FormData.isSection: true
@@ -54,14 +46,6 @@ Kirigami.ScrollablePage {
                     configManager.confirmDownloads = checked;
                 }
             }
-        }
-
-        QQC2.Label {
-            Layout.fillWidth: true
-            wrapMode: QQC2.Label.WordWrap
-            font: Kirigami.Theme.smallFont
-            color: Kirigami.Theme.disabledTextColor
-            text: i18n("When enabled, a confirmation dialog will appear before each download. When disabled, files are saved automatically to your Downloads folder.")
         }
 
         Kirigami.Separator {
