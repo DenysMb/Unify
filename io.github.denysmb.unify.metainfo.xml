@@ -69,6 +69,19 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.7.0" date="2026-05-23">
+      <description>
+        <p>This release introduces a dedicated Settings window, moving all configuration options out of the workspace drawer for a cleaner and more organized experience:</p>
+        <ul>
+          <li>Added dedicated Settings window with categorized sections (Appearance, Behavior, Widevine)</li>
+          <li>Appearance settings: sidebar orientation, size presets, header visibility, zoom controls, workspaces bar</li>
+          <li>Behavior settings: global mute, download confirmation, system tray, autostart</li>
+          <li>Widevine DRM management with install/uninstall UI</li>
+          <li>Workspace drawer simplified to show only workspace navigation and quick actions</li>
+          <li>Settings follow KDE HIG with proper FormLayout structure</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.6.0" date="2026-05-14">
       <description>
         <p>This release adds sidebar customization, header visibility control, and autostart support:</p>
