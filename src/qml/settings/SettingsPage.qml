@@ -85,7 +85,7 @@ Kirigami.ScrollablePage {
             id: widevineButton
             text: i18nc("@action:button", "Widevine (DRM)")
             description: i18nc("@info:whatsthis", "Install and manage Widevine CDM")
-            icon.name: "shield"
+            icon.name: "preferences-plugin"
             onClicked: Kirigami.PageStack.push(widevinePage)
         }
     }
