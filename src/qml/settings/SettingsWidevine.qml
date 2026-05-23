@@ -4,7 +4,7 @@ import QtQuick.Layouts
 
 import org.kde.kirigami as Kirigami
 
-Kirigami.ScrollablePage {
+Kirigami.Page {
     id: root
 
     title: i18nc("@title", "Widevine (DRM)")
@@ -24,6 +24,7 @@ Kirigami.ScrollablePage {
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
+            visible: true
             type: widevineManager && widevineManager.isInstalled ? Kirigami.MessageType.Positive : Kirigami.MessageType.Information
             icon.name: widevineManager && widevineManager.isInstalled ? "dialog-ok-apply" : "dialog-warning"
 
