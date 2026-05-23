@@ -11,47 +11,37 @@ Kirigami.ScrollablePage {
 
     Kirigami.ColumnView.fillWidth: true
 
-    Kirigami.FormLayout {
+    ColumnLayout {
         anchors.fill: parent
+        anchors.margins: Kirigami.Units.largeSpacing
+        spacing: Kirigami.Units.largeSpacing
 
-        Kirigami.Separator {
-            Kirigami.FormData.label: i18nc("@title:group", "Status:")
-            Kirigami.FormData.isSection: true
+        QQC2.Label {
+            Layout.fillWidth: true
+            wrapMode: QQC2.Label.WordWrap
+            text: i18n("Some streaming services (Spotify, Netflix, Prime Video, etc.) require Widevine CDM to play DRM-protected content. Widevine is a Google proprietary library that cannot be bundled with the app.")
         }
 
-        RowLayout {
-            Kirigami.FormData.label: i18nc("@label", "Installation:")
-            spacing: Kirigami.Units.smallSpacing
+        Kirigami.InlineMessage {
+            Layout.fillWidth: true
+            type: widevineManager && widevineManager.isInstalled ? Kirigami.MessageType.Positive : Kirigami.MessageType.Information
+            icon.name: widevineManager && widevineManager.isInstalled ? "dialog-ok-apply" : "dialog-warning"
 
-            Kirigami.Icon {
-                source: widevineManager && widevineManager.isInstalled ? "dialog-ok-apply" : "dialog-warning"
-                color: widevineManager && widevineManager.isInstalled ? Kirigami.Theme.positiveTextColor : Kirigami.Theme.neutralTextColor
-                Layout.preferredWidth: Kirigami.Units.iconSizes.small
-                Layout.preferredHeight: Kirigami.Units.iconSizes.small
-            }
-
-            QQC2.Label {
-                text: {
-                    if (!widevineManager) return i18n("Unknown");
-                    if (widevineManager.isInstalling) return i18n("Installing...");
-                    if (widevineManager.isInstalled) return i18n("Installed (version %1)", widevineManager.installedVersion);
-                    return i18n("Not installed");
-                }
-                color: widevineManager && widevineManager.isInstalled ? Kirigami.Theme.positiveTextColor : Kirigami.Theme.neutralTextColor
+            text: {
+                if (!widevineManager) return i18n("Status: Unknown");
+                if (widevineManager.isInstalling) return i18n("Status: Installing...");
+                if (widevineManager.isInstalled) return i18n("Status: Installed (version %1)", widevineManager.installedVersion);
+                return i18n("Status: Not installed");
             }
         }
 
-        Kirigami.Separator {
-            Kirigami.FormData.label: i18nc("@title:group", "Actions:")
-            Kirigami.FormData.isSection: true
-        }
-
         RowLayout {
-            Kirigami.FormData.label: i18nc("@label", "Widevine CDM:")
+            Layout.fillWidth: true
             spacing: Kirigami.Units.smallSpacing
 
             QQC2.Button {
-                text: widevineManager && widevineManager.isInstalled ? i18n("Reinstall") : i18n("Install")
+                Layout.fillWidth: true
+                text: widevineManager && widevineManager.isInstalled ? i18n("Reinstall Widevine") : i18n("Install Widevine")
                 icon.name: "download"
                 enabled: widevineManager && !widevineManager.isInstalling
                 onClicked: {
@@ -68,6 +58,7 @@ Kirigami.ScrollablePage {
             }
 
             QQC2.Button {
+                Layout.fillWidth: true
                 text: i18n("Uninstall")
                 icon.name: "edit-delete"
                 visible: widevineManager && widevineManager.isInstalled
@@ -81,7 +72,6 @@ Kirigami.ScrollablePage {
         }
 
         QQC2.Label {
-            Kirigami.FormData.label: ""
             Layout.fillWidth: true
             wrapMode: QQC2.Label.WordWrap
             font: Kirigami.Theme.smallFont
@@ -89,16 +79,8 @@ Kirigami.ScrollablePage {
             text: i18n("After installing or uninstalling, restart Unify for changes to take effect.")
         }
 
-        Kirigami.Separator {
-            Kirigami.FormData.label: i18nc("@title:group", "Info:")
-            Kirigami.FormData.isSection: true
-        }
-
-        QQC2.Label {
-            Kirigami.FormData.label: ""
-            Layout.fillWidth: true
-            wrapMode: QQC2.Label.WordWrap
-            text: i18n("Some streaming services (Spotify, Netflix, Prime Video, etc.) require Widevine CDM to play DRM-protected content. Widevine is a Google proprietary library that cannot be bundled with the app.")
+        Item {
+            Layout.fillHeight: true
         }
     }
 
