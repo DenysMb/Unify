@@ -48,7 +48,12 @@ ecm_target_qml_sources(unify
     qml/dialogs/PermissionDialog.qml
     qml/dialogs/WorkspaceDialog.qml
     qml/dialogs/DesktopMediaDialog.qml
+    qml/dialogs/TipsDialog.qml
     qml/drawers/WorkspaceDrawer.qml
+    qml/settings/SettingsPage.qml
+    qml/settings/SettingsAppearance.qml
+    qml/settings/SettingsBehavior.qml
+    qml/settings/SettingsWidevine.qml
     qml/utils/Services.js
     qml/utils/AntiDetection.js
 )

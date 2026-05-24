@@ -620,6 +620,27 @@ Kirigami.ApplicationWindow {
                 addWorkspaceDialog.open();
             }
         }
+        onSettingsRequested: root.openSettings()
+        onTipsRequested: tipsDialog.open()
+    }
+
+    Component {
+        id: settingsPageComponent
+        SettingsPage {}
+    }
+
+    TipsDialog {
+        id: tipsDialog
+    }
+
+    function openSettings() {
+        applicationWindow().pageStack.pushDialogLayer(settingsPageComponent, {}, {
+            title: i18n("Settings"),
+            width: 600,
+            height: 550,
+            minimumWidth: 600,
+            minimumHeight: 550
+        });
     }
 
     // Add/Edit Service Dialog
