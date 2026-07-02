@@ -431,9 +431,9 @@ Kirigami.ApplicationWindow {
     // Workspaces are now managed by configManager
     property var workspaces: configManager ? configManager.workspaces : ["Personal"]
 
-    // Firefox User-Agent string to simulate Firefox browser for compatibility with web services
-    // Using latest stable Firefox version to avoid detection issues
-    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0"
+    // Chrome User-Agent string to simulate Chrome browser for compatibility with web services
+    // Qt WebEngine 6.11.1 is based on Chromium 140, so matching the UA to that version
+    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
 
     // Services configuration array
     // Services are now managed by configManager
@@ -461,6 +461,8 @@ Kirigami.ApplicationWindow {
 
         // Set user agent
         httpUserAgent: root.chromeUserAgent
+
+        httpAcceptLanguage: "en-US,en;q=0.9"
 
         // Cache and cookie settings
         httpCacheType: WebEngineProfile.DiskHttpCache

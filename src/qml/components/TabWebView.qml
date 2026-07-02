@@ -63,7 +63,6 @@ WebEngineView {
             webView.runJavaScript(AntiDetection.getScript());
         }
         if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
-            webView.runJavaScript(AntiDetection.getScript());
             // Extract notification count from content using querySelector
             extractNotificationCount();
             // Start the periodic timer
