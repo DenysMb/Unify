@@ -670,6 +670,9 @@ Kirigami.ApplicationWindow {
                 // Update current service name if we edited the active service
                 if (serviceId === root.currentServiceId) {
                     root.currentServiceName = serviceData.title;
+                    Qt.callLater(function () {
+                        webViewStack.recreateService(serviceId);
+                    });
                 }
 
                 if (serviceData.workspace && serviceData.workspace !== prevWs) {

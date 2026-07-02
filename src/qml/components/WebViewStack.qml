@@ -153,6 +153,23 @@ Item {
         }
     }
 
+    function recreateService(serviceId) {
+        var oldService = webViewCache[serviceId];
+        if (oldService) {
+            oldService.destroy();
+            delete webViewCache[serviceId];
+        }
+
+        var profiles = root.isolatedProfiles;
+        if (profiles[serviceId]) {
+            delete profiles[serviceId];
+        }
+        root.isolatedProfiles = profiles;
+
+        createWebViewForService(serviceId);
+        setCurrentByServiceId(serviceId);
+    }
+
     function refreshByServiceId(serviceId) {
         if (webViewCache[serviceId]) {
             var wv = webViewCache[serviceId];
