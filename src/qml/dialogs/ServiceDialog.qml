@@ -18,7 +18,8 @@ Kirigami.Dialog {
             workspace: "",
             useFavicon: false,
             isolatedProfile: false,
-            querySelector: ""
+            querySelector: "",
+            userAgent: ""
         })
 
     signal acceptedData(var data)
@@ -78,6 +79,7 @@ Kirigami.Dialog {
         root.useFavicon = service.useFavicon || false;
         root.isolatedProfile = service.isolatedProfile || false;
         root.selectedFaviconSource = service.faviconSource || 0;
+        userAgentField.setUserAgentValue(service.userAgent || "");
 
         // Fetch favicon previews if URL is valid
         if (service.url) {
@@ -108,6 +110,7 @@ Kirigami.Dialog {
         root.selectedIconName = "internet-web-browser-symbolic";
         root.useFavicon = true;
         root.isolatedProfile = false;
+        userAgentField.currentIndex = 0;
     }
 
     function fetchFaviconPreviews() {
@@ -176,7 +179,8 @@ Kirigami.Dialog {
             useFavicon: root.useFavicon,
             isolatedProfile: root.isolatedProfile,
             faviconSource: root.useFavicon ? root.selectedFaviconSource : -1,
-            querySelector: querySelectorField.text.trim()
+            querySelector: querySelectorField.text.trim(),
+            userAgent: userAgentField.model[userAgentField.currentIndex].value
         };
         acceptedData(data);
         clearFields();
@@ -444,6 +448,30 @@ Kirigami.Dialog {
             Layout.fillWidth: true
             Controls.ToolTip.visible: hovered
             Controls.ToolTip.text: i18n("CSS selector to extract notification count from page content. Use document.querySelector() syntax. Example: document.querySelector('a[data-testid=\"navigation-link:almost-all-mail\"] span.navigation-counter-item').textContent")
+        }
+
+        Controls.ComboBox {
+            id: userAgentField
+            Kirigami.FormData.label: i18n("Browser User-Agent:")
+            Layout.fillWidth: true
+            textRole: "label"
+            valueRole: "value"
+            model: [
+                { label: i18n("Firefox (Default)"), value: "" },
+                { label: i18n("Chrome"), value: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" }
+            ]
+            Controls.ToolTip.visible: hovered
+            Controls.ToolTip.text: i18n("Firefox works with Google OAuth. Chrome is required for services with Cloudflare Turnstile (e.g., Linear).")
+            
+            function setUserAgentValue(ua) {
+                for (var i = 0; i < model.length; i++) {
+                    if (model[i].value === ua) {
+                        currentIndex = i;
+                        return;
+                    }
+                }
+                currentIndex = 0; // Default to Firefox
+            }
         }
 
         // Separator before destructive actions (only in edit mode)

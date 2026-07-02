@@ -431,9 +431,12 @@ Kirigami.ApplicationWindow {
     // Workspaces are now managed by configManager
     property var workspaces: configManager ? configManager.workspaces : ["Personal"]
 
-    // Chrome User-Agent string to simulate Chrome browser for compatibility with web services
+    // Chrome User-Agent string for services that need Cloudflare Turnstile compatibility
     // Qt WebEngine 6.11.1 is based on Chromium 140, so matching the UA to that version
     property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+
+    // Default user agent: Firefox (works with Google OAuth, which blocks embedded Chrome)
+    property string defaultUserAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0"
 
     // Services configuration array
     // Services are now managed by configManager
@@ -459,8 +462,8 @@ Kirigami.ApplicationWindow {
         // Explicitly set to NOT be off-the-record (enables persistence)
         offTheRecord: false
 
-        // Set user agent
-        httpUserAgent: root.chromeUserAgent
+        // Set user agent — default is Firefox for Google OAuth compatibility
+        httpUserAgent: root.defaultUserAgent
 
         httpAcceptLanguage: "en-US,en;q=0.9"
 
@@ -688,7 +691,8 @@ Kirigami.ApplicationWindow {
                     image: serviceData.image,
                     workspace: serviceData.workspace,
                     useFavicon: serviceData.useFavicon || false,
-                    isolatedProfile: serviceData.isolatedProfile || false
+                    isolatedProfile: serviceData.isolatedProfile || false,
+                    userAgent: serviceData.userAgent || ""
                 };
                 if (configManager)
                     configManager.addService(newService);

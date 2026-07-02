@@ -172,8 +172,8 @@ int main(int argc, char *argv[])
     defaultProf->setHttpCacheType(QWebEngineProfile::DiskHttpCache);
     defaultProf->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
 
-    // Set user agent for compatibility - Chrome 140 simulation (Qt WebEngine is Chromium 140-based)
-    defaultProf->setHttpUserAgent(QStringLiteral("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"));
+    // Set user agent for compatibility - Firefox 145 (works with Google OAuth, which blocks embedded Chrome)
+    defaultProf->setHttpUserAgent(QStringLiteral("Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0"));
 
     // Set Accept-Language header (Qt WebEngine doesn't send it by default, which triggers bot detection)
     defaultProf->setHttpAcceptLanguage(QStringLiteral("en-US,en;q=0.9"));
@@ -192,20 +192,6 @@ int main(int argc, char *argv[])
                            "window.addEventListener('unhandledrejection',function(e){console.log('[Unify] Unhandled rejection:',e.reason);},true);"
                            "try{if(window.qt)delete window.qt;if(window.QtWebEngine)delete window.QtWebEngine;}catch(e){}"
                            "try{Object.defineProperty(navigator,'webdriver',{get:()=>undefined,configurable:true});}catch(e){}"
-                           "if(!window.chrome){window.chrome={runtime:{},loadTimes:function(){},csi:function(){}};}"
-                           "if(!navigator.plugins||navigator.plugins.length===0){"
-                           "try{Object.defineProperty(navigator,'plugins',{get:function(){"
-                           "var a=[{name:'Chrome PDF Plugin',filename:'internal-pdf-viewer',description:'Portable Document Format',length:1}];"
-                           "a.item=function(i){return this[i]||null;};"
-                           "a.namedItem=function(n){return null;};"
-                           "a.refresh=function(){};"
-                           "return a;},configurable:true});}catch(e){}}"
-                           "if(!navigator.mimeTypes||navigator.mimeTypes.length===0){"
-                           "try{Object.defineProperty(navigator,'mimeTypes',{get:function(){"
-                           "var a=[{type:'application/pdf',suffixes:'pdf',description:'Portable Document Format'}];"
-                           "a.item=function(i){return this[i]||null;};"
-                           "a.namedItem=function(n){return null;};"
-                           "return a;},configurable:true});}catch(e){}}"
                            "window.__unifyCtrlPressed=false;"
                            "document.addEventListener('keydown',function(e){if(e.key==='Control'||e.ctrlKey)window.__unifyCtrlPressed=true;},true);"
                            "document.addEventListener('keyup',function(e){if(e.key==='Control')window.__unifyCtrlPressed=false;},true);"

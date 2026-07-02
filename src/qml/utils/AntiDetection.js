@@ -4,7 +4,7 @@
 
 .pragma library
 
-var script = `
+var baseScript = `
 (function() {
     if (window.__antiDetectionApplied) return;
     window.__antiDetectionApplied = true;
@@ -33,42 +33,7 @@ var script = `
         });
     } catch (e) {}
 
-    // 3. Ensure window.chrome exists (Chromium-based browsers have it)
-    if (!window.chrome) {
-        window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {} };
-    }
-
-    // 4. Ensure plugins/mimeTypes are populated (empty = bot signal)
-    if (!navigator.plugins || navigator.plugins.length === 0) {
-        try {
-            Object.defineProperty(navigator, 'plugins', {
-                get: function() {
-                    var arr = [{name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format', length: 1}];
-                    arr.item = function(i) { return this[i] || null; };
-                    arr.namedItem = function(name) { return null; };
-                    arr.refresh = function() {};
-                    return arr;
-                },
-                configurable: true
-            });
-        } catch (e) {}
-    }
-
-    if (!navigator.mimeTypes || navigator.mimeTypes.length === 0) {
-        try {
-            Object.defineProperty(navigator, 'mimeTypes', {
-                get: function() {
-                    var arr = [{type: 'application/pdf', suffixes: 'pdf', description: 'Portable Document Format'}];
-                    arr.item = function(i) { return this[i] || null; };
-                    arr.namedItem = function(name) { return null; };
-                    return arr;
-                },
-                configurable: true
-            });
-        } catch (e) {}
-    }
-
-    // 5. Track Ctrl key state for link opening behavior
+    // 3. Track Ctrl key state for link opening behavior
     window.__unifyCtrlPressed = false;
 
     document.addEventListener('keydown', function(e) {
@@ -86,9 +51,66 @@ var script = `
     window.addEventListener('blur', function() {
         window.__unifyCtrlPressed = false;
     });
+`;
+
+var chromePolyfills = `
+    // 4. Chrome-specific polyfills (only for Chrome UA services like Linear)
+    if (!window.chrome) {
+        window.chrome = {
+            runtime: {},
+            loadTimes: function() {},
+            csi: function() {}
+        };
+    }
+
+    if (!navigator.plugins || navigator.plugins.length === 0) {
+        try {
+            Object.defineProperty(navigator, 'plugins', {
+                get: function() {
+                    var arr = [{
+                        name: 'Chrome PDF Plugin',
+                        filename: 'internal-pdf-viewer',
+                        description: 'Portable Document Format',
+                        length: 1
+                    }];
+                    arr.item = function(i) { return this[i] || null; };
+                    arr.namedItem = function(n) { return null; };
+                    arr.refresh = function() {};
+                    return arr;
+                },
+                configurable: true
+            });
+        } catch (e) {}
+    }
+
+    if (!navigator.mimeTypes || navigator.mimeTypes.length === 0) {
+        try {
+            Object.defineProperty(navigator, 'mimeTypes', {
+                get: function() {
+                    var arr = [{
+                        type: 'application/pdf',
+                        suffixes: 'pdf',
+                        description: 'Portable Document Format'
+                    }];
+                    arr.item = function(i) { return this[i] || null; };
+                    arr.namedItem = function(n) { return null; };
+                    return arr;
+                },
+                configurable: true
+            });
+        } catch (e) {}
+    }
+`;
+
+var closingTag = `
 })();
 `;
 
-function getScript() {
+function getScript(isChrome) {
+    var script = baseScript;
+    if (isChrome) {
+        script += chromePolyfills;
+    }
+    script += closingTag;
     return script;
 }
