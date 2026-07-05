@@ -29,6 +29,7 @@ Kirigami.Dialog {
     property bool useFavicon: true
     property bool isolatedProfile: false
     property int selectedFaviconSource: 0 // 0 = Google, 1 = IconHorse
+    property string chromeUserAgent: ""
 
     // Favicon preview URLs
     property string googleFaviconUrl: ""
@@ -458,7 +459,7 @@ Kirigami.Dialog {
             valueRole: "value"
             model: [
                 { label: i18n("Firefox (Default)"), value: "" },
-                { label: i18n("Chrome"), value: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" }
+                { label: i18n("Chrome"), value: root.chromeUserAgent }
             ]
             Controls.ToolTip.visible: hovered
             Controls.ToolTip.text: i18n("Firefox works with Google OAuth. Chrome is required for services with Cloudflare Turnstile (e.g., Linear).")
@@ -469,6 +470,13 @@ Kirigami.Dialog {
                         currentIndex = i;
                         return;
                     }
+                }
+                // Tolerant fallback: a saved Chrome UA whose version differs from the current
+                // build's Chromium version (e.g. Chrome/140 saved under a Chromium 134 Flatpak)
+                // should still select the Chrome option instead of resetting to Firefox.
+                if (ua && ua.indexOf("Chrome/") !== -1 && ua.indexOf("rv:") === -1) {
+                    currentIndex = 1;
+                    return;
                 }
                 currentIndex = 0; // Default to Firefox
             }

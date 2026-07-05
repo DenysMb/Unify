@@ -431,9 +431,13 @@ Kirigami.ApplicationWindow {
     // Workspaces are now managed by configManager
     property var workspaces: configManager ? configManager.workspaces : ["Personal"]
 
-    // Chrome User-Agent string for services that need Cloudflare Turnstile compatibility
-    // Qt WebEngine 6.11.1 is based on Chromium 140, so matching the UA to that version
-    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    // Chrome User-Agent string, derived in main.cpp from the real Chromium version embedded
+    // in this QtWebEngine build (e.g. Chromium 140 on the system, 134 in the Flatpak BaseApp)
+    // so the UA header matches TLS JA4 / HTTP2 / sec-ch-ua Client Hints fingerprints and does
+    // not trip Cloudflare Turnstile. Falls back to Chrome/140 if the C++ value is unavailable.
+    property string chromeUserAgent: typeof chromeUserAgentGlobal !== "undefined"
+        ? chromeUserAgentGlobal
+        : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
 
     // Default user agent: Firefox (works with Google OAuth, which blocks embedded Chrome)
     property string defaultUserAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0"
@@ -653,6 +657,7 @@ Kirigami.ApplicationWindow {
         id: addServiceDialog
         workspaces: root.workspaces
         currentWorkspace: root.currentWorkspace
+        chromeUserAgent: root.chromeUserAgent
         onRejected: {
             // Clear temporary editing ID when dialog is cancelled
             root.editingServiceId = "";

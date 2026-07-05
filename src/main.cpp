@@ -14,6 +14,7 @@
 #include <QDir>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
+#include <QRegularExpression>
 #include <QUrl>
 #include <QWebEngineNotification>
 #include <QWebEngineProfile>
@@ -172,6 +173,21 @@ int main(int argc, char *argv[])
     defaultProf->setHttpCacheType(QWebEngineProfile::DiskHttpCache);
     defaultProf->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
 
+    // Derive the Chrome UA from the real Chromium version embedded in this QtWebEngine build.
+    // The UA HTTP header must match the actual Chromium version, otherwise TLS JA4 / HTTP2 /
+    // sec-ch-ua Client Hints fingerprints (all version-bound) disagree with the UA string and
+    // trigger Cloudflare Turnstile bot detection.
+    // e.g. QtWebEngine 6.11 ships Chromium 140; Flatpak BaseApp 6.10 ships Chromium 134.
+    QString chromeUserAgent = QStringLiteral("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36");
+    const QString embeddedUa = defaultProf->httpUserAgent();
+    const QRegularExpression chromeVersionRe(QStringLiteral("Chrome/(\\d+)"));
+    const auto chromeMatch = chromeVersionRe.match(embeddedUa);
+    if (chromeMatch.hasMatch()) {
+        chromeUserAgent =
+            QStringLiteral("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%1.0.0.0 Safari/537.36").arg(chromeMatch.captured(1));
+    }
+    qDebug() << "Embedded Chromium UA:" << embeddedUa << "=> Chrome UA:" << chromeUserAgent;
+
     // Set user agent for compatibility - Firefox 145 (works with Google OAuth, which blocks embedded Chrome)
     defaultProf->setHttpUserAgent(QStringLiteral("Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0"));
 
@@ -224,6 +240,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("fileUtils"), fileUtils);
     engine.rootContext()->setContextProperty(QStringLiteral("printHandler"), printHandler);
     engine.rootContext()->setContextProperty(QStringLiteral("widevineManager"), widevineManager);
+    engine.rootContext()->setContextProperty(QStringLiteral("chromeUserAgentGlobal"), chromeUserAgent);
 
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
     engine.loadFromModule("io.github.denysmb.unify", "Main");
