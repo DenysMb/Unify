@@ -431,9 +431,16 @@ Kirigami.ApplicationWindow {
     // Workspaces are now managed by configManager
     property var workspaces: configManager ? configManager.workspaces : ["Personal"]
 
-    // Firefox User-Agent string to simulate Firefox browser for compatibility with web services
-    // Using latest stable Firefox version to avoid detection issues
-    property string chromeUserAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0"
+    // Chrome User-Agent string, derived in main.cpp from the real Chromium version embedded
+    // in this QtWebEngine build (e.g. Chromium 140 on the system, 134 in the Flatpak BaseApp)
+    // so the UA header matches TLS JA4 / HTTP2 / sec-ch-ua Client Hints fingerprints and does
+    // not trip Cloudflare Turnstile. Falls back to Chrome/140 if the C++ value is unavailable.
+    property string chromeUserAgent: typeof chromeUserAgentGlobal !== "undefined"
+        ? chromeUserAgentGlobal
+        : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+
+    // Default user agent: Firefox (works with Google OAuth, which blocks embedded Chrome)
+    property string defaultUserAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0"
 
     // Services configuration array
     // Services are now managed by configManager
@@ -459,8 +466,10 @@ Kirigami.ApplicationWindow {
         // Explicitly set to NOT be off-the-record (enables persistence)
         offTheRecord: false
 
-        // Set user agent
-        httpUserAgent: root.chromeUserAgent
+        // Set user agent — default is Firefox for Google OAuth compatibility
+        httpUserAgent: root.defaultUserAgent
+
+        httpAcceptLanguage: "en-US,en;q=0.9"
 
         // Cache and cookie settings
         httpCacheType: WebEngineProfile.DiskHttpCache
@@ -648,6 +657,7 @@ Kirigami.ApplicationWindow {
         id: addServiceDialog
         workspaces: root.workspaces
         currentWorkspace: root.currentWorkspace
+        chromeUserAgent: root.chromeUserAgent
         onRejected: {
             // Clear temporary editing ID when dialog is cancelled
             root.editingServiceId = "";
@@ -665,6 +675,9 @@ Kirigami.ApplicationWindow {
                 // Update current service name if we edited the active service
                 if (serviceId === root.currentServiceId) {
                     root.currentServiceName = serviceData.title;
+                    Qt.callLater(function () {
+                        webViewStack.recreateService(serviceId);
+                    });
                 }
 
                 if (serviceData.workspace && serviceData.workspace !== prevWs) {
@@ -686,7 +699,8 @@ Kirigami.ApplicationWindow {
                     image: serviceData.image,
                     workspace: serviceData.workspace,
                     useFavicon: serviceData.useFavicon || false,
-                    isolatedProfile: serviceData.isolatedProfile || false
+                    isolatedProfile: serviceData.isolatedProfile || false,
+                    userAgent: serviceData.userAgent || ""
                 };
                 if (configManager)
                     configManager.addService(newService);

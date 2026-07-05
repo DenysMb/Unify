@@ -60,10 +60,10 @@ WebEngineView {
 
     onLoadingChanged: function (loadRequest) {
         if (loadRequest.status === WebEngineView.LoadStartedStatus) {
-            webView.runJavaScript(AntiDetection.getScript());
+            var isChrome = webView.webProfile && webView.webProfile.httpUserAgent.indexOf("Chrome") !== -1;
+            webView.runJavaScript(AntiDetection.getScript(isChrome));
         }
         if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
-            webView.runJavaScript(AntiDetection.getScript());
             // Extract notification count from content using querySelector
             extractNotificationCount();
             // Start the periodic timer

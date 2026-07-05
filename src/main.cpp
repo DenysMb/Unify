@@ -14,9 +14,12 @@
 #include <QDir>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
+#include <QRegularExpression>
 #include <QUrl>
 #include <QWebEngineNotification>
 #include <QWebEngineProfile>
+#include <QWebEngineScript>
+#include <QWebEngineScriptCollection>
 #include <QtQml>
 #include <QtWebEngineQuick>
 
@@ -65,8 +68,6 @@ int main(int argc, char *argv[])
     if (chromiumFlags.isEmpty()) {
         // No flags set, use our defaults.
         chromiumFlags =
-            "--disable-blink-features=AutomationControlled "
-            "--disable-web-security=false "
             "--enable-features=NetworkService,NetworkServiceInProcess,WebRTCPipeWireCapturer,HardwareMediaDecoding,PlatformEncryptedDolbyVision,"
             "PlatformHEVCEncoderSupport "
             "--disable-background-networking=false "
@@ -85,13 +86,15 @@ int main(int argc, char *argv[])
     }
 
     // GPU/Compositor workarounds
-    // Default: disable GPU to avoid QtWebEngine compositor freezes on Wayland/AMD.
-    // Users can opt-in to GPU acceleration by setting `UNIFY_WEBENGINE_DISABLE_GPU=0`.
-    const bool disableGpu = !qEnvironmentVariableIsSet("UNIFY_WEBENGINE_DISABLE_GPU") || qEnvironmentVariableIntValue("UNIFY_WEBENGINE_DISABLE_GPU") != 0;
+    // Default: enable GPU for WebGL compatibility (Cloudflare Turnstile, etc.).
+    // Users can disable GPU acceleration by setting `UNIFY_WEBENGINE_DISABLE_GPU=1`.
+    const bool disableGpu = qEnvironmentVariableIsSet("UNIFY_WEBENGINE_DISABLE_GPU") && qEnvironmentVariableIntValue("UNIFY_WEBENGINE_DISABLE_GPU") == 1;
 
     if (disableGpu) {
         chromiumFlags += " --disable-gpu --disable-gpu-compositing --disable-features=VizDisplayCompositor";
         qDebug() << "WebEngine GPU disabled (set UNIFY_WEBENGINE_DISABLE_GPU=0 to enable)";
+    } else {
+        qDebug() << "WebEngine GPU enabled (set UNIFY_WEBENGINE_DISABLE_GPU=1 to disable)";
     }
 
     if (qEnvironmentVariableIsSet("UNIFY_WEBENGINE_FORCE_USE_GBM") && qEnvironmentVariableIntValue("UNIFY_WEBENGINE_FORCE_USE_GBM") == 0) {
@@ -170,8 +173,51 @@ int main(int argc, char *argv[])
     defaultProf->setHttpCacheType(QWebEngineProfile::DiskHttpCache);
     defaultProf->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
 
-    // Set user agent for compatibility - Firefox simulation
+    // Derive the Chrome UA from the real Chromium version embedded in this QtWebEngine build.
+    // The UA HTTP header must match the actual Chromium version, otherwise TLS JA4 / HTTP2 /
+    // sec-ch-ua Client Hints fingerprints (all version-bound) disagree with the UA string and
+    // trigger Cloudflare Turnstile bot detection.
+    // e.g. QtWebEngine 6.11 ships Chromium 140; Flatpak BaseApp 6.10 ships Chromium 134.
+    QString chromeUserAgent = QStringLiteral("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36");
+    const QString embeddedUa = defaultProf->httpUserAgent();
+    const QRegularExpression chromeVersionRe(QStringLiteral("Chrome/(\\d+)"));
+    const auto chromeMatch = chromeVersionRe.match(embeddedUa);
+    if (chromeMatch.hasMatch()) {
+        chromeUserAgent =
+            QStringLiteral("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%1.0.0.0 Safari/537.36").arg(chromeMatch.captured(1));
+    }
+    qDebug() << "Embedded Chromium UA:" << embeddedUa << "=> Chrome UA:" << chromeUserAgent;
+
+    // Set user agent for compatibility - Firefox 145 (works with Google OAuth, which blocks embedded Chrome)
     defaultProf->setHttpUserAgent(QStringLiteral("Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0"));
+
+    // Set Accept-Language header (Qt WebEngine doesn't send it by default, which triggers bot detection)
+    defaultProf->setHttpAcceptLanguage(QStringLiteral("en-US,en;q=0.9"));
+
+    // Inject anti-detection script at DocumentCreation (earliest possible moment)
+    // This runs before any page script, including Cloudflare Turnstile
+    {
+        QWebEngineScript antiDetection;
+        antiDetection.setName(QStringLiteral("antiDetection"));
+        antiDetection.setSourceCode(
+            QStringLiteral("(function(){"
+                           "if(window.__antiDetectionApplied)return;"
+                           "window.__antiDetectionApplied=true;"
+                           "window.addEventListener('error',function(e){if(e.message&&e.filename)console.log('[Unify] JS "
+                           "error:',e.message,'at',e.filename+':'+e.lineno);},true);"
+                           "window.addEventListener('unhandledrejection',function(e){console.log('[Unify] Unhandled rejection:',e.reason);},true);"
+                           "try{if(window.qt)delete window.qt;if(window.QtWebEngine)delete window.QtWebEngine;}catch(e){}"
+                           "try{Object.defineProperty(navigator,'webdriver',{get:()=>undefined,configurable:true});}catch(e){}"
+                           "window.__unifyCtrlPressed=false;"
+                           "document.addEventListener('keydown',function(e){if(e.key==='Control'||e.ctrlKey)window.__unifyCtrlPressed=true;},true);"
+                           "document.addEventListener('keyup',function(e){if(e.key==='Control')window.__unifyCtrlPressed=false;},true);"
+                           "window.addEventListener('blur',function(){window.__unifyCtrlPressed=false;});"
+                           "})()"));
+        antiDetection.setInjectionPoint(QWebEngineScript::DocumentCreation);
+        antiDetection.setWorldId(QWebEngineScript::MainWorld);
+        antiDetection.setRunsOnSubFrames(true);
+        defaultProf->scripts()->insert(antiDetection);
+    }
 
     // Set up notification presenter
     defaultProf->setNotificationPresenter(globalNotificationPresenter);
@@ -194,6 +240,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("fileUtils"), fileUtils);
     engine.rootContext()->setContextProperty(QStringLiteral("printHandler"), printHandler);
     engine.rootContext()->setContextProperty(QStringLiteral("widevineManager"), widevineManager);
+    engine.rootContext()->setContextProperty(QStringLiteral("chromeUserAgentGlobal"), chromeUserAgent);
 
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
     engine.loadFromModule("io.github.denysmb.unify", "Main");
