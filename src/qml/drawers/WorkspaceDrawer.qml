@@ -99,6 +99,19 @@ Kirigami.GlobalDrawer {
             visible: activeWorkspaces.length > 0 || disabledWorkspaces.length > 0
         },
 
+        QQC2.Label {
+            width: parent?.width ?? 0
+            visible: activeWorkspaces.length > 0
+            leftPadding: Kirigami.Units.largeSpacing
+            rightPadding: Kirigami.Units.largeSpacing
+            topPadding: Kirigami.Units.smallSpacing
+            bottomPadding: Kirigami.Units.smallSpacing
+            text: i18n("Enabled Workspaces")
+            font.pointSize: Kirigami.Theme.defaultFont.pointSize * 0.85
+            opacity: 0.6
+            elide: Text.ElideRight
+        },
+
         Repeater {
             model: activeWorkspaces
 
@@ -124,7 +137,9 @@ Kirigami.GlobalDrawer {
                 }
 
                 QQC2.ToolButton {
+                    Layout.alignment: Qt.AlignVCenter
                     Layout.preferredWidth: implicitHeight
+                    Layout.rightMargin: Kirigami.Units.largeSpacing
                     icon.name: "overflow-menu"
                     onClicked: {
                         var menu = activeMenuComponent.createObject(this, {
@@ -183,7 +198,9 @@ Kirigami.GlobalDrawer {
                 }
 
                 QQC2.ToolButton {
+                    Layout.alignment: Qt.AlignVCenter
                     Layout.preferredWidth: implicitHeight
+                    Layout.rightMargin: Kirigami.Units.largeSpacing
                     icon.name: "overflow-menu"
                     onClicked: {
                         var menu = disabledMenuComponent.createObject(this, {
@@ -198,6 +215,7 @@ Kirigami.GlobalDrawer {
     ]
 
     actions: [
+        Kirigami.Action { separator: true },
         Kirigami.Action {
             text: i18n("Add Workspace")
             icon.name: "folder-new"
