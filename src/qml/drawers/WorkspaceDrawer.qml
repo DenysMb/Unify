@@ -77,7 +77,10 @@ Kirigami.GlobalDrawer {
 
     topContent: [
         QQC2.ItemDelegate {
-            width: parent?.width ?? 0
+            anchors {
+                left: parent?.left
+                right: parent?.right
+            }
             icon.name: "starred-symbolic"
             text: i18n("Favorites (Ctrl+B)")
             checkable: true
@@ -86,7 +89,10 @@ Kirigami.GlobalDrawer {
         },
 
         QQC2.ItemDelegate {
-            width: parent?.width ?? 0
+            anchors {
+                left: parent?.left
+                right: parent?.right
+            }
             icon.name: "applications-all-symbolic"
             text: i18n("All Services")
             checkable: true
@@ -137,9 +143,9 @@ Kirigami.GlobalDrawer {
                 }
 
                 QQC2.ToolButton {
-                    Layout.alignment: Qt.AlignVCenter
                     Layout.preferredWidth: implicitHeight
                     Layout.rightMargin: Kirigami.Units.largeSpacing
+                    Layout.topMargin: Kirigami.Units.smallSpacing
                     icon.name: "overflow-menu"
                     onClicked: {
                         var menu = activeMenuComponent.createObject(this, {
@@ -198,9 +204,9 @@ Kirigami.GlobalDrawer {
                 }
 
                 QQC2.ToolButton {
-                    Layout.alignment: Qt.AlignVCenter
                     Layout.preferredWidth: implicitHeight
                     Layout.rightMargin: Kirigami.Units.largeSpacing
+                    Layout.topMargin: Kirigami.Units.smallSpacing
                     icon.name: "overflow-menu"
                     onClicked: {
                         var menu = disabledMenuComponent.createObject(this, {
