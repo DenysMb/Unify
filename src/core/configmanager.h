@@ -16,6 +16,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(QString currentWorkspace READ currentWorkspace WRITE setCurrentWorkspace NOTIFY currentWorkspaceChanged)
     Q_PROPERTY(QVariantMap workspaceIcons READ workspaceIcons NOTIFY workspaceIconsChanged)
     Q_PROPERTY(QVariantMap workspaceIsolatedStorage READ workspaceIsolatedStorage NOTIFY workspaceIsolatedStorageChanged)
+    Q_PROPERTY(QVariantMap disabledWorkspaces READ disabledWorkspaces WRITE setDisabledWorkspaces NOTIFY disabledWorkspacesChanged)
     Q_PROPERTY(QVariantMap disabledServices READ disabledServices WRITE setDisabledServices NOTIFY disabledServicesChanged)
     Q_PROPERTY(QVariantMap mutedServices READ mutedServices WRITE setMutedServices NOTIFY mutedServicesChanged)
     Q_PROPERTY(QVariantMap serviceTabs READ serviceTabs NOTIFY serviceTabsChanged)
@@ -58,6 +59,15 @@ public:
     QVariantMap workspaceIsolatedStorage() const;
     Q_INVOKABLE bool isWorkspaceIsolated(const QString &workspace) const;
     Q_INVOKABLE void setWorkspaceIsolatedStorage(const QString &workspace, bool isolated);
+
+    // Workspace reorder
+    Q_INVOKABLE void moveWorkspace(int fromIndex, int toIndex);
+
+    // Disabled workspaces management
+    QVariantMap disabledWorkspaces() const;
+    void setDisabledWorkspaces(const QVariantMap &disabledWorkspaces);
+    Q_INVOKABLE void setWorkspaceDisabled(const QString &workspace, bool disabled);
+    Q_INVOKABLE bool isWorkspaceDisabled(const QString &workspace) const;
 
     // Disabled services management
     QVariantMap disabledServices() const;
@@ -142,6 +152,7 @@ Q_SIGNALS:
     void currentWorkspaceChanged();
     void workspaceIconsChanged();
     void workspaceIsolatedStorageChanged();
+    void disabledWorkspacesChanged();
     void disabledServicesChanged();
     void mutedServicesChanged();
     void serviceTabsChanged();
@@ -165,6 +176,7 @@ private:
     QHash<QString, QString> m_lastServiceByWorkspace; // workspace -> serviceId
     QHash<QString, QString> m_workspaceIcons; // workspace -> icon name
     QHash<QString, bool> m_workspaceIsolatedStorage; // workspace -> isolated storage flag
+    QVariantMap m_disabledWorkspaces; // workspace name -> bool (true if disabled)
     QVariantMap m_disabledServices; // serviceId -> bool (true if disabled)
     QVariantMap m_mutedServices; // serviceId -> bool (true if muted)
     QVariantMap m_serviceTabs; // serviceId -> QVariantList of tabs

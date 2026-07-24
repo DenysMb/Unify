@@ -222,6 +222,69 @@ bool ConfigManager::isServiceDisabled(const QString &serviceId) const
     return m_disabledServices.contains(serviceId) && m_disabledServices.value(serviceId).toBool();
 }
 
+QVariantMap ConfigManager::disabledWorkspaces() const
+{
+    return m_disabledWorkspaces;
+}
+
+void ConfigManager::setDisabledWorkspaces(const QVariantMap &disabledWorkspaces)
+{
+    if (m_disabledWorkspaces != disabledWorkspaces) {
+        m_disabledWorkspaces = disabledWorkspaces;
+        Q_EMIT disabledWorkspacesChanged();
+        saveSettings();
+    }
+}
+
+void ConfigManager::setWorkspaceDisabled(const QString &workspace, bool disabled)
+{
+    if (workspace.isEmpty()) {
+        return;
+    }
+    if (isSpecialWorkspace(workspace)) {
+        return;
+    }
+
+    bool changed = false;
+    if (disabled) {
+        if (!m_disabledWorkspaces.contains(workspace) || m_disabledWorkspaces.value(workspace).toBool() != true) {
+            m_disabledWorkspaces.insert(workspace, true);
+            changed = true;
+        }
+    } else {
+        if (m_disabledWorkspaces.contains(workspace)) {
+            m_disabledWorkspaces.remove(workspace);
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        Q_EMIT disabledWorkspacesChanged();
+        saveSettings();
+        qDebug() << "Workspace" << workspace << (disabled ? "disabled" : "enabled");
+    }
+}
+
+bool ConfigManager::isWorkspaceDisabled(const QString &workspace) const
+{
+    return m_disabledWorkspaces.contains(workspace) && m_disabledWorkspaces.value(workspace).toBool();
+}
+
+void ConfigManager::moveWorkspace(int fromIndex, int toIndex)
+{
+    if (fromIndex < 0 || fromIndex >= m_workspaces.size() || toIndex < 0 || toIndex >= m_workspaces.size() || fromIndex == toIndex) {
+        qDebug() << "Invalid move workspace indices:" << fromIndex << "to" << toIndex;
+        return;
+    }
+
+    m_workspaces.move(fromIndex, toIndex);
+
+    Q_EMIT workspacesChanged();
+    saveSettings();
+
+    qDebug() << "Moved workspace from index" << fromIndex << "to" << toIndex;
+}
+
 QVariantMap ConfigManager::mutedServices() const
 {
     return m_mutedServices;
@@ -593,6 +656,12 @@ void ConfigManager::removeWorkspace(const QString &workspaceName)
             Q_EMIT workspaceIsolatedStorageChanged();
         }
 
+        // Remove disabled workspace flag if present
+        if (m_disabledWorkspaces.contains(workspaceName)) {
+            m_disabledWorkspaces.remove(workspaceName);
+            Q_EMIT disabledWorkspacesChanged();
+        }
+
         // If current workspace was removed, switch to first available or create Personal
         if (m_currentWorkspace == workspaceName) {
             if (!m_workspaces.isEmpty()) {
@@ -657,6 +726,13 @@ void ConfigManager::renameWorkspace(const QString &oldName, const QString &newNa
             Q_EMIT workspaceIsolatedStorageChanged();
         }
 
+        // Move disabled workspace flag along with the rename
+        if (m_disabledWorkspaces.contains(oldName)) {
+            const bool disabled = m_disabledWorkspaces.value(oldName).toBool();
+            m_disabledWorkspaces.remove(oldName);
+            m_disabledWorkspaces.insert(newName, disabled);
+        }
+
         Q_EMIT servicesChanged();
         Q_EMIT workspacesChanged();
         saveSettings();
@@ -691,6 +767,8 @@ void ConfigManager::saveSettings()
         }
         m_settings.setValue(QStringLiteral("isolatedStorage"), isolatedMap);
     }
+    // Persist disabled workspaces map
+    m_settings.setValue(QStringLiteral("disabled"), m_disabledWorkspaces);
     m_settings.endGroup();
 
     // Persist last used service per workspace
@@ -760,6 +838,8 @@ void ConfigManager::loadSettings()
             m_workspaceIsolatedStorage.insert(it.key(), it.value().toBool());
         }
     }
+    // Load disabled workspaces
+    m_disabledWorkspaces = m_settings.value(QStringLiteral("disabled"), QVariantMap()).toMap();
     m_settings.endGroup();
 
     // Load last used service mapping
@@ -941,6 +1021,8 @@ bool ConfigManager::exportToJson(const QString &filePath) const
         isolatedObj.insert(it.key(), it.value());
     }
     workspacesObj[QStringLiteral("isolatedStorage")] = isolatedObj;
+
+    workspacesObj[QStringLiteral("disabled")] = QJsonValue::fromVariant(m_disabledWorkspaces);
     data[QStringLiteral("workspaces")] = workspacesObj;
 
     data[QStringLiteral("disabledServices")] = QJsonValue::fromVariant(m_disabledServices);
@@ -1028,6 +1110,10 @@ bool ConfigManager::importFromJson(const QString &filePath)
                 m_workspaceIsolatedStorage.insert(it.key(), it.value().toBool());
             }
         }
+        if (ws.contains(QStringLiteral("disabled")) && ws[QStringLiteral("disabled")].isObject()) {
+            m_disabledWorkspaces.clear();
+            m_disabledWorkspaces = ws[QStringLiteral("disabled")].toObject().toVariantMap();
+        }
     }
 
     if (data.contains(QStringLiteral("disabledServices")) && data[QStringLiteral("disabledServices")].isObject()) {
@@ -1071,6 +1157,7 @@ bool ConfigManager::importFromJson(const QString &filePath)
     Q_EMIT currentWorkspaceChanged();
     Q_EMIT workspaceIconsChanged();
     Q_EMIT workspaceIsolatedStorageChanged();
+    Q_EMIT disabledWorkspacesChanged();
     Q_EMIT disabledServicesChanged();
     Q_EMIT mutedServicesChanged();
     Q_EMIT serviceTabsChanged();

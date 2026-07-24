@@ -69,8 +69,56 @@ Kirigami.ApplicationWindow {
     }
 
     // Object to track disabled service IDs (using object instead of Set for QML compatibility)
-    // Now loaded from and saved to configManager
-    property var disabledServices: configManager ? configManager.disabledServices : ({})
+    // rawDisabledServices = per-service flags from configManager
+    // disabledServices = effective: per-service OR workspace-disabled (computed by recomputeEffectiveDisabled)
+    // disabledWorkspaces = per-workspace flags from configManager
+    property var rawDisabledServices: configManager ? configManager.disabledServices : ({})
+    property var disabledWorkspaces: configManager ? configManager.disabledWorkspaces : ({})
+    property var disabledServices: ({})
+
+    function recomputeEffectiveDisabled() {
+        var previous = disabledServices || {};
+        var eff = {};
+        for (var k in rawDisabledServices) {
+            if (rawDisabledServices.hasOwnProperty(k) && rawDisabledServices[k]) {
+                eff[k] = true;
+            }
+        }
+        for (var i = 0; i < services.length; i++) {
+            var s = services[i];
+            if (s.workspace && s.id && disabledWorkspaces && disabledWorkspaces[s.workspace]) {
+                eff[s.id] = true;
+            }
+        }
+
+        if (!root.webViewStack) {
+            disabledServices = eff;
+            return;
+        }
+
+        // Stop/blank webviews for newly disabled services
+        for (var k in eff) {
+            if (!previous[k] && eff[k]) {
+                var view = root.webViewStack.getWebViewByServiceId(k);
+                if (view) {
+                    view.stopCurrent();
+                    view.loadBlank();
+                }
+            }
+        }
+        // Restart webviews for newly enabled services
+        for (var k in previous) {
+            if (!eff[k] && previous[k]) {
+                var svc = root.findServiceById(k);
+                var view = root.webViewStack.getWebViewByServiceId(k);
+                if (svc && view) {
+                    view.loadUrl(svc.url);
+                }
+            }
+        }
+
+        disabledServices = eff;
+    }
 
     // Object to track detached service IDs and their window instances
     property var detachedServices: ({})
@@ -431,6 +479,28 @@ Kirigami.ApplicationWindow {
     // Workspaces are now managed by configManager
     property var workspaces: configManager ? configManager.workspaces : ["Personal"]
 
+    property var activeWorkspaces: {
+        if (!configManager) return ["Personal"];
+        var disabledWs = configManager.disabledWorkspaces || {};
+        var list = [];
+        var allWs = configManager.workspaces;
+        for (var i = 0; i < allWs.length; i++) {
+            if (!disabledWs[allWs[i]]) list.push(allWs[i]);
+        }
+        return list.length > 0 ? list : ["Personal"];
+    }
+
+    property var disabledWorkspacesList: {
+        if (!configManager) return [];
+        var disabledWs = configManager.disabledWorkspaces || {};
+        var list = [];
+        var allWs = configManager.workspaces;
+        for (var i = 0; i < allWs.length; i++) {
+            if (disabledWs[allWs[i]]) list.push(allWs[i]);
+        }
+        return list;
+    }
+
     // Chrome User-Agent string, derived in main.cpp from the real Chromium version embedded
     // in this QtWebEngine build (e.g. Chromium 140 on the system, 134 in the Flatpak BaseApp)
     // so the UA header matches TLS JA4 / HTTP2 / sec-ch-ua Client Hints fingerprints and does
@@ -588,7 +658,8 @@ Kirigami.ApplicationWindow {
     // Global drawer (hamburger menu)
     globalDrawer: WorkspaceDrawer {
         id: drawer
-        workspaces: root.workspaces
+        activeWorkspaces: root.activeWorkspaces
+        disabledWorkspaces: root.disabledWorkspacesList
         currentWorkspace: root.currentWorkspace
         // Hide the floating auto-handle only when the drawer is closed, the
         // application header is hidden, and the sidebar is hosting our own
@@ -607,27 +678,18 @@ Kirigami.ApplicationWindow {
             addWorkspaceDialog.clearFields();
             addWorkspaceDialog.open();
         }
-        onEditWorkspaceRequested: function (index) {
-            if (index >= 0 && index < root.workspaces.length) {
-                addWorkspaceDialog.isEditMode = true;
-                addWorkspaceDialog.editingIndex = index;
-                addWorkspaceDialog.initialName = root.workspaces[index];
-                // Pre-fill current icon if available
-                if (configManager && configManager.workspaceIcons) {
-                    var iconMap = configManager.workspaceIcons;
-                    addWorkspaceDialog.initialIcon = iconMap[addWorkspaceDialog.initialName] || "folder";
-                } else {
-                    addWorkspaceDialog.initialIcon = "folder";
-                }
-                // Pre-fill isolated storage status
-                if (configManager && configManager.isWorkspaceIsolated) {
-                    addWorkspaceDialog.initialIsolatedStorage = configManager.isWorkspaceIsolated(addWorkspaceDialog.initialName);
-                } else {
-                    addWorkspaceDialog.initialIsolatedStorage = false;
-                }
-                addWorkspaceDialog.populateFields(addWorkspaceDialog.initialName);
-                addWorkspaceDialog.open();
-            }
+        onEditWorkspaceRequested: function (name) {
+            root.editWorkspaceByName(name);
+        }
+        onToggleWorkspaceDisabledRequested: function (name) {
+            var isDisabled = root.disabledWorkspaces && root.disabledWorkspaces[name] === true;
+            root.setWorkspaceEnabled(name, isDisabled);
+        }
+        onMoveWorkspaceUpRequested: function (name) {
+            root.moveWorkspaceUp(name);
+        }
+        onMoveWorkspaceDownRequested: function (name) {
+            root.moveWorkspaceDown(name);
         }
         onSettingsRequested: root.openSettings()
         onTipsRequested: tipsDialog.open()
@@ -808,6 +870,7 @@ Kirigami.ApplicationWindow {
     Connections {
         target: configManager
         function onServicesChanged() {
+            root.recomputeEffectiveDisabled();
             // Only reselect if we have an active service and it still exists
             if (root.currentServiceId && root.currentServiceId !== "") {
                 var stillExists = root.findServiceById(root.currentServiceId);
@@ -819,8 +882,12 @@ Kirigami.ApplicationWindow {
             }
         }
         function onDisabledServicesChanged() {
-            // Update local disabledServices when configManager changes
-            root.disabledServices = configManager.disabledServices;
+            root.rawDisabledServices = configManager.disabledServices;
+            root.recomputeEffectiveDisabled();
+        }
+        function onDisabledWorkspacesChanged() {
+            root.disabledWorkspaces = configManager.disabledWorkspaces;
+            root.recomputeEffectiveDisabled();
         }
         function onMutedServicesChanged() {
             root.mutedServices = configManager.mutedServices;
@@ -1158,6 +1225,17 @@ Kirigami.ApplicationWindow {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         color: Kirigami.Theme.backgroundColor
+
+                        Kirigami.PlaceholderMessage {
+                            anchors.centerIn: parent
+                            width: parent.width - Kirigami.Units.gridUnit * 4
+                            visible: root.isCurrentWorkspaceDisabled()
+                            z: 1
+                            text: i18n("Workspace Disabled")
+                            explanation: i18n("This workspace and all its services are currently disabled. Enable it from the drawer to use its services.")
+                            icon.name: "offline"
+                        }
+
                         WebViewStack {
                             id: webViewStackVertical
                             anchors.fill: parent
@@ -1226,7 +1304,7 @@ Kirigami.ApplicationWindow {
 
                 WorkspacesBar {
                     showBar: configManager && configManager.alwaysShowWorkspacesBar
-                    workspaces: root.workspaces
+                    workspaces: root.activeWorkspaces
                     currentWorkspace: root.currentWorkspace
                     onSwitchToWorkspace: function (name) {
                         root.switchToWorkspace(name);
@@ -1306,6 +1384,17 @@ Kirigami.ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     color: Kirigami.Theme.backgroundColor
+
+                    Kirigami.PlaceholderMessage {
+                        anchors.centerIn: parent
+                        width: parent.width - Kirigami.Units.gridUnit * 4
+                        visible: root.isCurrentWorkspaceDisabled()
+                        z: 1
+                        text: i18n("Workspace Disabled")
+                        explanation: i18n("This workspace and all its services are currently disabled. Enable it from the drawer to use its services.")
+                        icon.name: "offline"
+                    }
+
                     WebViewStack {
                         id: webViewStackHorizontal
                         anchors.fill: parent
@@ -1373,7 +1462,7 @@ Kirigami.ApplicationWindow {
 
                 WorkspacesBar {
                     showBar: configManager && configManager.alwaysShowWorkspacesBar
-                    workspaces: root.workspaces
+                    workspaces: root.activeWorkspaces
                     currentWorkspace: root.currentWorkspace
                     onSwitchToWorkspace: function (name) {
                         root.switchToWorkspace(name);
@@ -1385,9 +1474,15 @@ Kirigami.ApplicationWindow {
 
     // Initialize with the first workspace on startup - delayed to ensure profile is ready
     Component.onCompleted: {
-        // Initialize disabled services from configManager
-        if (configManager && configManager.disabledServices) {
-            root.disabledServices = configManager.disabledServices;
+        // Initialize disabled states from configManager
+        if (configManager) {
+            if (configManager.disabledServices) {
+                root.rawDisabledServices = configManager.disabledServices;
+            }
+            if (configManager.disabledWorkspaces) {
+                root.disabledWorkspaces = configManager.disabledWorkspaces;
+            }
+            root.recomputeEffectiveDisabled();
         }
 
         // Delay initialization to ensure WebEngineProfile is fully set up
@@ -1492,10 +1587,10 @@ Kirigami.ApplicationWindow {
     }
     // Helper to switch to Nth workspace (1-based)
     function switchToWorkspaceByPosition(pos) {
-        if (!workspaces || workspaces.length === 0)
+        if (!activeWorkspaces || activeWorkspaces.length === 0)
             return;
-        var idx = Math.max(0, Math.min(workspaces.length - 1, pos - 1));
-        var ws = workspaces[idx];
+        var idx = Math.max(0, Math.min(activeWorkspaces.length - 1, pos - 1));
+        var ws = activeWorkspaces[idx];
         if (ws) {
             switchToWorkspace(ws);
         }
@@ -1516,12 +1611,12 @@ Kirigami.ApplicationWindow {
         switchToService(filteredServices[target].id);
     }
     function cycleWorkspace(next) {
-        if (!workspaces || workspaces.length === 0)
+        if (!activeWorkspaces || activeWorkspaces.length === 0)
             return;
-        var count = workspaces.length;
-        var cur = Math.max(0, workspaces.indexOf(currentWorkspace));
+        var count = activeWorkspaces.length;
+        var cur = Math.max(0, activeWorkspaces.indexOf(currentWorkspace));
         var target = (cur + (next ? 1 : -1) + count) % count;
-        switchToWorkspace(workspaces[target]);
+        switchToWorkspace(activeWorkspaces[target]);
     }
 
     // Ctrl+Tab: next service
@@ -1778,31 +1873,91 @@ Kirigami.ApplicationWindow {
 
     // Function to disable/enable a service
     function setServiceEnabled(serviceId, enabled) {
+        if (enabled) {
+            delete rawDisabledServices[serviceId];
+        } else {
+            rawDisabledServices[serviceId] = true;
+        }
+        if (configManager && configManager.setServiceDisabled) {
+            configManager.setServiceDisabled(serviceId, !enabled);
+        }
+        root.recomputeEffectiveDisabled();
+
+        var webView = webViewStack.getWebViewByServiceId(serviceId);
+        if (!webView) return;
         var service = findServiceById(serviceId);
-        if (service) {
-            var webView = webViewStack.getWebViewByServiceId(serviceId);
-            if (webView) {
-                if (enabled) {
-                    // Re-enable service
-                    delete disabledServices[serviceId];
-                    webView.loadUrl(service.url);
-                } else {
-                    // Disable service
-                    disabledServices[serviceId] = true;
-                    webView.stopCurrent();
-                    webView.loadBlank();
-                }
-                // Update configManager to persist the disabled state
-                if (configManager && configManager.setServiceDisabled) {
-                    configManager.setServiceDisabled(serviceId, !enabled);
-                }
-            }
+        if (!service) return;
+        if (!disabledServices[serviceId]) {
+            webView.loadUrl(service.url);
+        } else {
+            webView.stopCurrent();
+            webView.loadBlank();
         }
     }
 
     // Function to check if a service is disabled
     function isServiceDisabled(serviceId) {
         return disabledServices.hasOwnProperty(serviceId);
+    }
+
+    function setWorkspaceEnabled(workspaceName, enabled) {
+        if (!configManager || !configManager.setWorkspaceDisabled) return;
+        configManager.setWorkspaceDisabled(workspaceName, !enabled);
+    }
+
+    function moveWorkspaceUp(workspaceName) {
+        if (!configManager || !configManager.moveWorkspace) return;
+        var globalIdx = workspaces.indexOf(workspaceName);
+        if (globalIdx <= 0) return;
+        var prevActiveIdx = -1;
+        for (var i = globalIdx - 1; i >= 0; i--) {
+            if (!disabledWorkspaces || !disabledWorkspaces[workspaces[i]]) {
+                prevActiveIdx = i;
+                break;
+            }
+        }
+        if (prevActiveIdx < 0) return;
+        configManager.moveWorkspace(globalIdx, prevActiveIdx);
+    }
+
+    function moveWorkspaceDown(workspaceName) {
+        if (!configManager || !configManager.moveWorkspace) return;
+        var globalIdx = workspaces.indexOf(workspaceName);
+        if (globalIdx < 0 || globalIdx >= workspaces.length - 1) return;
+        var nextActiveIdx = -1;
+        for (var i = globalIdx + 1; i < workspaces.length; i++) {
+            if (!disabledWorkspaces || !disabledWorkspaces[workspaces[i]]) {
+                nextActiveIdx = i;
+                break;
+            }
+        }
+        if (nextActiveIdx < 0) return;
+        configManager.moveWorkspace(globalIdx, nextActiveIdx);
+    }
+
+    function isCurrentWorkspaceDisabled() {
+        return disabledWorkspaces && currentWorkspace && disabledWorkspaces[currentWorkspace] === true;
+    }
+
+    function editWorkspaceByName(name) {
+        var index = workspaces.indexOf(name);
+        if (index < 0) return;
+        addWorkspaceDialog.isEditMode = true;
+        addWorkspaceDialog.editingIndex = index;
+        addWorkspaceDialog.initialName = name;
+        if (configManager && configManager.workspaceIcons) {
+            var iconMap = configManager.workspaceIcons;
+            addWorkspaceDialog.initialIcon = iconMap[name] || "folder";
+        } else {
+            addWorkspaceDialog.initialIcon = "folder";
+        }
+        if (configManager && configManager.isWorkspaceIsolated) {
+            addWorkspaceDialog.initialIsolatedStorage = configManager.isWorkspaceIsolated(name);
+        } else {
+            addWorkspaceDialog.initialIsolatedStorage = false;
+        }
+        addWorkspaceDialog.populateFields(name);
+        addWorkspaceDialog.open();
     }
 
     // Function to move a service up in the list
