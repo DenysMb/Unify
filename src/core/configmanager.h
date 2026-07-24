@@ -112,6 +112,11 @@ public:
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
 
+    Q_INVOKABLE bool exportToJson(const QString &filePath) const;
+    Q_INVOKABLE bool importFromJson(const QString &filePath);
+    Q_INVOKABLE void exportConfigViaDialog();
+    Q_INVOKABLE void importConfigViaDialog();
+
     // Last-used service persistence (per workspace)
     Q_INVOKABLE void setLastUsedService(const QString &workspace, const QString &serviceId);
     Q_INVOKABLE QString lastUsedService(const QString &workspace) const;

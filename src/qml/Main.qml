@@ -635,7 +635,14 @@ Kirigami.ApplicationWindow {
 
     Component {
         id: settingsPageComponent
-        SettingsPage {}
+        SettingsPage {
+            onExportRequested: {
+                if (configManager) configManager.exportConfigViaDialog();
+            }
+            onImportRequested: {
+                if (configManager) configManager.importConfigViaDialog();
+            }
+        }
     }
 
     TipsDialog {
@@ -646,9 +653,9 @@ Kirigami.ApplicationWindow {
         applicationWindow().pageStack.pushDialogLayer(settingsPageComponent, {}, {
             title: i18n("Settings"),
             width: 600,
-            height: 550,
+            height: 650,
             minimumWidth: 600,
-            minimumHeight: 550
+            minimumHeight: 650
         });
     }
 

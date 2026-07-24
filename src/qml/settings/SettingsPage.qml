@@ -17,6 +17,9 @@ Kirigami.ScrollablePage {
     Kirigami.ColumnView.minimumWidth: Kirigami.Units.gridUnit * 12
     Kirigami.ColumnView.maximumWidth: Kirigami.Units.gridUnit * 22
 
+    signal exportRequested
+    signal importRequested
+
     Component {
         id: appearancePage
         SettingsAppearance {}
@@ -87,6 +90,32 @@ Kirigami.ScrollablePage {
             description: i18nc("@info:whatsthis", "Install and manage Widevine CDM")
             icon.name: "preferences-plugin"
             onClicked: Kirigami.PageStack.push(widevinePage)
+        }
+
+        FormCard.FormDelegateSeparator {
+            above: widevineButton
+            below: exportButton
+        }
+
+        FormCard.FormButtonDelegate {
+            id: exportButton
+            text: i18nc("@action:button", "Export Configuration")
+            description: i18nc("@info:whatsthis", "Save services, workspaces, and settings to a JSON file")
+            icon.name: "document-export"
+            onClicked: root.exportRequested()
+        }
+
+        FormCard.FormDelegateSeparator {
+            above: exportButton
+            below: importButton
+        }
+
+        FormCard.FormButtonDelegate {
+            id: importButton
+            text: i18nc("@action:button", "Import Configuration")
+            description: i18nc("@info:whatsthis", "Replace current configuration from a JSON file")
+            icon.name: "document-import"
+            onClicked: root.importRequested()
         }
     }
 }

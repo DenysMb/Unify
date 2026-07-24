@@ -4,7 +4,13 @@
 #include <QDBusMessage>
 #include <QDBusObjectPath>
 #include <QDBusReply>
+#include <QDateTime>
 #include <QDebug>
+#include <QFile>
+#include <QFileDialog>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QUuid>
 
 // Define special workspace constants
@@ -908,4 +914,198 @@ qreal ConfigManager::serviceZoomFactor(const QString &serviceId) const
         }
     }
     return 1.0;
+}
+
+bool ConfigManager::exportToJson(const QString &filePath) const
+{
+    QJsonObject root;
+    root[QStringLiteral("version")] = 1;
+    root[QStringLiteral("exportDate")] = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+
+    QJsonObject data;
+
+    data[QStringLiteral("services")] = QJsonValue::fromVariant(m_services);
+
+    QJsonObject workspacesObj;
+    workspacesObj[QStringLiteral("current")] = m_currentWorkspace;
+    workspacesObj[QStringLiteral("list")] = QJsonArray::fromStringList(m_workspaces);
+
+    QJsonObject iconsObj;
+    for (auto it = m_workspaceIcons.constBegin(); it != m_workspaceIcons.constEnd(); ++it) {
+        iconsObj.insert(it.key(), it.value());
+    }
+    workspacesObj[QStringLiteral("icons")] = iconsObj;
+
+    QJsonObject isolatedObj;
+    for (auto it = m_workspaceIsolatedStorage.constBegin(); it != m_workspaceIsolatedStorage.constEnd(); ++it) {
+        isolatedObj.insert(it.key(), it.value());
+    }
+    workspacesObj[QStringLiteral("isolatedStorage")] = isolatedObj;
+    data[QStringLiteral("workspaces")] = workspacesObj;
+
+    data[QStringLiteral("disabledServices")] = QJsonValue::fromVariant(m_disabledServices);
+    data[QStringLiteral("mutedServices")] = QJsonValue::fromVariant(m_mutedServices);
+    data[QStringLiteral("serviceTabs")] = QJsonValue::fromVariant(m_serviceTabs);
+
+    QJsonObject displayObj;
+    displayObj[QStringLiteral("horizontalSidebar")] = m_horizontalSidebar;
+    displayObj[QStringLiteral("alwaysShowWorkspacesBar")] = m_alwaysShowWorkspacesBar;
+    displayObj[QStringLiteral("systemTrayEnabled")] = m_systemTrayEnabled;
+    displayObj[QStringLiteral("showZoomInHeader")] = m_showZoomInHeader;
+    displayObj[QStringLiteral("globalMute")] = m_globalMute;
+    displayObj[QStringLiteral("autostartEnabled")] = m_autostartEnabled;
+    displayObj[QStringLiteral("hideHeader")] = m_hideHeader;
+    displayObj[QStringLiteral("sidebarSizePreset")] = m_sidebarSizePreset;
+    data[QStringLiteral("display")] = displayObj;
+
+    root[QStringLiteral("data")] = data;
+
+    QJsonDocument doc(root);
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning() << "Failed to open file for export:" << filePath;
+        return false;
+    }
+
+    file.write(doc.toJson(QJsonDocument::Indented));
+    file.close();
+    qDebug() << "Configuration exported to:" << filePath;
+    return true;
+}
+
+bool ConfigManager::importFromJson(const QString &filePath)
+{
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Failed to open file for import:" << filePath;
+        return false;
+    }
+
+    QByteArray content = file.readAll();
+    file.close();
+
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(content, &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        qWarning() << "JSON parse error:" << parseError.errorString();
+        return false;
+    }
+
+    QJsonObject root = doc.object();
+    if (!root.contains(QStringLiteral("data")) || !root[QStringLiteral("data")].isObject()) {
+        qWarning() << "Invalid import file: missing 'data' object";
+        return false;
+    }
+
+    QJsonObject data = root[QStringLiteral("data")].toObject();
+
+    if (data.contains(QStringLiteral("services")) && data[QStringLiteral("services")].isArray()) {
+        m_services = data[QStringLiteral("services")].toArray().toVariantList();
+    }
+
+    if (data.contains(QStringLiteral("workspaces")) && data[QStringLiteral("workspaces")].isObject()) {
+        QJsonObject ws = data[QStringLiteral("workspaces")].toObject();
+        if (ws.contains(QStringLiteral("list")) && ws[QStringLiteral("list")].isArray()) {
+            m_workspaces.clear();
+            for (const QJsonValue &val : ws[QStringLiteral("list")].toArray()) {
+                m_workspaces.append(val.toString());
+            }
+        }
+        if (ws.contains(QStringLiteral("current")) && ws[QStringLiteral("current")].isString()) {
+            m_currentWorkspace = ws[QStringLiteral("current")].toString();
+        }
+        if (ws.contains(QStringLiteral("icons")) && ws[QStringLiteral("icons")].isObject()) {
+            m_workspaceIcons.clear();
+            QJsonObject icons = ws[QStringLiteral("icons")].toObject();
+            for (auto it = icons.constBegin(); it != icons.constEnd(); ++it) {
+                m_workspaceIcons.insert(it.key(), it.value().toString());
+            }
+        }
+        if (ws.contains(QStringLiteral("isolatedStorage")) && ws[QStringLiteral("isolatedStorage")].isObject()) {
+            m_workspaceIsolatedStorage.clear();
+            QJsonObject iso = ws[QStringLiteral("isolatedStorage")].toObject();
+            for (auto it = iso.constBegin(); it != iso.constEnd(); ++it) {
+                m_workspaceIsolatedStorage.insert(it.key(), it.value().toBool());
+            }
+        }
+    }
+
+    if (data.contains(QStringLiteral("disabledServices")) && data[QStringLiteral("disabledServices")].isObject()) {
+        m_disabledServices = data[QStringLiteral("disabledServices")].toObject().toVariantMap();
+    }
+
+    if (data.contains(QStringLiteral("mutedServices")) && data[QStringLiteral("mutedServices")].isObject()) {
+        m_mutedServices = data[QStringLiteral("mutedServices")].toObject().toVariantMap();
+    }
+
+    if (data.contains(QStringLiteral("serviceTabs")) && data[QStringLiteral("serviceTabs")].isObject()) {
+        m_serviceTabs = data[QStringLiteral("serviceTabs")].toObject().toVariantMap();
+    }
+
+    if (data.contains(QStringLiteral("display")) && data[QStringLiteral("display")].isObject()) {
+        QJsonObject d = data[QStringLiteral("display")].toObject();
+        m_horizontalSidebar = d.value(QStringLiteral("horizontalSidebar")).toBool(false);
+        m_alwaysShowWorkspacesBar = d.value(QStringLiteral("alwaysShowWorkspacesBar")).toBool(false);
+        m_systemTrayEnabled = d.value(QStringLiteral("systemTrayEnabled")).toBool(true);
+        m_showZoomInHeader = d.value(QStringLiteral("showZoomInHeader")).toBool(true);
+        m_globalMute = d.value(QStringLiteral("globalMute")).toBool(false);
+        m_autostartEnabled = d.value(QStringLiteral("autostartEnabled")).toBool(false);
+        m_hideHeader = d.value(QStringLiteral("hideHeader")).toBool(false);
+        m_sidebarSizePreset = d.value(QStringLiteral("sidebarSizePreset")).toString(QStringLiteral("normal"));
+    }
+
+    // Ensure there's at least one workspace
+    if (m_workspaces.isEmpty()) {
+        m_workspaces.append(QStringLiteral("Personal"));
+        m_currentWorkspace = QStringLiteral("Personal");
+    }
+
+    // Clear last-used service cache since IDs may have changed
+    m_lastServiceByWorkspace.clear();
+
+    updateWorkspacesList();
+    saveSettings();
+
+    Q_EMIT servicesChanged();
+    Q_EMIT workspacesChanged();
+    Q_EMIT currentWorkspaceChanged();
+    Q_EMIT workspaceIconsChanged();
+    Q_EMIT workspaceIsolatedStorageChanged();
+    Q_EMIT disabledServicesChanged();
+    Q_EMIT mutedServicesChanged();
+    Q_EMIT serviceTabsChanged();
+    Q_EMIT globalMuteChanged();
+    Q_EMIT horizontalSidebarChanged();
+    Q_EMIT alwaysShowWorkspacesBarChanged();
+    Q_EMIT systemTrayEnabledChanged();
+    Q_EMIT showZoomInHeaderChanged();
+    Q_EMIT autostartEnabledChanged();
+    Q_EMIT hideHeaderChanged();
+    Q_EMIT sidebarSizePresetChanged();
+
+    qDebug() << "Configuration imported from:" << filePath;
+    return true;
+}
+
+void ConfigManager::exportConfigViaDialog()
+{
+    const QString defaultName = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd")) + QStringLiteral(" Unify backup.json");
+    const QString filePath = QFileDialog::getSaveFileName(nullptr, tr("Export Configuration"), defaultName, tr("JSON Files (*.json)"));
+    if (filePath.isEmpty()) {
+        return;
+    }
+    if (!exportToJson(filePath)) {
+        qWarning() << "Failed to export configuration to:" << filePath;
+    }
+}
+
+void ConfigManager::importConfigViaDialog()
+{
+    const QString filePath = QFileDialog::getOpenFileName(nullptr, tr("Import Configuration"), QString(), tr("JSON Files (*.json)"));
+    if (filePath.isEmpty()) {
+        return;
+    }
+    if (!importFromJson(filePath)) {
+        qWarning() << "Failed to import configuration from:" << filePath;
+    }
 }
