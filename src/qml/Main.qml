@@ -1239,6 +1239,7 @@ Kirigami.ApplicationWindow {
                         WebViewStack {
                             id: webViewStackVertical
                             anchors.fill: parent
+                            visible: !root.isCurrentWorkspaceDisabled()
                             services: root.appInitialized ? root.services : []
                             filteredCount: root.filteredServices.length
                             currentWorkspace: root.currentWorkspace
@@ -1398,6 +1399,7 @@ Kirigami.ApplicationWindow {
                     WebViewStack {
                         id: webViewStackHorizontal
                         anchors.fill: parent
+                        visible: !root.isCurrentWorkspaceDisabled()
                         services: root.appInitialized ? root.services : []
                         filteredCount: root.filteredServices.length
                         currentWorkspace: root.currentWorkspace
