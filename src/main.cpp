@@ -138,6 +138,10 @@ int main(int argc, char *argv[])
 
     // Create tray icon manager instance
     TrayIconManager *trayIconManager = new TrayIconManager(&app);
+    trayIconManager->setVoiceChatService(configManager->voiceChatService());
+    QObject::connect(configManager, &ConfigManager::voiceChatServiceChanged, trayIconManager, [trayIconManager, configManager]() {
+        trayIconManager->setVoiceChatService(configManager->voiceChatService());
+    });
 
     // Create favicon cache instance
     FaviconCache *faviconCache = new FaviconCache(&app);

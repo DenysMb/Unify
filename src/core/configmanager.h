@@ -29,6 +29,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(bool autostartEnabled READ autostartEnabled WRITE setAutostartEnabled NOTIFY autostartEnabledChanged)
     Q_PROPERTY(bool hideHeader READ hideHeader WRITE setHideHeader NOTIFY hideHeaderChanged)
     Q_PROPERTY(QString sidebarSizePreset READ sidebarSizePreset WRITE setSidebarSizePreset NOTIFY sidebarSizePresetChanged)
+    Q_PROPERTY(QString voiceChatService READ voiceChatService WRITE setVoiceChatService NOTIFY voiceChatServiceChanged)
 
 public:
     explicit ConfigManager(QObject *parent = nullptr);
@@ -119,6 +120,9 @@ public:
     QString sidebarSizePreset() const;
     void setSidebarSizePreset(const QString &preset);
 
+    QString voiceChatService() const;
+    void setVoiceChatService(const QString &service);
+
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
 
@@ -165,6 +169,7 @@ Q_SIGNALS:
     void autostartEnabledChanged();
     void hideHeaderChanged();
     void sidebarSizePresetChanged();
+    void voiceChatServiceChanged();
 
 private:
     void updateWorkspacesList();
@@ -189,6 +194,7 @@ private:
     bool m_autostartEnabled = false;
     bool m_hideHeader = false;
     QString m_sidebarSizePreset = QStringLiteral("normal");
+    QString m_voiceChatService = QStringLiteral("perplexity");
 };
 
 #endif // CONFIGMANAGER_H

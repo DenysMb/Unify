@@ -71,6 +71,37 @@ Kirigami.ScrollablePage {
             }
         }
 
+        QQC2.ComboBox {
+            Kirigami.FormData.label: i18nc("@label:combobox", "Voice Chat Service:")
+
+            model: [
+                { text: i18nc("@item:inlistbox", "ChatGPT"), value: "chatgpt" },
+                { text: i18nc("@item:inlistbox", "Perplexity"), value: "perplexity" }
+            ]
+            textRole: "text"
+            valueRole: "value"
+
+            currentIndex: {
+                var current = configManager ? configManager.voiceChatService : "perplexity";
+                for (var i = 0; i < model.length; i++) {
+                    if (model[i].value === current) {
+                        return i;
+                    }
+                }
+                return 1;
+            }
+
+            onActivated: function (index) {
+                if (configManager) {
+                    configManager.voiceChatService = model[index].value;
+                }
+            }
+
+            QQC2.ToolTip.visible: hovered
+            QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
+            QQC2.ToolTip.text: i18nc("@info:tooltip", "Select which AI service the tray quick action opens")
+        }
+
         QQC2.CheckBox {
             Kirigami.FormData.label: i18nc("@label:checkbox", "Autostart:")
             text: i18nc("@option:check", "Launch on system start")

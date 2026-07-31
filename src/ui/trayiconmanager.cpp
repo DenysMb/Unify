@@ -6,8 +6,30 @@
 #include <QDebug>
 #include <QEvent>
 #include <QGuiApplication>
+#include <QHash>
 #include <QIcon>
 #include <QPalette>
+
+namespace
+{
+
+struct VoiceChatServiceInfo {
+    QString url;
+    QString selector;
+};
+
+const QHash<QString, VoiceChatServiceInfo> voiceChatServices = {
+    {QStringLiteral("chatgpt"), {QStringLiteral("https://chatgpt.com/"), QStringLiteral(".composer-submit-button-color")}},
+    {QStringLiteral("perplexity"), {QStringLiteral("https://www.perplexity.ai/"), QStringLiteral("button.reset:nth-child(3)")}},
+};
+
+VoiceChatServiceInfo voiceChatInfoFor(const QString &service)
+{
+    const auto it = voiceChatServices.constFind(service);
+    return it != voiceChatServices.constEnd() ? it.value() : voiceChatServices.constFind(QStringLiteral("perplexity")).value();
+}
+
+} // namespace
 
 TrayIconManager::TrayIconManager(QObject *parent)
     : QObject(parent)
@@ -15,8 +37,10 @@ TrayIconManager::TrayIconManager(QObject *parent)
     , m_trayMenu(nullptr)
     , m_showAction(nullptr)
     , m_hideAction(nullptr)
+    , m_voiceChatAction(nullptr)
     , m_quitAction(nullptr)
     , m_mainWindow(nullptr)
+    , m_voiceChatService(QStringLiteral("perplexity"))
     , m_windowVisible(true)
     , m_hasNotifications(false)
     , m_debounceTimer(nullptr)
@@ -41,7 +65,9 @@ TrayIconManager::TrayIconManager(QObject *parent)
 
 TrayIconManager::~TrayIconManager()
 {
-    qApp->removeEventFilter(this);
+    if (QCoreApplication::instance()) {
+        qApp->removeEventFilter(this);
+    }
     if (m_trayIcon) {
         m_trayIcon->hide();
         delete m_trayIcon;
@@ -73,6 +99,20 @@ void TrayIconManager::createMenu()
     m_hideAction->setIcon(QIcon::fromTheme(QStringLiteral("window-minimize")));
     connect(m_hideAction, &QAction::triggered, this, &TrayIconManager::hideWindowRequested);
     m_trayMenu->addAction(m_hideAction);
+
+    m_trayMenu->addSeparator();
+
+    // Create "Open <AI> Voice Chat" quick action (configured in Settings > Behavior)
+    m_voiceChatAction = new QAction(this);
+    m_voiceChatAction->setIcon(QIcon::fromTheme(QStringLiteral("audio-input-microphone")));
+    connect(m_voiceChatAction, &QAction::triggered, this, [this]() {
+        const VoiceChatServiceInfo info = voiceChatInfoFor(m_voiceChatService);
+        const QString script =
+            QStringLiteral("(function(){var el=document.querySelector('%1');if(el){el.click();return true;}return false;})()").arg(info.selector);
+        Q_EMIT serviceVoiceChatRequested(info.url, script);
+    });
+    m_trayMenu->addAction(m_voiceChatAction);
+    updateVoiceChatAction();
 
     m_trayMenu->addSeparator();
 
@@ -153,6 +193,24 @@ void TrayIconManager::show()
         m_trayIcon->show();
         qDebug() << "System tray icon shown";
     }
+}
+
+void TrayIconManager::setVoiceChatService(const QString &service)
+{
+    if (m_voiceChatService != service) {
+        m_voiceChatService = service;
+        updateVoiceChatAction();
+    }
+}
+
+void TrayIconManager::updateVoiceChatAction()
+{
+    if (!m_voiceChatAction) {
+        return;
+    }
+
+    const QString serviceName = m_voiceChatService == QStringLiteral("chatgpt") ? i18nc("@item:inlistbox", "ChatGPT") : i18nc("@item:inlistbox", "Perplexity");
+    m_voiceChatAction->setText(i18nc("@action:inmenu", "Open %1 Voice Chat", serviceName));
 }
 
 void TrayIconManager::hide()

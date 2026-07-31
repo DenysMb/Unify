@@ -919,6 +919,94 @@ Kirigami.ApplicationWindow {
         function onQuitRequested() {
             Qt.quit();
         }
+        function onServiceVoiceChatRequested(serviceUrl, jsScript) {
+            root.show();
+            root.raise();
+            root.requestActivate();
+            if (trayIconManager)
+                trayIconManager.windowVisible = true;
+
+            var serviceId = root.findServiceIdByOrigin(serviceUrl);
+            if (!serviceId) {
+                if (trayIconManager)
+                    trayIconManager.showNotification(i18n("Service not found"), i18n("Add Perplexity as a service to use voice chat."));
+                return;
+            }
+
+            var service = root.findServiceById(serviceId);
+            if (!service)
+                return;
+
+            var isInSpecialWorkspace = configManager && configManager.isSpecialWorkspace(root.currentWorkspace);
+            var isServiceInCurrentWorkspace = false;
+            if (isInSpecialWorkspace) {
+                for (var i = 0; i < root.filteredServices.length; i++) {
+                    if (root.filteredServices[i].id === serviceId) {
+                        isServiceInCurrentWorkspace = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!(isInSpecialWorkspace && isServiceInCurrentWorkspace) && service.workspace && service.workspace !== root.currentWorkspace) {
+                root.switchToWorkspace(service.workspace);
+            }
+
+            if (root.switchToService(serviceId)) {
+                voiceChatRetryTimer.serviceId = serviceId;
+                voiceChatRetryTimer.jsScript = jsScript;
+                voiceChatRetryTimer.attempts = 0;
+                voiceChatRetryTimer.start();
+            }
+        }
+    }
+
+    // Retries running the voice chat script until the target element is present
+    Timer {
+        id: voiceChatRetryTimer
+        interval: 800
+        repeat: true
+        property int attempts: 0
+        property string serviceId: ""
+        property string jsScript: ""
+
+        function tryRunScript() {
+            var stack = root.webViewStack;
+            if (!stack) {
+                voiceChatRetryTimer.stop();
+                return;
+            }
+            var serviceView = stack.getWebViewByServiceId(serviceId);
+            if (!serviceView) {
+                voiceChatRetryTimer.stop();
+                return;
+            }
+            var webView = serviceView.getCurrentWebView();
+            if (!webView) {
+                voiceChatRetryTimer.stop();
+                return;
+            }
+            webView.runJavaScript(jsScript, function(result) {
+                if (result === true) {
+                    console.log("🎙️ Voice chat script executed successfully for:", serviceId);
+                    voiceChatRetryTimer.stop();
+                } else {
+                    voiceChatRetryTimer.attempts++;
+                    if (voiceChatRetryTimer.attempts >= 30) {
+                        console.warn("🎙️ Voice chat script failed after 30 attempts for:", serviceId);
+                        voiceChatRetryTimer.stop();
+                    }
+                }
+            });
+        }
+
+        onTriggered: {
+            if (!serviceId || !jsScript) {
+                voiceChatRetryTimer.stop();
+                return;
+            }
+            voiceChatRetryTimer.tryRunScript();
+        }
     }
 
     // Handle notification click events

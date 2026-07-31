@@ -506,6 +506,20 @@ void ConfigManager::setSidebarSizePreset(const QString &preset)
     }
 }
 
+QString ConfigManager::voiceChatService() const
+{
+    return m_voiceChatService;
+}
+
+void ConfigManager::setVoiceChatService(const QString &service)
+{
+    if (m_voiceChatService != service) {
+        m_voiceChatService = service;
+        Q_EMIT voiceChatServiceChanged();
+        saveSettings();
+    }
+}
+
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
@@ -805,6 +819,7 @@ void ConfigManager::saveSettings()
     m_settings.setValue(QStringLiteral("autostartEnabled"), m_autostartEnabled);
     m_settings.setValue(QStringLiteral("hideHeader"), m_hideHeader);
     m_settings.setValue(QStringLiteral("sidebarSizePreset"), m_sidebarSizePreset);
+    m_settings.setValue(QStringLiteral("voiceChatService"), m_voiceChatService);
     m_settings.endGroup();
 
     m_settings.sync();
@@ -877,6 +892,7 @@ void ConfigManager::loadSettings()
     m_autostartEnabled = m_settings.value(QStringLiteral("autostartEnabled"), false).toBool();
     m_hideHeader = m_settings.value(QStringLiteral("hideHeader"), false).toBool();
     m_sidebarSizePreset = m_settings.value(QStringLiteral("sidebarSizePreset"), QStringLiteral("normal")).toString();
+    m_voiceChatService = m_settings.value(QStringLiteral("voiceChatService"), QStringLiteral("perplexity")).toString();
     m_settings.endGroup();
 
     // Only update workspaces list if it's empty (first run)
@@ -1038,6 +1054,7 @@ bool ConfigManager::exportToJson(const QString &filePath) const
     displayObj[QStringLiteral("autostartEnabled")] = m_autostartEnabled;
     displayObj[QStringLiteral("hideHeader")] = m_hideHeader;
     displayObj[QStringLiteral("sidebarSizePreset")] = m_sidebarSizePreset;
+    displayObj[QStringLiteral("voiceChatService")] = m_voiceChatService;
     data[QStringLiteral("display")] = displayObj;
 
     root[QStringLiteral("data")] = data;
@@ -1138,6 +1155,7 @@ bool ConfigManager::importFromJson(const QString &filePath)
         m_autostartEnabled = d.value(QStringLiteral("autostartEnabled")).toBool(false);
         m_hideHeader = d.value(QStringLiteral("hideHeader")).toBool(false);
         m_sidebarSizePreset = d.value(QStringLiteral("sidebarSizePreset")).toString(QStringLiteral("normal"));
+        m_voiceChatService = d.value(QStringLiteral("voiceChatService")).toString(QStringLiteral("perplexity"));
     }
 
     // Ensure there's at least one workspace
@@ -1169,6 +1187,7 @@ bool ConfigManager::importFromJson(const QString &filePath)
     Q_EMIT autostartEnabledChanged();
     Q_EMIT hideHeaderChanged();
     Q_EMIT sidebarSizePresetChanged();
+    Q_EMIT voiceChatServiceChanged();
 
     qDebug() << "Configuration imported from:" << filePath;
     return true;
