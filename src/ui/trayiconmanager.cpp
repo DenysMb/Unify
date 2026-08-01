@@ -38,9 +38,11 @@ TrayIconManager::TrayIconManager(QObject *parent)
     , m_showAction(nullptr)
     , m_hideAction(nullptr)
     , m_voiceChatAction(nullptr)
+    , m_voiceChatSeparator(nullptr)
     , m_quitAction(nullptr)
     , m_mainWindow(nullptr)
     , m_voiceChatService(QStringLiteral("perplexity"))
+    , m_experimentalFeaturesEnabled(false)
     , m_windowVisible(true)
     , m_hasNotifications(false)
     , m_debounceTimer(nullptr)
@@ -113,8 +115,10 @@ void TrayIconManager::createMenu()
     });
     m_trayMenu->addAction(m_voiceChatAction);
     updateVoiceChatAction();
+    m_voiceChatAction->setVisible(false);
 
-    m_trayMenu->addSeparator();
+    m_voiceChatSeparator = m_trayMenu->addSeparator();
+    m_voiceChatSeparator->setVisible(false);
 
     // Create "Quit Unify" action (always visible)
     m_quitAction = new QAction(i18n("Quit Unify"), this);
@@ -200,6 +204,21 @@ void TrayIconManager::setVoiceChatService(const QString &service)
     if (m_voiceChatService != service) {
         m_voiceChatService = service;
         updateVoiceChatAction();
+    }
+}
+
+void TrayIconManager::setExperimentalFeaturesEnabled(bool enabled)
+{
+    if (m_experimentalFeaturesEnabled == enabled) {
+        return;
+    }
+
+    m_experimentalFeaturesEnabled = enabled;
+    if (m_voiceChatAction) {
+        m_voiceChatAction->setVisible(enabled);
+    }
+    if (m_voiceChatSeparator) {
+        m_voiceChatSeparator->setVisible(enabled);
     }
 }
 

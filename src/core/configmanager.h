@@ -30,6 +30,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(bool hideHeader READ hideHeader WRITE setHideHeader NOTIFY hideHeaderChanged)
     Q_PROPERTY(QString sidebarSizePreset READ sidebarSizePreset WRITE setSidebarSizePreset NOTIFY sidebarSizePresetChanged)
     Q_PROPERTY(QString voiceChatService READ voiceChatService WRITE setVoiceChatService NOTIFY voiceChatServiceChanged)
+    Q_PROPERTY(bool experimentalFeaturesEnabled READ experimentalFeaturesEnabled WRITE setExperimentalFeaturesEnabled NOTIFY experimentalFeaturesEnabledChanged)
 
 public:
     explicit ConfigManager(QObject *parent = nullptr);
@@ -123,6 +124,9 @@ public:
     QString voiceChatService() const;
     void setVoiceChatService(const QString &service);
 
+    bool experimentalFeaturesEnabled() const;
+    void setExperimentalFeaturesEnabled(bool enabled);
+
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
 
@@ -170,6 +174,7 @@ Q_SIGNALS:
     void hideHeaderChanged();
     void sidebarSizePresetChanged();
     void voiceChatServiceChanged();
+    void experimentalFeaturesEnabledChanged();
 
 private:
     void updateWorkspacesList();
@@ -195,6 +200,7 @@ private:
     bool m_hideHeader = false;
     QString m_sidebarSizePreset = QStringLiteral("normal");
     QString m_voiceChatService = QStringLiteral("perplexity");
+    bool m_experimentalFeaturesEnabled = false;
 };
 
 #endif // CONFIGMANAGER_H

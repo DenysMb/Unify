@@ -34,6 +34,7 @@ public:
     Q_INVOKABLE void hide();
     Q_INVOKABLE void showNotification(const QString &title, const QString &message);
     Q_INVOKABLE void setVoiceChatService(const QString &service);
+    Q_INVOKABLE void setExperimentalFeaturesEnabled(bool enabled);
 
 Q_SIGNALS:
     void windowVisibleChanged();
@@ -63,9 +64,11 @@ private:
     QAction *m_showAction;
     QAction *m_hideAction;
     QAction *m_voiceChatAction;
+    QAction *m_voiceChatSeparator;
     QAction *m_quitAction;
     QWindow *m_mainWindow;
     QString m_voiceChatService;
+    bool m_experimentalFeaturesEnabled;
     bool m_windowVisible;
     bool m_hasNotifications;
 

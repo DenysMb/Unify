@@ -520,6 +520,20 @@ void ConfigManager::setVoiceChatService(const QString &service)
     }
 }
 
+bool ConfigManager::experimentalFeaturesEnabled() const
+{
+    return m_experimentalFeaturesEnabled;
+}
+
+void ConfigManager::setExperimentalFeaturesEnabled(bool enabled)
+{
+    if (m_experimentalFeaturesEnabled != enabled) {
+        m_experimentalFeaturesEnabled = enabled;
+        Q_EMIT experimentalFeaturesEnabledChanged();
+        saveSettings();
+    }
+}
+
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
@@ -820,6 +834,7 @@ void ConfigManager::saveSettings()
     m_settings.setValue(QStringLiteral("hideHeader"), m_hideHeader);
     m_settings.setValue(QStringLiteral("sidebarSizePreset"), m_sidebarSizePreset);
     m_settings.setValue(QStringLiteral("voiceChatService"), m_voiceChatService);
+    m_settings.setValue(QStringLiteral("experimentalFeaturesEnabled"), m_experimentalFeaturesEnabled);
     m_settings.endGroup();
 
     m_settings.sync();
@@ -893,6 +908,7 @@ void ConfigManager::loadSettings()
     m_hideHeader = m_settings.value(QStringLiteral("hideHeader"), false).toBool();
     m_sidebarSizePreset = m_settings.value(QStringLiteral("sidebarSizePreset"), QStringLiteral("normal")).toString();
     m_voiceChatService = m_settings.value(QStringLiteral("voiceChatService"), QStringLiteral("perplexity")).toString();
+    m_experimentalFeaturesEnabled = m_settings.value(QStringLiteral("experimentalFeaturesEnabled"), false).toBool();
     m_settings.endGroup();
 
     // Only update workspaces list if it's empty (first run)
@@ -1055,6 +1071,7 @@ bool ConfigManager::exportToJson(const QString &filePath) const
     displayObj[QStringLiteral("hideHeader")] = m_hideHeader;
     displayObj[QStringLiteral("sidebarSizePreset")] = m_sidebarSizePreset;
     displayObj[QStringLiteral("voiceChatService")] = m_voiceChatService;
+    displayObj[QStringLiteral("experimentalFeaturesEnabled")] = m_experimentalFeaturesEnabled;
     data[QStringLiteral("display")] = displayObj;
 
     root[QStringLiteral("data")] = data;
@@ -1156,6 +1173,7 @@ bool ConfigManager::importFromJson(const QString &filePath)
         m_hideHeader = d.value(QStringLiteral("hideHeader")).toBool(false);
         m_sidebarSizePreset = d.value(QStringLiteral("sidebarSizePreset")).toString(QStringLiteral("normal"));
         m_voiceChatService = d.value(QStringLiteral("voiceChatService")).toString(QStringLiteral("perplexity"));
+        m_experimentalFeaturesEnabled = d.value(QStringLiteral("experimentalFeaturesEnabled")).toBool(false);
     }
 
     // Ensure there's at least one workspace
@@ -1188,6 +1206,7 @@ bool ConfigManager::importFromJson(const QString &filePath)
     Q_EMIT hideHeaderChanged();
     Q_EMIT sidebarSizePresetChanged();
     Q_EMIT voiceChatServiceChanged();
+    Q_EMIT experimentalFeaturesEnabledChanged();
 
     qDebug() << "Configuration imported from:" << filePath;
     return true;
