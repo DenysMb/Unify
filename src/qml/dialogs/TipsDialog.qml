@@ -30,6 +30,7 @@ Kirigami.Dialog {
                 textFormat: QQC2.Label.RichText
                 text: i18n("<b>Ctrl + 1, 2, 3...</b> — Switch between services in the current workspace<br>" +
                     "<b>Ctrl + Shift + 1, 2, 3...</b> — Switch between workspaces<br>" +
+                    "<b>Ctrl + K</b> — Open the global service switcher<br>" +
                     "<b>Ctrl + B</b> — Go to Favorites workspace<br>" +
                     "<b>Ctrl + Tab</b> — Go to the next service<br>" +
                     "<b>Ctrl + Shift + Tab</b> — Go to the next workspace<br>" +

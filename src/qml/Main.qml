@@ -440,6 +440,32 @@ Kirigami.ApplicationWindow {
         return false;
     }
 
+    // Function to switch to a service selected from the global switcher (Ctrl+K).
+    // The switcher lists services across all workspaces, so this may change workspace.
+    function switchToServiceFromSwitcher(serviceId) {
+        var service = findServiceById(serviceId);
+        if (!service)
+            return;
+
+        // If we're in a special workspace (Favorites/All Services) and the service is
+        // visible there, stay; otherwise switch to the service's own workspace.
+        var isSpecial = configManager && configManager.isSpecialWorkspace(currentWorkspace);
+        var inFiltered = false;
+        if (isSpecial) {
+            for (var i = 0; i < filteredServices.length; i++) {
+                if (filteredServices[i].id === serviceId) {
+                    inFiltered = true;
+                    break;
+                }
+            }
+        }
+
+        if (!(isSpecial && inFiltered) && service.workspace && service.workspace !== currentWorkspace) {
+            switchToWorkspace(service.workspace);
+        }
+        switchToService(serviceId);
+    }
+
     // Function to switch to previous service (for double Ctrl)
     function switchToPreviousService() {
         if (previousServiceId === "" || previousServiceId === currentServiceId) {
@@ -864,6 +890,17 @@ Kirigami.ApplicationWindow {
     // Permission Request Dialog (componente)
     PermissionDialog {
         id: permissionDialog
+    }
+
+    // Global service switcher (Ctrl+K)
+    GlobalSwitcher {
+        id: globalSwitcher
+        parent: root.contentItem
+        services: root.services
+        currentServiceId: root.currentServiceId
+        onServiceSelected: function (id) {
+            root.switchToServiceFromSwitcher(id);
+        }
     }
 
     // Keep currently selected service visible after services list changes (add/update/remove)
@@ -1662,6 +1699,13 @@ Kirigami.ApplicationWindow {
                 configManager.hideHeader = !configManager.hideHeader;
             }
         }
+    }
+
+    // Open the global service switcher with Ctrl+K
+    Shortcut {
+        sequences: ["Ctrl+K"]
+        context: Qt.ApplicationShortcut
+        onActivated: globalSwitcher.open()
     }
 
     // --- Numeric shortcuts: Ctrl+1..9 for services (within current workspace) ---
