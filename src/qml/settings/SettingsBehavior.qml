@@ -131,7 +131,8 @@ Kirigami.ScrollablePage {
         }
 
         Kirigami.InlineMessage {
-            Kirigami.FormData.isSpanning: true
+            // Kirigami.FormData.isSpanning: true
+            Layout.fillWidth: true
             visible: configManager ? configManager.experimentalFeaturesEnabled : false
             type: Kirigami.MessageType.Information
             icon.name: "audio-input-microphone"

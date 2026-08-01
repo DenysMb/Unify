@@ -112,6 +112,10 @@ Controls.Popup {
 
                 width: listView.width
                 height: Kirigami.Units.gridUnit * 2.5
+                // Zero the style's default padding so the content is vertically
+                // centered instead of being pushed down inside the item.
+                padding: 0
+                horizontalPadding: Kirigami.Units.smallSpacing
                 highlighted: ListView.isCurrentItem
                 onClicked: {
                     root.serviceSelected(modelData.id);
@@ -123,32 +127,71 @@ Controls.Popup {
                 contentItem: RowLayout {
                     spacing: Kirigami.Units.smallSpacing
 
-                    Kirigami.Icon {
-                        Layout.preferredWidth: Kirigami.Units.iconSizes.medium
-                        Layout.preferredHeight: Kirigami.Units.iconSizes.medium
-                        source: {
-                            var image = modelData.image || "";
-                            if (image !== "" && !image.match(/^https?:\/\//))
-                                return image; // Named (theme) icon
-                            return "applications-internet";
-                        }
-                        fallback: "applications-internet"
-                    }
+                    // Service icon — mirrors the cache/request logic from
+                    // ServiceIconButton so favicons resolve asynchronously.
+                    Item {
+                        id: iconContainer
 
-                    // Remote image (favicon or custom image URL)
-                    Image {
                         Layout.preferredWidth: Kirigami.Units.iconSizes.medium
                         Layout.preferredHeight: Kirigami.Units.iconSizes.medium
-                        visible: status === Image.Ready
-                        fillMode: Image.PreserveAspectFit
-                        source: {
-                            var image = modelData.image || "";
-                            if (image.match(/^https?:\/\//) && typeof faviconCache !== "undefined" && faviconCache !== null) {
-                                return modelData.useFavicon
-                                    ? faviconCache.getFavicon(modelData.url, true)
-                                    : faviconCache.getImageUrl(image);
+
+                        property string serviceUrl: modelData.url || ""
+                        property string image: modelData.image || ""
+                        property bool useFavicon: modelData.useFavicon || false
+                        property string cachedFaviconUrl: ""
+                        property string cachedImageUrl: ""
+
+                        readonly property bool isUrl: image.match(/^https?:\/\//) !== null
+                        readonly property bool hasImage: image.trim() !== ""
+                        readonly property bool shouldShowFavicon: useFavicon && cachedFaviconUrl !== ""
+                        readonly property bool shouldShowImage: !useFavicon && hasImage && isUrl && cachedImageUrl !== ""
+                        readonly property bool shouldShowIcon: !useFavicon && hasImage && !isUrl
+
+                        function requestCachedAssets() {
+                            if (typeof faviconCache === "undefined" || faviconCache === null)
+                                return;
+
+                            if (useFavicon && serviceUrl !== "") {
+                                var cached = faviconCache.getFavicon(serviceUrl, true);
+                                if (cached && cached !== "")
+                                    cachedFaviconUrl = cached;
+                            } else if (!useFavicon && hasImage && isUrl) {
+                                var cachedImg = faviconCache.getImageUrl(image);
+                                if (cachedImg && cachedImg !== "")
+                                    cachedImageUrl = cachedImg;
                             }
-                            return "";
+                        }
+
+                        Component.onCompleted: requestCachedAssets()
+
+                        Connections {
+                            target: typeof faviconCache !== "undefined" ? faviconCache : null
+
+                            function onFaviconReady(serviceUrl, localPath) {
+                                if (iconContainer.useFavicon && iconContainer.serviceUrl === serviceUrl)
+                                    iconContainer.cachedFaviconUrl = localPath;
+                            }
+
+                            function onImageReady(imageUrl, localPath) {
+                                if (!iconContainer.useFavicon && iconContainer.image === imageUrl)
+                                    iconContainer.cachedImageUrl = localPath;
+                            }
+                        }
+
+                        Image {
+                            anchors.fill: parent
+                            visible: iconContainer.shouldShowFavicon || iconContainer.shouldShowImage
+                            source: iconContainer.shouldShowFavicon ? iconContainer.cachedFaviconUrl : iconContainer.cachedImageUrl
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                            asynchronous: true
+                        }
+
+                        Kirigami.Icon {
+                            anchors.fill: parent
+                            visible: !iconContainer.shouldShowFavicon && !iconContainer.shouldShowImage
+                            source: iconContainer.shouldShowIcon ? iconContainer.image : "internet-web-browser-symbolic"
+                            fallback: "internet-web-browser-symbolic"
                         }
                     }
 
