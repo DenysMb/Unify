@@ -794,6 +794,8 @@ Kirigami.ApplicationWindow {
                     image: serviceData.image,
                     workspace: serviceData.workspace,
                     useFavicon: serviceData.useFavicon || false,
+                    faviconSource: serviceData.faviconSource !== undefined ? serviceData.faviconSource : -1,
+                    querySelector: serviceData.querySelector || "",
                     isolatedProfile: serviceData.isolatedProfile || false,
                     userAgent: serviceData.userAgent || ""
                 };
