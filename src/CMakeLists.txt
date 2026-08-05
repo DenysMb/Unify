@@ -15,6 +15,8 @@ target_sources(unify
     core/configmanager.h
     core/notificationpresenter.cpp
     core/notificationpresenter.h
+    core/tlsproxybridge.cpp
+    core/tlsproxybridge.h
     ui/trayiconmanager.cpp
     ui/trayiconmanager.h
     utils/faviconcache.cpp
@@ -67,6 +69,7 @@ target_link_libraries(unify
     Qt6::QuickControls2
     Qt6::Widgets
     Qt6::WebEngineQuick
+    Qt6::WebChannel
     Qt6::DBus
     Qt6::Network
     Qt6::PrintSupport
@@ -82,3 +85,9 @@ target_link_libraries(unify
 )
 
 install(TARGETS unify ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+
+# TLS impersonation sidecar used by TlsProxyBridge (requires python3 + curl_cffi)
+install(FILES proxy/cf-proxy.py DESTINATION ${KDE_INSTALL_DATADIR}/unify)
+
+# Dev-build fallback so TlsProxyBridge finds cf-proxy.py without installing
+target_compile_definitions(unify PRIVATE UNIFY_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

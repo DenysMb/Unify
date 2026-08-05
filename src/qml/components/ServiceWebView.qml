@@ -24,6 +24,8 @@ Item {
     property bool globalMute: false
     property var restoredTabs: []
     property string querySelector: ""
+    // Shared WebChannel carrying the TLS proxy bridge
+    property var sharedWebChannel
 
     property alias contents: view
     property int currentTabIndex: 0
@@ -137,6 +139,7 @@ Item {
             "serviceId": view.serviceId,
             "initialUrl": url,
             "webProfile": view.webProfile,
+            "sharedWebChannel": view.sharedWebChannel,
             "isMuted": view.isMuted,
             "globalMute": view.globalMute,
             "querySelector": view.querySelector,

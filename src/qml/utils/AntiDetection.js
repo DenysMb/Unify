@@ -20,7 +20,12 @@ var baseScript = `
     }, true);
 
     // 1. Remove QtWebEngine-specific properties that leak the embedding context
+    // The WebChannel transport is preserved under a different name so the TLS
+    // proxy shim can still communicate with the C++ bridge.
     try {
+        if (window.qt && window.qt.webChannelTransport) {
+            window.__unifyQtTransport = window.qt.webChannelTransport;
+        }
         if (window.qt) delete window.qt;
         if (window.QtWebEngine) delete window.QtWebEngine;
     } catch (e) {}

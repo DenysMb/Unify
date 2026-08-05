@@ -4,6 +4,7 @@ import QtQuick.Window
 import QtQuick.Layouts
 import QtCore
 import QtWebEngine
+import QtWebChannel
 import QtQuick.Controls as Controls
 // Controls are used in components; WebEngine used here for profile
 import org.kde.kirigami as Kirigami
@@ -527,6 +528,14 @@ Kirigami.ApplicationWindow {
         return list;
     }
 
+    // Shared WebChannel carrying the TLS proxy bridge to every WebView
+    WebChannel {
+        id: unifyWebChannel
+        Component.onCompleted: {
+            registerObjects({ "tlsProxyBridge": tlsProxyBridge });
+        }
+    }
+
     // Chrome User-Agent string, derived in main.cpp from the real Chromium version embedded
     // in this QtWebEngine build (e.g. Chromium 140 on the system, 134 in the Flatpak BaseApp)
     // so the UA header matches TLS JA4 / HTTP2 / sec-ch-ua Client Hints fingerprints and does
@@ -607,6 +616,18 @@ Kirigami.ApplicationWindow {
                 });
 
                 download.accept();
+            }
+        }
+
+        Component.onCompleted: {
+            if (typeof tlsProxyShimSource !== "undefined" && tlsProxyShimSource !== "") {
+                var shim = WebEngine.script();
+                shim.name = "tlsProxyShim";
+                shim.sourceCode = tlsProxyShimSource;
+                shim.injectionPoint = WebEngineScript.DocumentCreation;
+                shim.worldId = WebEngineScript.MainWorld;
+                shim.runsOnSubFrames = false;
+                userScripts.insert(shim);
             }
         }
     }
@@ -1375,6 +1396,7 @@ Kirigami.ApplicationWindow {
                             globalMute: root.globalMute
                             serviceTabs: configManager ? configManager.serviceTabs : ({})
                             webProfile: persistentProfile
+                            sharedWebChannel: unifyWebChannel
                             workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                             onTitleUpdated: root.updateBadgeFromTitle
                             notificationCountCallback: root.updateBadgeFromContent
@@ -1535,6 +1557,7 @@ Kirigami.ApplicationWindow {
                         globalMute: root.globalMute
                         serviceTabs: configManager ? configManager.serviceTabs : ({})
                         webProfile: persistentProfile
+                        sharedWebChannel: unifyWebChannel
                         workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                         onTitleUpdated: root.updateBadgeFromTitle
                         notificationCountCallback: root.updateBadgeFromContent

@@ -1,5 +1,6 @@
 #include "core/configmanager.h"
 #include "core/notificationpresenter.h"
+#include "core/tlsproxybridge.h"
 #include "ui/trayiconmanager.h"
 #include "utils/faviconcache.h"
 #include "utils/fileutils.h"
@@ -12,6 +13,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QFile>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
 #include <QRegularExpression>
@@ -214,7 +216,8 @@ int main(int argc, char *argv[])
                            "window.addEventListener('error',function(e){if(e.message&&e.filename)console.log('[Unify] JS "
                            "error:',e.message,'at',e.filename+':'+e.lineno);},true);"
                            "window.addEventListener('unhandledrejection',function(e){console.log('[Unify] Unhandled rejection:',e.reason);},true);"
-                           "try{if(window.qt)delete window.qt;if(window.QtWebEngine)delete window.QtWebEngine;}catch(e){}"
+                           "try{if(window.qt&&window.qt.webChannelTransport){window.__unifyQtTransport=window.qt.webChannelTransport;}if(window.qt)delete "
+                           "window.qt;if(window.QtWebEngine)delete window.QtWebEngine;}catch(e){}"
                            "try{Object.defineProperty(navigator,'webdriver',{get:()=>undefined,configurable:true});}catch(e){}"
                            "window.__unifyCtrlPressed=false;"
                            "document.addEventListener('keydown',function(e){if(e.key==='Control'||e.ctrlKey)window.__unifyCtrlPressed=true;},true);"
@@ -236,6 +239,35 @@ int main(int argc, char *argv[])
     qDebug() << "  Persistent storage path:" << defaultProf->persistentStoragePath();
     qDebug() << "  Cache path:" << defaultProf->cachePath();
 
+    // TLS proxy bridge: routes requests through a local impersonating sidecar for services
+    // whose APIs sit behind Cloudflare TLS-fingerprint bot detection (e.g. Standard Notes).
+    // Registered on a QML WebChannel (Main.qml) shared by all WebViews.
+    TlsProxyBridge *tlsProxyBridge = new TlsProxyBridge(&app);
+    tlsProxyBridge->setObjectName(QStringLiteral("tlsProxyBridge"));
+
+    // Concatenated shim script (qwebchannel.js + fetch shim), injected into each profile's userScripts
+    QString tlsProxyShimSource;
+    {
+        QFile channelFile(QStringLiteral(":/io.github.denysmb.unify/js/qwebchannel.js"));
+        QFile shimFile(QStringLiteral(":/io.github.denysmb.unify/js/tls-proxy-shim.js"));
+        if (channelFile.open(QIODevice::ReadOnly) && shimFile.open(QIODevice::ReadOnly)) {
+            tlsProxyShimSource = QString::fromUtf8(channelFile.readAll()) + QLatin1Char('\n') + QString::fromUtf8(shimFile.readAll());
+        } else {
+            qWarning() << "Failed to load TLS proxy shim scripts from resources";
+        }
+    }
+
+    // Inject the shim into the default profile as well (fallback for views without an explicit profile)
+    if (!tlsProxyShimSource.isEmpty()) {
+        QWebEngineScript tlsProxyShim;
+        tlsProxyShim.setName(QStringLiteral("tlsProxyShim"));
+        tlsProxyShim.setSourceCode(tlsProxyShimSource);
+        tlsProxyShim.setInjectionPoint(QWebEngineScript::DocumentCreation);
+        tlsProxyShim.setWorldId(QWebEngineScript::MainWorld);
+        tlsProxyShim.setRunsOnSubFrames(false);
+        defaultProf->scripts()->insert(tlsProxyShim);
+    }
+
     QQmlApplicationEngine engine;
 
     // Register the notification presenter, config manager, tray icon manager, favicon cache, key event filter, application shortcut manager and file utils with
@@ -249,6 +281,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("printHandler"), printHandler);
     engine.rootContext()->setContextProperty(QStringLiteral("widevineManager"), widevineManager);
     engine.rootContext()->setContextProperty(QStringLiteral("chromeUserAgentGlobal"), chromeUserAgent);
+    engine.rootContext()->setContextProperty(QStringLiteral("tlsProxyBridge"), tlsProxyBridge);
+    engine.rootContext()->setContextProperty(QStringLiteral("tlsProxyShimSource"), tlsProxyShimSource);
 
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
     engine.loadFromModule("io.github.denysmb.unify", "Main");

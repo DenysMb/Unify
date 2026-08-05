@@ -26,6 +26,8 @@ Item {
     property var notificationCountCallback: null
     // Workspace isolated storage info (provided by Main.qml)
     property var workspaceIsolatedStorage: ({})
+    // Shared WebChannel carrying the TLS proxy bridge (provided by Main.qml)
+    property var sharedWebChannel
 
     // Signal to propagate service URL update requests
     signal updateServiceUrlRequested(string serviceId, string newUrl)
@@ -414,6 +416,7 @@ Item {
             "initialUrl": initialUrl,
             "configuredUrl": serviceData.url,
             "webProfile": profileToUse,
+            "sharedWebChannel": root.sharedWebChannel,
             "isServiceDisabled": root.isDisabled(serviceData.id),
             "isMuted": root.mutedServices && root.mutedServices.hasOwnProperty(serviceData.id),
             "globalMute": root.globalMute,
@@ -632,6 +635,18 @@ Item {
             offTheRecord: false
             httpCacheType: WebEngineProfile.DiskHttpCache
             persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
+
+            Component.onCompleted: {
+                if (typeof tlsProxyShimSource !== "undefined" && tlsProxyShimSource !== "") {
+                    var shim = WebEngine.script();
+                    shim.name = "tlsProxyShim";
+                    shim.sourceCode = tlsProxyShimSource;
+                    shim.injectionPoint = WebEngineScript.DocumentCreation;
+                    shim.worldId = WebEngineScript.MainWorld;
+                    shim.runsOnSubFrames = false;
+                    userScripts.insert(shim);
+                }
+            }
         }
     }
 }

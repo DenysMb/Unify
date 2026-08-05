@@ -40,6 +40,7 @@ find_package(Qt6 ${QT6_MIN_VERSION} REQUIRED COMPONENTS
     QuickControls2
     Widgets
     WebEngineQuick
+    WebChannel
     PrintSupport
     Pdf
 )
@@ -98,3 +99,7 @@ kde_clang_format(${ALL_CLANG_FORMAT_SOURCE_FILES})
 kde_configure_git_pre_commit_hook(CHECKS CLANG_FORMAT)
 
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
+
+if(BUILD_TESTING)
+    add_subdirectory(src/autotests)
+endif()
