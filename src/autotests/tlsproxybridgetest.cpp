@@ -16,6 +16,7 @@ private Q_SLOTS:
     void init();
     void fetchRoundTrip();
     void httpErrorStatusIsForwarded();
+    void learnsSuccessfulRetryHosts();
     void unavailableWithoutSidecar();
 };
 
@@ -134,6 +135,38 @@ void TlsProxyBridgeTest::httpErrorStatusIsForwarded()
     QCOMPARE(response.value(QStringLiteral("status")).toInt(), 401);
     const QByteArray decoded = QByteArray::fromBase64(response.value(QStringLiteral("bodyBase64")).toString().toUtf8());
     QCOMPARE(decoded, responseBody);
+
+    socket->disconnectFromHost();
+}
+
+void TlsProxyBridgeTest::learnsSuccessfulRetryHosts()
+{
+    QTcpServer server;
+    QVERIFY(server.listen(QHostAddress::LocalHost));
+
+    TlsProxyBridge bridge;
+    bridge.setProxyBaseUrlForTesting(QUrl(QStringLiteral("http://127.0.0.1:%1/").arg(server.serverPort())));
+
+    QSignalSpy spy(&bridge, &TlsProxyBridge::fetchResponse);
+    QJsonObject request{{QStringLiteral("url"), QStringLiteral("https://gated.example.com/api")},
+                        {QStringLiteral("method"), QStringLiteral("GET")},
+                        {QStringLiteral("isRetry"), true}};
+    bridge.fetchViaProxy(QStringLiteral("req-3"), request);
+
+    QTRY_VERIFY_WITH_TIMEOUT(server.hasPendingConnections(), 5000);
+    QTcpSocket *socket = server.nextPendingConnection();
+    QVERIFY(socket);
+
+    QByteArray raw;
+    QTRY_VERIFY_WITH_TIMEOUT((raw += socket->readAll(), raw.indexOf("\r\n\r\n") > 0), 5000);
+    socket->write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+    socket->flush();
+
+    QVERIFY(spy.wait(5000));
+    QCOMPARE(bridge.learnedHosts(), QStringList{QStringLiteral("gated.example.com")});
+
+    bridge.dismissLearnedHost(QStringLiteral("gated.example.com"));
+    QVERIFY(bridge.learnedHosts().isEmpty());
 
     socket->disconnectFromHost();
 }

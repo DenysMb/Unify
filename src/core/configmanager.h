@@ -31,6 +31,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(QString sidebarSizePreset READ sidebarSizePreset WRITE setSidebarSizePreset NOTIFY sidebarSizePresetChanged)
     Q_PROPERTY(QString voiceChatService READ voiceChatService WRITE setVoiceChatService NOTIFY voiceChatServiceChanged)
     Q_PROPERTY(bool experimentalFeaturesEnabled READ experimentalFeaturesEnabled WRITE setExperimentalFeaturesEnabled NOTIFY experimentalFeaturesEnabledChanged)
+    Q_PROPERTY(QStringList tlsProxyHosts READ tlsProxyHosts WRITE setTlsProxyHosts NOTIFY tlsProxyHostsChanged)
 
 public:
     explicit ConfigManager(QObject *parent = nullptr);
@@ -127,6 +128,11 @@ public:
     bool experimentalFeaturesEnabled() const;
     void setExperimentalFeaturesEnabled(bool enabled);
 
+    // Hosts whose requests are always routed through the local TLS-impersonating
+    // proxy (Cloudflare TLS-fingerprint bot detection workaround)
+    QStringList tlsProxyHosts() const;
+    void setTlsProxyHosts(const QStringList &hosts);
+
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
 
@@ -175,6 +181,7 @@ Q_SIGNALS:
     void sidebarSizePresetChanged();
     void voiceChatServiceChanged();
     void experimentalFeaturesEnabledChanged();
+    void tlsProxyHostsChanged();
 
 private:
     void updateWorkspacesList();
@@ -201,6 +208,7 @@ private:
     QString m_sidebarSizePreset = QStringLiteral("normal");
     QString m_voiceChatService = QStringLiteral("perplexity");
     bool m_experimentalFeaturesEnabled = false;
+    QStringList m_tlsProxyHosts;
 };
 
 #endif // CONFIGMANAGER_H

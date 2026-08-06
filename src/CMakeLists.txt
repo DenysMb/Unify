@@ -56,6 +56,7 @@ ecm_target_qml_sources(unify
     qml/settings/SettingsPage.qml
     qml/settings/SettingsAppearance.qml
     qml/settings/SettingsBehavior.qml
+    qml/settings/SettingsNetwork.qml
     qml/settings/SettingsWidevine.qml
     qml/utils/Services.js
     qml/utils/AntiDetection.js

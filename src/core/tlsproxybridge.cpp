@@ -38,6 +38,41 @@ bool TlsProxyBridge::proxyReady() const
     return m_ready;
 }
 
+QStringList TlsProxyBridge::proxyHosts() const
+{
+    return m_proxyHosts;
+}
+
+void TlsProxyBridge::setProxyHosts(const QStringList &hosts)
+{
+    if (m_proxyHosts == hosts) {
+        return;
+    }
+    m_proxyHosts = hosts;
+    Q_EMIT proxyHostsChanged();
+}
+
+QStringList TlsProxyBridge::learnedHosts() const
+{
+    return m_learnedHosts;
+}
+
+void TlsProxyBridge::dismissLearnedHost(const QString &host)
+{
+    if (m_learnedHosts.removeAll(host) > 0) {
+        Q_EMIT learnedHostsChanged();
+    }
+}
+
+void TlsProxyBridge::learnHost(const QString &host)
+{
+    if (host.isEmpty() || m_proxyHosts.contains(host) || m_learnedHosts.contains(host)) {
+        return;
+    }
+    m_learnedHosts.append(host);
+    Q_EMIT learnedHostsChanged();
+}
+
 void TlsProxyBridge::setProxyBaseUrlForTesting(const QUrl &baseUrl)
 {
     m_baseUrl = baseUrl;
@@ -156,11 +191,15 @@ void TlsProxyBridge::fetchViaProxy(const QString &requestId, const QJsonObject &
     const QByteArray body = QByteArray::fromBase64(request.value(QStringLiteral("bodyBase64")).toString().toUtf8());
     QNetworkReply *reply = m_networkManager->sendCustomRequest(networkRequest, method.toUtf8(), body);
 
-    connect(reply, &QNetworkReply::finished, this, [this, reply, requestId]() {
+    // Generic-fallback retries that succeed reveal hosts gated by TLS fingerprint
+    const QString retryHost = request.value(QStringLiteral("isRetry")).toBool() ? QUrl(targetUrl).host() : QString();
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply, requestId, retryHost]() {
         reply->deleteLater();
         QJsonObject response;
         const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (status > 0) {
+            learnHost(retryHost);
             // An HTTP response arrived, even if Qt flags 4xx/5xx as a reply error
             response.insert(QStringLiteral("status"), status);
             QJsonObject responseHeaders;

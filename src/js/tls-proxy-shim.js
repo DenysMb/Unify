@@ -14,12 +14,36 @@
     if (window.__unifyTlsProxyInstalled) return;
     window.__unifyTlsProxyInstalled = true;
 
-    var ALWAYS_PROXY_HOSTS = ["api.standardnotes.com"];
+    // Qt WebEngine renders object args as "[object Object]", hiding page errors;
+    // stringify them so failures are visible in the app log
+    ["error", "warn"].forEach(function (level) {
+        var original = console[level];
+        console[level] = function () {
+            var args = Array.prototype.map.call(arguments, function (arg) {
+                if (arg instanceof Error) return arg.stack || String(arg);
+                if (arg && typeof arg === "object") {
+                    try {
+                        return JSON.stringify(arg);
+                    } catch (e) {
+                        return String(arg);
+                    }
+                }
+                return arg;
+            });
+            return original.apply(console, args);
+        };
+    });
+
+    // Seed until the bridge provides the configured list (ConfigManager.tlsProxyHosts)
+    var proxyHosts = ["api.standardnotes.com"];
 
     var channelPromise = null;
     var channelBridge = null;
     var pending = {};
     var nextId = 1;
+    // Unique per page: all pages share one bridge, and fetchResponse is broadcast
+    // to every page, so ids must not collide across pages
+    var pageId = Math.random().toString(36).slice(2) + Date.now().toString(36);
 
     function getTransport() {
         if (window.qt && window.qt.webChannelTransport) {
@@ -52,6 +76,8 @@
                         delete pending[id];
                         settle(response);
                     });
+                    syncHosts(bridge.proxyHosts);
+                    bridge.proxyHostsChanged.connect(syncHosts);
                     console.log("[Unify] TLS proxy bridge connected");
                     resolve(true);
                 });
@@ -63,6 +89,15 @@
         return channelPromise;
     }
     ensureChannel();
+
+    function syncHosts(hosts) {
+        if (!hosts || typeof hosts.length !== "number") return;
+        proxyHosts = [];
+        for (var i = 0; i < hosts.length; i++) {
+            proxyHosts.push(String(hosts[i]));
+        }
+        console.warn("[Unify] TLS proxy hosts:", proxyHosts.join(", ") || "(none)");
+    }
 
     function bytesToBase64(bytes) {
         var binary = "";
@@ -129,16 +164,17 @@
         return { url: url, method: method.toUpperCase(), headers: headers, bodyPromise: bodyPromise };
     }
 
-    function proxyFetch(input, init) {
+    function proxyFetch(input, init, isRetry) {
         var spec = normalizeRequest(input, init);
         return Promise.all([spec.bodyPromise, ensureChannel()]).then(function (results) {
             if (!results[1]) return Promise.reject(new TypeError("Failed to fetch"));
-            var id = String(nextId++);
+            var id = pageId + "-" + String(nextId++);
             var request = {
                 url: spec.url,
                 method: spec.method,
                 headers: spec.headers,
-                bodyBase64: results[0]
+                bodyBase64: results[0],
+                isRetry: isRetry === true
             };
             return new Promise(function (resolve, reject) {
                 pending[id] = function (response) {
@@ -163,13 +199,19 @@
 
     window.fetch = function (input, init) {
         var url = typeof input === "string" ? input : (input && input.url) || "";
+
+        // Never route data:/blob: URLs through the proxy (e.g. WASM loaders)
+        if (/^(data|blob):/i.test(url)) {
+            return originalFetch.call(window, input, init);
+        }
+
         var host = "";
         try {
             host = new URL(url, window.location.href).hostname;
         } catch (e) {}
 
-        if (ALWAYS_PROXY_HOSTS.indexOf(host) !== -1) {
-            return proxyFetch(input, init).catch(function (error) {
+        if (proxyHosts.indexOf(host) !== -1) {
+            return proxyFetch(input, init, false).catch(function (error) {
                 console.warn("[Unify] TLS proxy fetch failed, falling back to direct fetch:", error && error.message);
                 return originalFetch.call(window, input, init);
             });
@@ -177,7 +219,8 @@
 
         return originalFetch.call(window, input, init).catch(function (error) {
             if (!(error instanceof TypeError)) throw error;
-            return proxyFetch(input, init).catch(function () {
+            console.warn("[Unify] TLS proxy retry after direct failure:", url.slice(0, 120));
+            return proxyFetch(input, init, true).catch(function () {
                 throw error;
             });
         });

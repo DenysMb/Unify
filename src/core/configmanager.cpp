@@ -534,6 +534,20 @@ void ConfigManager::setExperimentalFeaturesEnabled(bool enabled)
     }
 }
 
+QStringList ConfigManager::tlsProxyHosts() const
+{
+    return m_tlsProxyHosts;
+}
+
+void ConfigManager::setTlsProxyHosts(const QStringList &hosts)
+{
+    if (m_tlsProxyHosts != hosts) {
+        m_tlsProxyHosts = hosts;
+        Q_EMIT tlsProxyHostsChanged();
+        saveSettings();
+    }
+}
+
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
@@ -835,6 +849,7 @@ void ConfigManager::saveSettings()
     m_settings.setValue(QStringLiteral("sidebarSizePreset"), m_sidebarSizePreset);
     m_settings.setValue(QStringLiteral("voiceChatService"), m_voiceChatService);
     m_settings.setValue(QStringLiteral("experimentalFeaturesEnabled"), m_experimentalFeaturesEnabled);
+    m_settings.setValue(QStringLiteral("tlsProxyHosts"), m_tlsProxyHosts);
     m_settings.endGroup();
 
     m_settings.sync();
@@ -909,6 +924,7 @@ void ConfigManager::loadSettings()
     m_sidebarSizePreset = m_settings.value(QStringLiteral("sidebarSizePreset"), QStringLiteral("normal")).toString();
     m_voiceChatService = m_settings.value(QStringLiteral("voiceChatService"), QStringLiteral("perplexity")).toString();
     m_experimentalFeaturesEnabled = m_settings.value(QStringLiteral("experimentalFeaturesEnabled"), false).toBool();
+    m_tlsProxyHosts = m_settings.value(QStringLiteral("tlsProxyHosts"), QStringList{QStringLiteral("api.standardnotes.com")}).toStringList();
     m_settings.endGroup();
 
     // Only update workspaces list if it's empty (first run)

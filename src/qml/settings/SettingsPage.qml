@@ -31,6 +31,11 @@ Kirigami.ScrollablePage {
     }
 
     Component {
+        id: networkPage
+        SettingsNetwork {}
+    }
+
+    Component {
         id: widevinePage
         SettingsWidevine {}
     }
@@ -81,6 +86,19 @@ Kirigami.ScrollablePage {
 
         FormCard.FormDelegateSeparator {
             above: behaviorButton
+            below: networkButton
+        }
+
+        FormCard.FormButtonDelegate {
+            id: networkButton
+            text: i18nc("@action:button", "Network")
+            description: i18nc("@info:whatsthis", "TLS proxy hosts for Cloudflare-protected APIs")
+            icon.name: "preferences-system-network"
+            onClicked: Kirigami.PageStack.push(networkPage)
+        }
+
+        FormCard.FormDelegateSeparator {
+            above: networkButton
             below: widevineButton
         }
 

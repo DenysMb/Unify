@@ -245,6 +245,13 @@ int main(int argc, char *argv[])
     TlsProxyBridge *tlsProxyBridge = new TlsProxyBridge(&app);
     tlsProxyBridge->setObjectName(QStringLiteral("tlsProxyBridge"));
 
+    // ConfigManager is the source of truth for the always-proxied host list;
+    // the bridge mirrors it and pushes live updates to the injected fetch shim
+    tlsProxyBridge->setProxyHosts(configManager->tlsProxyHosts());
+    QObject::connect(configManager, &ConfigManager::tlsProxyHostsChanged, tlsProxyBridge, [tlsProxyBridge, configManager]() {
+        tlsProxyBridge->setProxyHosts(configManager->tlsProxyHosts());
+    });
+
     // Concatenated shim script (qwebchannel.js + fetch shim), injected into each profile's userScripts
     QString tlsProxyShimSource;
     {

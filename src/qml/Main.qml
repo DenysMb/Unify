@@ -536,6 +536,15 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    Connections {
+        target: tlsProxyBridge
+        function onLearnedHostsChanged() {
+            if (tlsProxyBridge && tlsProxyBridge.learnedHosts.length > 0) {
+                root.showPassiveNotification(i18n("A host only connected through the TLS proxy. Review it in Settings > Network."), "long");
+            }
+        }
+    }
+
     // Chrome User-Agent string, derived in main.cpp from the real Chromium version embedded
     // in this QtWebEngine build (e.g. Chromium 140 on the system, 134 in the Flatpak BaseApp)
     // so the UA header matches TLS JA4 / HTTP2 / sec-ch-ua Client Hints fingerprints and does
