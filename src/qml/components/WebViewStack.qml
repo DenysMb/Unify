@@ -26,6 +26,8 @@ Item {
     property var notificationCountCallback: null
     // Workspace isolated storage info (provided by Main.qml)
     property var workspaceIsolatedStorage: ({})
+    // Shared WebChannel carrying the TLS proxy bridge (provided by Main.qml)
+    property var sharedWebChannel
 
     // Signal to propagate service URL update requests
     signal updateServiceUrlRequested(string serviceId, string newUrl)
@@ -153,6 +155,23 @@ Item {
         }
     }
 
+    function recreateService(serviceId) {
+        var oldService = webViewCache[serviceId];
+        if (oldService) {
+            oldService.destroy();
+            delete webViewCache[serviceId];
+        }
+
+        var profiles = root.isolatedProfiles;
+        if (profiles[serviceId]) {
+            delete profiles[serviceId];
+        }
+        root.isolatedProfiles = profiles;
+
+        createWebViewForService(serviceId);
+        setCurrentByServiceId(serviceId);
+    }
+
     function refreshByServiceId(serviceId) {
         if (webViewCache[serviceId]) {
             var wv = webViewCache[serviceId];
@@ -254,6 +273,11 @@ Item {
         // Check if we already have an isolated profile for this service
         if (isolatedProfiles[serviceId]) {
             console.log("Reusing existing isolated profile for:", serviceId);
+            // Update user agent if it changed
+            if (userAgent && isolatedProfiles[serviceId].httpUserAgent !== userAgent) {
+                isolatedProfiles[serviceId].httpUserAgent = userAgent;
+                console.log("Updated user agent for isolated profile:", serviceId);
+            }
             return isolatedProfiles[serviceId];
         }
 
@@ -282,6 +306,11 @@ Item {
         // Check if we already have an isolated profile for this workspace
         if (workspaceProfiles[workspaceName]) {
             console.log("Reusing existing workspace profile for:", workspaceName);
+            // Update user agent if it changed
+            if (userAgent && workspaceProfiles[workspaceName].httpUserAgent !== userAgent) {
+                workspaceProfiles[workspaceName].httpUserAgent = userAgent;
+                console.log("Updated user agent for workspace profile:", workspaceName);
+            }
             return workspaceProfiles[workspaceName];
         }
 
@@ -354,16 +383,17 @@ Item {
 
         // Determine which profile to use based on priority:
         // 1. Service-level isolated profile (highest priority)
-        // 2. Workspace-level isolated profile
-        // 3. Shared profile (default)
+        // 2. Service with custom User-Agent (auto-isolated)
+        // 3. Workspace-level isolated profile
+        // 4. Shared profile (default)
         var profileToUse = root.webProfile;
-        var userAgent = root.webProfile ? root.webProfile.httpUserAgent : "";
+        var userAgent = (serviceData.userAgent && serviceData.userAgent !== "") ? serviceData.userAgent : root.webProfile.httpUserAgent;
         var isolationType = "shared";
         
-        if (serviceData.isolatedProfile) {
-            // Service-level isolation takes priority
+        if (serviceData.isolatedProfile || (serviceData.userAgent && serviceData.userAgent !== "")) {
+            // Service-level isolation (explicit or auto for custom UA)
             profileToUse = getOrCreateIsolatedProfile(serviceData.id, userAgent);
-            isolationType = "service-isolated";
+            isolationType = serviceData.isolatedProfile ? "service-isolated" : "service-isolated:auto-ua";
             if (!profileToUse) {
                 console.error("Failed to create isolated profile for service:", serviceId);
                 profileToUse = root.webProfile; // Fallback to shared profile
@@ -386,6 +416,7 @@ Item {
             "initialUrl": initialUrl,
             "configuredUrl": serviceData.url,
             "webProfile": profileToUse,
+            "sharedWebChannel": root.sharedWebChannel,
             "isServiceDisabled": root.isDisabled(serviceData.id),
             "isMuted": root.mutedServices && root.mutedServices.hasOwnProperty(serviceData.id),
             "globalMute": root.globalMute,
@@ -604,6 +635,18 @@ Item {
             offTheRecord: false
             httpCacheType: WebEngineProfile.DiskHttpCache
             persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
+
+            Component.onCompleted: {
+                if (typeof tlsProxyShimSource !== "undefined" && tlsProxyShimSource !== "") {
+                    var shim = WebEngine.script();
+                    shim.name = "tlsProxyShim";
+                    shim.sourceCode = tlsProxyShimSource;
+                    shim.injectionPoint = WebEngineScript.DocumentCreation;
+                    shim.worldId = WebEngineScript.MainWorld;
+                    shim.runsOnSubFrames = false;
+                    userScripts.insert(shim);
+                }
+            }
         }
     }
 }

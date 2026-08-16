@@ -13,6 +13,8 @@ WebEngineView {
     property string serviceId: ""
     property url initialUrl: "about:blank"
     property WebEngineProfile webProfile
+    // Shared WebChannel carrying the TLS proxy bridge
+    property var sharedWebChannel
     property bool isMuted: false
     property bool globalMute: false
     property string querySelector: ""
@@ -30,6 +32,7 @@ WebEngineView {
     profile: webView.webProfile
     url: webView.initialUrl
     audioMuted: webView.isMuted || webView.globalMute
+    webChannel: webView.sharedWebChannel
 
     onZoomFactorChanged: {
         webView.zoomUpdated(webView.zoomFactor);
@@ -60,10 +63,10 @@ WebEngineView {
 
     onLoadingChanged: function (loadRequest) {
         if (loadRequest.status === WebEngineView.LoadStartedStatus) {
-            webView.runJavaScript(AntiDetection.getScript());
+            var isChrome = webView.webProfile && webView.webProfile.httpUserAgent.indexOf("Chrome") !== -1;
+            webView.runJavaScript(AntiDetection.getScript(isChrome));
         }
         if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
-            webView.runJavaScript(AntiDetection.getScript());
             // Extract notification count from content using querySelector
             extractNotificationCount();
             // Start the periodic timer
@@ -87,7 +90,8 @@ WebEngineView {
             if (popupComponent.status === Component.Ready) {
                 var popup = popupComponent.createObject(null, {
                     "parentService": webView.serviceId,
-                    "webProfile": webView.webProfile
+                    "webProfile": webView.webProfile,
+                    "sharedWebChannel": webView.sharedWebChannel
                 });
                 if (popup) {
                     popup.show();

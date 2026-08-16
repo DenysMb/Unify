@@ -11,6 +11,8 @@ Window {
     property string parentService: ""
     property alias webView: webEngineView
     property WebEngineProfile webProfile
+    // Shared WebChannel carrying the TLS proxy bridge
+    property var sharedWebChannel
 
     // Anti-detection script for Google OAuth compatibility
     // Injected via runJavaScript on each page load
@@ -66,6 +68,7 @@ Window {
         // url property is NOT bound here to avoid conflict with openIn()
         // It will be set either by request.openIn() or manually via property update if needed
         profile: popupWindow.webProfile
+        webChannel: popupWindow.sharedWebChannel
 
         // Enable necessary settings for authentication and OAuth compatibility
         settings.javascriptCanAccessClipboard: true

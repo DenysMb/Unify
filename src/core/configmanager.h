@@ -16,6 +16,7 @@ class ConfigManager : public QObject
     Q_PROPERTY(QString currentWorkspace READ currentWorkspace WRITE setCurrentWorkspace NOTIFY currentWorkspaceChanged)
     Q_PROPERTY(QVariantMap workspaceIcons READ workspaceIcons NOTIFY workspaceIconsChanged)
     Q_PROPERTY(QVariantMap workspaceIsolatedStorage READ workspaceIsolatedStorage NOTIFY workspaceIsolatedStorageChanged)
+    Q_PROPERTY(QVariantMap disabledWorkspaces READ disabledWorkspaces WRITE setDisabledWorkspaces NOTIFY disabledWorkspacesChanged)
     Q_PROPERTY(QVariantMap disabledServices READ disabledServices WRITE setDisabledServices NOTIFY disabledServicesChanged)
     Q_PROPERTY(QVariantMap mutedServices READ mutedServices WRITE setMutedServices NOTIFY mutedServicesChanged)
     Q_PROPERTY(QVariantMap serviceTabs READ serviceTabs NOTIFY serviceTabsChanged)
@@ -28,6 +29,9 @@ class ConfigManager : public QObject
     Q_PROPERTY(bool autostartEnabled READ autostartEnabled WRITE setAutostartEnabled NOTIFY autostartEnabledChanged)
     Q_PROPERTY(bool hideHeader READ hideHeader WRITE setHideHeader NOTIFY hideHeaderChanged)
     Q_PROPERTY(QString sidebarSizePreset READ sidebarSizePreset WRITE setSidebarSizePreset NOTIFY sidebarSizePresetChanged)
+    Q_PROPERTY(QString voiceChatService READ voiceChatService WRITE setVoiceChatService NOTIFY voiceChatServiceChanged)
+    Q_PROPERTY(bool experimentalFeaturesEnabled READ experimentalFeaturesEnabled WRITE setExperimentalFeaturesEnabled NOTIFY experimentalFeaturesEnabledChanged)
+    Q_PROPERTY(QStringList tlsProxyHosts READ tlsProxyHosts WRITE setTlsProxyHosts NOTIFY tlsProxyHostsChanged)
 
 public:
     explicit ConfigManager(QObject *parent = nullptr);
@@ -58,6 +62,15 @@ public:
     QVariantMap workspaceIsolatedStorage() const;
     Q_INVOKABLE bool isWorkspaceIsolated(const QString &workspace) const;
     Q_INVOKABLE void setWorkspaceIsolatedStorage(const QString &workspace, bool isolated);
+
+    // Workspace reorder
+    Q_INVOKABLE void moveWorkspace(int fromIndex, int toIndex);
+
+    // Disabled workspaces management
+    QVariantMap disabledWorkspaces() const;
+    void setDisabledWorkspaces(const QVariantMap &disabledWorkspaces);
+    Q_INVOKABLE void setWorkspaceDisabled(const QString &workspace, bool disabled);
+    Q_INVOKABLE bool isWorkspaceDisabled(const QString &workspace) const;
 
     // Disabled services management
     QVariantMap disabledServices() const;
@@ -109,8 +122,24 @@ public:
     QString sidebarSizePreset() const;
     void setSidebarSizePreset(const QString &preset);
 
+    QString voiceChatService() const;
+    void setVoiceChatService(const QString &service);
+
+    bool experimentalFeaturesEnabled() const;
+    void setExperimentalFeaturesEnabled(bool enabled);
+
+    // Hosts whose requests are always routed through the local TLS-impersonating
+    // proxy (Cloudflare TLS-fingerprint bot detection workaround)
+    QStringList tlsProxyHosts() const;
+    void setTlsProxyHosts(const QStringList &hosts);
+
     Q_INVOKABLE void saveSettings();
     Q_INVOKABLE void loadSettings();
+
+    Q_INVOKABLE bool exportToJson(const QString &filePath) const;
+    Q_INVOKABLE bool importFromJson(const QString &filePath);
+    Q_INVOKABLE void exportConfigViaDialog();
+    Q_INVOKABLE void importConfigViaDialog();
 
     // Last-used service persistence (per workspace)
     Q_INVOKABLE void setLastUsedService(const QString &workspace, const QString &serviceId);
@@ -137,6 +166,7 @@ Q_SIGNALS:
     void currentWorkspaceChanged();
     void workspaceIconsChanged();
     void workspaceIsolatedStorageChanged();
+    void disabledWorkspacesChanged();
     void disabledServicesChanged();
     void mutedServicesChanged();
     void serviceTabsChanged();
@@ -149,6 +179,9 @@ Q_SIGNALS:
     void autostartEnabledChanged();
     void hideHeaderChanged();
     void sidebarSizePresetChanged();
+    void voiceChatServiceChanged();
+    void experimentalFeaturesEnabledChanged();
+    void tlsProxyHostsChanged();
 
 private:
     void updateWorkspacesList();
@@ -160,6 +193,7 @@ private:
     QHash<QString, QString> m_lastServiceByWorkspace; // workspace -> serviceId
     QHash<QString, QString> m_workspaceIcons; // workspace -> icon name
     QHash<QString, bool> m_workspaceIsolatedStorage; // workspace -> isolated storage flag
+    QVariantMap m_disabledWorkspaces; // workspace name -> bool (true if disabled)
     QVariantMap m_disabledServices; // serviceId -> bool (true if disabled)
     QVariantMap m_mutedServices; // serviceId -> bool (true if muted)
     QVariantMap m_serviceTabs; // serviceId -> QVariantList of tabs
@@ -172,6 +206,9 @@ private:
     bool m_autostartEnabled = false;
     bool m_hideHeader = false;
     QString m_sidebarSizePreset = QStringLiteral("normal");
+    QString m_voiceChatService = QStringLiteral("perplexity");
+    bool m_experimentalFeaturesEnabled = false;
+    QStringList m_tlsProxyHosts;
 };
 
 #endif // CONFIGMANAGER_H

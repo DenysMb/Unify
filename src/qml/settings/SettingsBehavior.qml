@@ -81,5 +81,62 @@ Kirigami.ScrollablePage {
                 }
             }
         }
+
+        Kirigami.Separator {
+            Kirigami.FormData.label: i18nc("@title:group", "Experimental:")
+            Kirigami.FormData.isSection: true
+        }
+
+        QQC2.CheckBox {
+            Kirigami.FormData.label: i18nc("@label:checkbox", "Experimental Features:")
+            text: i18nc("@option:check", "Enable experimental features")
+            checked: configManager ? configManager.experimentalFeaturesEnabled : false
+            onCheckedChanged: {
+                if (configManager) {
+                    configManager.experimentalFeaturesEnabled = checked;
+                }
+            }
+        }
+
+        QQC2.ComboBox {
+            Kirigami.FormData.label: i18nc("@label:combobox", "Voice Chat Service:")
+            visible: configManager ? configManager.experimentalFeaturesEnabled : false
+
+            model: [
+                { text: i18nc("@item:inlistbox", "ChatGPT"), value: "chatgpt" },
+                { text: i18nc("@item:inlistbox", "Perplexity"), value: "perplexity" }
+            ]
+            textRole: "text"
+            valueRole: "value"
+
+            currentIndex: {
+                var current = configManager ? configManager.voiceChatService : "perplexity";
+                for (var i = 0; i < model.length; i++) {
+                    if (model[i].value === current) {
+                        return i;
+                    }
+                }
+                return 1;
+            }
+
+            onActivated: function (index) {
+                if (configManager) {
+                    configManager.voiceChatService = model[index].value;
+                }
+            }
+
+            QQC2.ToolTip.visible: hovered
+            QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
+            QQC2.ToolTip.text: i18nc("@info:tooltip", "Select which AI service the tray quick action opens")
+        }
+
+        Kirigami.InlineMessage {
+            // Kirigami.FormData.isSpanning: true
+            Layout.fillWidth: true
+            visible: configManager ? configManager.experimentalFeaturesEnabled : false
+            type: Kirigami.MessageType.Information
+            icon.name: "audio-input-microphone"
+            text: i18nc("@info", "Adds a quick action to the system tray menu that opens the selected AI service and starts a voice conversation.")
+        }
     }
 }
