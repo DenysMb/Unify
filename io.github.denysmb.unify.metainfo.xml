@@ -69,6 +69,21 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.8.0" date="2026-08-16">
+      <description>
+        <p>This release adds a TLS proxy to reach Cloudflare-protected APIs, a global service switcher, a voice chat quick action in the system tray, and the ability to disable workspaces:</p>
+        <ul>
+          <li>Added TLS proxy bridge that routes requests through a local sidecar presenting a real browser fingerprint, bypassing Cloudflare TLS detection on protected APIs</li>
+          <li>Added Network settings page to manage proxied hosts, with automatic detection of hosts that only work through the proxy</li>
+          <li>Added Global Switcher to search and jump to any service across all workspaces</li>
+          <li>Added experimental system tray quick action to open an AI voice chat (ChatGPT or Perplexity), configurable in Settings &gt; Behavior</li>
+          <li>Added support for disabling workspaces from the workspace drawer</li>
+          <li>Re-enabled GPU acceleration in the Flatpak build by removing forced software rendering flags</li>
+          <li>Improved anti-detection script and reworked workspace drawer</li>
+          <li>Added automated tests for the TLS proxy bridge</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.7.0" date="2026-05-23">
       <description>
         <p>This release introduces a dedicated Settings window, moving all configuration options out of the workspace drawer for a cleaner and more organized experience:</p>
