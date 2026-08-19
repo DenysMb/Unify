@@ -9,14 +9,14 @@ msgstr ""
 "Project-Id-Version: Unify 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-25 16:02+0000\n"
-"PO-Revision-Date: 2026-01-02 19:49+0100\n"
+"PO-Revision-Date: 2026-08-19 11:03+0200\n"
 "Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
 "Language-Team: \n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.8\n"
+"X-Generator: Poedit 3.9\n"
 
 #: io.github.denysmb.unify.desktop:2 src/trayiconmanager.cpp:45
 #, kde-format
@@ -55,7 +55,7 @@ msgstr "Unify"
 #, kde-format
 msgctxt "@title:window"
 msgid "Unify - %1"
-msgstr ""
+msgstr "Unify - %1"
 
 #: src/qml/Main.qml:456 src/qml/dialogs/ServiceDialog.qml:28
 #, kde-format
@@ -324,41 +324,41 @@ msgstr "${ws}"
 #: src/qml/drawers/WorkspaceDrawer.qml:170
 #, kde-format
 msgid "Launch on System Start"
-msgstr ""
+msgstr "Automatisch opstarten"
 
 #: src/qml/drawers/WorkspaceDrawer.qml:209
 #, kde-format
 msgid "Hide Header (Ctrl+H)"
-msgstr ""
+msgstr "Kopbalk verbergen (Ctrl+H)"
 
 #: src/qml/drawers/WorkspaceDrawer.qml:116
 #, kde-format
 msgid "Sidebar Size"
-msgstr ""
+msgstr "Zijbalkgrootte"
 
 #: src/qml/drawers/WorkspaceDrawer.qml:120
 #, kde-format
 msgctxt "Sidebar size preset"
 msgid "Tiny"
-msgstr ""
+msgstr "Erg klein"
 
 #: src/qml/drawers/WorkspaceDrawer.qml:130
 #, kde-format
 msgctxt "Sidebar size preset"
 msgid "Small"
-msgstr ""
+msgstr "Klein"
 
 #: src/qml/drawers/WorkspaceDrawer.qml:140
 #, kde-format
 msgctxt "Sidebar size preset"
 msgid "Normal"
-msgstr ""
+msgstr "Gemiddeld"
 
 #: src/qml/drawers/WorkspaceDrawer.qml:150
 #, kde-format
 msgctxt "Sidebar size preset"
 msgid "Big"
-msgstr ""
+msgstr "Groot"
 
 #: src/trayiconmanager.cpp:57
 #, kde-format
