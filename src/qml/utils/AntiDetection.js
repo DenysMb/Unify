@@ -1,130 +1,44 @@
 // Anti-detection script for browser compatibility
-// This script removes/masks properties that websites use to detect embedded browsers
-// Updated to be consistent with Firefox user agent
+// Qt WebEngine is Chromium-based. Only override what leaks the embedded context.
+// Intentionally minimal: every override risks creating detectable inconsistencies.
 
 .pragma library
 
-var script = `
+var baseScript = `
 (function() {
-    // Only run once per page
     if (window.__antiDetectionApplied) return;
     window.__antiDetectionApplied = true;
 
-    // 1. Remove webdriver property (primary detection method)
-    Object.defineProperty(navigator, 'webdriver', {
-        get: () => undefined,
-        configurable: true
-    });
+    // 0. Intercept all JavaScript errors for diagnostics
+    window.addEventListener('error', function(e) {
+        if (e.message && e.filename) {
+            console.log('[Unify] JS error:', e.message, 'at', e.filename + ':' + e.lineno);
+        }
+    }, true);
+    window.addEventListener('unhandledrejection', function(e) {
+        console.log('[Unify] Unhandled rejection:', e.reason);
+    }, true);
 
-    // 2. Override plugins to simulate Firefox (Firefox typically has fewer plugins)
-    const fakePlugins = {
-        length: 0,
-        item: function(i) { return null; },
-        namedItem: function(name) { return null; },
-        refresh: function() {}
-    };
-
-    Object.defineProperty(navigator, 'plugins', {
-        get: () => fakePlugins,
-        configurable: true
-    });
-
-    // 3. Override mimeTypes to be consistent with Firefox
-    const fakeMimeTypes = {
-        length: 0,
-        item: function(i) { return null; },
-        namedItem: function(name) { return null; }
-    };
-
-    Object.defineProperty(navigator, 'mimeTypes', {
-        get: () => fakeMimeTypes,
-        configurable: true
-    });
-
-    // 4. Override languages
-    Object.defineProperty(navigator, 'languages', {
-        get: () => ['en-US', 'en'],
-        configurable: true
-    });
-
-    Object.defineProperty(navigator, 'language', {
-        get: () => 'en-US',
-        configurable: true
-    });
-
-    // 5. Do NOT set window.chrome - Firefox doesn't have this object
-    // This was causing inconsistency detection (Firefox UA + chrome object = suspicious)
-    if (window.chrome) {
-        delete window.chrome;
-    }
-
-    // 6. Override permissions API
-    if (navigator.permissions && navigator.permissions.query) {
-        const originalQuery = navigator.permissions.query.bind(navigator.permissions);
-        navigator.permissions.query = function(parameters) {
-            if (parameters.name === 'notifications') {
-                return Promise.resolve({ state: Notification.permission, onchange: null });
-            }
-            return originalQuery(parameters);
-        };
-    }
-
-    // 7. Mask WebGL fingerprinting with Firefox-like values
+    // 1. Remove QtWebEngine-specific properties that leak the embedding context
+    // The WebChannel transport is preserved under a different name so the TLS
+    // proxy shim can still communicate with the C++ bridge.
     try {
-        const getParameterOrig = WebGLRenderingContext.prototype.getParameter;
-        WebGLRenderingContext.prototype.getParameter = function(parameter) {
-            if (parameter === 37445) return 'Mozilla';
-            if (parameter === 37446) return 'Mozilla';
-            return getParameterOrig.call(this, parameter);
-        };
-
-        const getParameter2Orig = WebGL2RenderingContext.prototype.getParameter;
-        WebGL2RenderingContext.prototype.getParameter = function(parameter) {
-            if (parameter === 37445) return 'Mozilla';
-            if (parameter === 37446) return 'Mozilla';
-            return getParameter2Orig.call(this, parameter);
-        };
-    } catch (e) {}
-
-    // 8. Override connection info (NetworkInformation API - limited in Firefox)
-    // Firefox has limited support for this API, so we make it undefined
-    try {
-        Object.defineProperty(navigator, 'connection', {
-            get: () => undefined,
-            configurable: true
-        });
-    } catch (e) {}
-
-    // 9. Override hardwareConcurrency
-    Object.defineProperty(navigator, 'hardwareConcurrency', {
-        get: () => 8,
-        configurable: true
-    });
-
-    // 10. Override deviceMemory (Firefox doesn't support this, should be undefined)
-    try {
-        Object.defineProperty(navigator, 'deviceMemory', {
-            get: () => undefined,
-            configurable: true
-        });
-    } catch (e) {}
-
-    // 11. Remove QtWebEngine-specific properties that may leak
-    try {
-        // Hide any Qt-specific objects
+        if (window.qt && window.qt.webChannelTransport) {
+            window.__unifyQtTransport = window.qt.webChannelTransport;
+        }
         if (window.qt) delete window.qt;
         if (window.QtWebEngine) delete window.QtWebEngine;
     } catch (e) {}
 
-    // 12. Override buildID for Firefox consistency
+    // 2. Remove webdriver property (set by --enable-automation or automation tools)
     try {
-        Object.defineProperty(navigator, 'buildID', {
-            get: () => '20181001000000',
+        Object.defineProperty(navigator, 'webdriver', {
+            get: () => undefined,
             configurable: true
         });
     } catch (e) {}
 
-    // 13. Track Ctrl key state for link opening behavior
+    // 3. Track Ctrl key state for link opening behavior
     window.__unifyCtrlPressed = false;
 
     document.addEventListener('keydown', function(e) {
@@ -139,15 +53,69 @@ var script = `
         }
     }, true);
 
-    // Reset on window blur (in case key is released while window not focused)
     window.addEventListener('blur', function() {
         window.__unifyCtrlPressed = false;
     });
+`;
 
-    console.log('🛡️ Anti-detection script loaded successfully (Firefox mode)');
+var chromePolyfills = `
+    // 4. Chrome-specific polyfills (only for Chrome UA services like Linear)
+    if (!window.chrome) {
+        window.chrome = {
+            runtime: {},
+            loadTimes: function() {},
+            csi: function() {}
+        };
+    }
+
+    if (!navigator.plugins || navigator.plugins.length === 0) {
+        try {
+            Object.defineProperty(navigator, 'plugins', {
+                get: function() {
+                    var arr = [{
+                        name: 'Chrome PDF Plugin',
+                        filename: 'internal-pdf-viewer',
+                        description: 'Portable Document Format',
+                        length: 1
+                    }];
+                    arr.item = function(i) { return this[i] || null; };
+                    arr.namedItem = function(n) { return null; };
+                    arr.refresh = function() {};
+                    return arr;
+                },
+                configurable: true
+            });
+        } catch (e) {}
+    }
+
+    if (!navigator.mimeTypes || navigator.mimeTypes.length === 0) {
+        try {
+            Object.defineProperty(navigator, 'mimeTypes', {
+                get: function() {
+                    var arr = [{
+                        type: 'application/pdf',
+                        suffixes: 'pdf',
+                        description: 'Portable Document Format'
+                    }];
+                    arr.item = function(i) { return this[i] || null; };
+                    arr.namedItem = function(n) { return null; };
+                    return arr;
+                },
+                configurable: true
+            });
+        } catch (e) {}
+    }
+`;
+
+var closingTag = `
 })();
 `;
 
-function getScript() {
+function getScript(isChrome) {
+    var script = baseScript;
+    if (isChrome) {
+        script += chromePolyfills;
+    }
+    script += closingTag;
     return script;
 }

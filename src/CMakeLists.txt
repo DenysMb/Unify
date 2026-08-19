@@ -15,6 +15,8 @@ target_sources(unify
     core/configmanager.h
     core/notificationpresenter.cpp
     core/notificationpresenter.h
+    core/tlsproxybridge.cpp
+    core/tlsproxybridge.h
     ui/trayiconmanager.cpp
     ui/trayiconmanager.h
     utils/faviconcache.cpp
@@ -44,11 +46,18 @@ ecm_target_qml_sources(unify
     qml/components/WebViewStack.qml
     qml/components/WorkspacesBar.qml
     qml/components/NowPlayingIndicator.qml
+    qml/components/GlobalSwitcher.qml
     qml/dialogs/ServiceDialog.qml
     qml/dialogs/PermissionDialog.qml
     qml/dialogs/WorkspaceDialog.qml
     qml/dialogs/DesktopMediaDialog.qml
+    qml/dialogs/TipsDialog.qml
     qml/drawers/WorkspaceDrawer.qml
+    qml/settings/SettingsPage.qml
+    qml/settings/SettingsAppearance.qml
+    qml/settings/SettingsBehavior.qml
+    qml/settings/SettingsNetwork.qml
+    qml/settings/SettingsWidevine.qml
     qml/utils/Services.js
     qml/utils/AntiDetection.js
 )
@@ -61,6 +70,7 @@ target_link_libraries(unify
     Qt6::QuickControls2
     Qt6::Widgets
     Qt6::WebEngineQuick
+    Qt6::WebChannel
     Qt6::DBus
     Qt6::Network
     Qt6::PrintSupport
@@ -76,3 +86,9 @@ target_link_libraries(unify
 )
 
 install(TARGETS unify ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+
+# TLS impersonation sidecar used by TlsProxyBridge (requires python3 + curl_cffi)
+install(FILES proxy/cf-proxy.py DESTINATION ${KDE_INSTALL_DATADIR}/unify)
+
+# Dev-build fallback so TlsProxyBridge finds cf-proxy.py without installing
+target_compile_definitions(unify PRIVATE UNIFY_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

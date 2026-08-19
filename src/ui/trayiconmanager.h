@@ -33,6 +33,8 @@ public:
     Q_INVOKABLE void show();
     Q_INVOKABLE void hide();
     Q_INVOKABLE void showNotification(const QString &title, const QString &message);
+    Q_INVOKABLE void setVoiceChatService(const QString &service);
+    Q_INVOKABLE void setExperimentalFeaturesEnabled(bool enabled);
 
 Q_SIGNALS:
     void windowVisibleChanged();
@@ -40,6 +42,7 @@ Q_SIGNALS:
     void showWindowRequested();
     void hideWindowRequested();
     void quitRequested();
+    void serviceVoiceChatRequested(const QString &serviceUrl, const QString &jsScript);
 
 private Q_SLOTS:
     void onActivated(QSystemTrayIcon::ActivationReason reason);
@@ -50,6 +53,7 @@ private Q_SLOTS:
 private:
     void createTrayIcon();
     void createMenu();
+    void updateVoiceChatAction();
     bool isDarkColorScheme() const;
     void updateIconBasedOnColorScheme();
     void scheduleIconUpdate();
@@ -59,8 +63,12 @@ private:
     QMenu *m_trayMenu;
     QAction *m_showAction;
     QAction *m_hideAction;
+    QAction *m_voiceChatAction;
+    QAction *m_voiceChatSeparator;
     QAction *m_quitAction;
     QWindow *m_mainWindow;
+    QString m_voiceChatService;
+    bool m_experimentalFeaturesEnabled;
     bool m_windowVisible;
     bool m_hasNotifications;
 

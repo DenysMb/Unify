@@ -17,10 +17,39 @@
     "--own-name=org.mpris.MediaPlayer2.chromium.*",
     "--filesystem=xdg-download",
     "--env=QTWEBENGINEPROCESS_PATH=/app/bin/QtWebEngineProcess",
-    "--env=QTWEBENGINE_CHROMIUM_FLAGS=--autoplay-policy=no-user-gesture-required --enable-features=WebRTCPipeWireCapturer --enable-widevine-cdm --disable-gpu --disable-gpu-compositing --disable-features=VizDisplayCompositor"
+    "--env=QTWEBENGINE_CHROMIUM_FLAGS=--autoplay-policy=no-user-gesture-required --enable-features=WebRTCPipeWireCapturer --enable-widevine-cdm"
   ],
   "cleanup": ["/app/cleanup-BaseApp.sh"],
   "modules": [
+    {
+      "name": "python3-curl_cffi",
+      "buildsystem": "simple",
+      "build-commands": [
+        "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} \"curl_cffi\" --no-build-isolation"
+      ],
+      "sources": [
+        {
+          "type": "file",
+          "url": "https://files.pythonhosted.org/packages/e4/45/9208864ec429558efac168088e50f8a91b947f742ee128cff55b88c7b635/curl_cffi-0.16.0-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "sha256": "182416f07d71a342240554fa62c22e591999b78c225b21d3fe27d9f807420dd6"
+        },
+        {
+          "type": "file",
+          "url": "https://files.pythonhosted.org/packages/95/95/86342356ff5953b3fb06f7ef7c5bee212d45e770abc7218d451b9148313c/cffi-2.1.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+          "sha256": "a931079504ecc49efed7744c476a5c343a92fabf66dec2db95edb1b2fdc770e2"
+        },
+        {
+          "type": "file",
+          "url": "https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl",
+          "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775"
+        },
+        {
+          "type": "file",
+          "url": "https://files.pythonhosted.org/packages/0c/c3/44f3fbbfa403ea2a7c779186dc20772604442dde72947e7d01069cbe98e3/pycparser-3.0-py3-none-any.whl",
+          "sha256": "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992"
+        }
+      ]
+    },
     {
       "name": "unify",
       "buildsystem": "cmake-ninja",

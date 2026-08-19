@@ -1,84 +1,57 @@
-# Unify
+<div align="center">
+  <img src="src/assets/unify.svg" width="128" height="128" alt="Unify Icon"/>
+  
+  # Unify
+  
+  **Web app aggregator for KDE Plasma**
+  
+  Organize and manage your web services with desktop-friendly integrations
+  
+</div>
 
-Unify is a web app aggregator built with Qt 6, Qt WebEngine, and Kirigami. It organizes "services" (web apps) by "workspaces" and opens each service in a WebView with desktop-friendly integrations (notifications, screen sharing, etc.).
+---
 
-<img src="https://raw.githubusercontent.com/DenysMb/Unify/refs/heads/main/screenshots/screenshot_webview.png" />
+## About
 
-## Requirements
+Unify is a native KDE application that brings your favorite web services to the desktop with seamless integration. Built with Qt 6, Qt WebEngine, and Kirigami, it organizes web apps by workspaces and provides desktop-friendly features like notifications, screen sharing, and more.
 
-- Qt 6 (Quick, Qml, QuickControls2, WebEngineQuick, DBus)
-- KDE Frameworks 6 (Kirigami, I18n, CoreAddons, IconThemes, Notifications)
-- Extra CMake Modules (ECM)
-- CMake 3.24+ and a C++17+ compiler
-- gettext (optional, for i18n via `Messages.sh`)
+### Features
 
-On a recent KDE/Qt distro, install the development packages matching the modules above.
+- **Workspace organization** - Group related web services into customizable workspaces
+- **Desktop integrations** - Native notifications, screen sharing, media capture support
+- **DRM content support** - Play protected content from Spotify, Netflix, Prime Video, and Tidal with Widevine
+- **Privacy controls** - Isolated profiles option for separate cookies and storage per service
+- **Auto-granted permissions** - Seamless experience with pre-configured permissions for your services
+- **Native KDE integration** - Built with Qt/QML and Kirigami for seamless Plasma desktop experience
+- **Persistent sessions** - Your login sessions and preferences are saved between restarts
 
-## Project Structure (overview)
+## Installation
 
-- `src/`: C++ sources (`main.cpp`, `configmanager.*`)
-- `src/qml/`: QML UI (`Main.qml`) and components
-- `po/`: localization tooling and CMake integration
-- `CMakeLists.txt` and `src/CMakeLists.txt`: build configuration
-- `io.github.denysmb.unify.desktop`, `io.github.denysmb.unify.metainfo.xml`: app metadata
+### Flathub (Recommended)
 
-## Build
+The easiest way to install Diktate is through Flathub:
 
-Debug (recommended for development):
+[![Download on Flathub](https://flathub.org/api/badge?svg)](https://flathub.org/apps/io.github.denysmb.unify)
 
+Or via command line:
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-cmake --build build -j
+flatpak install flathub io.github.denysmb.unify
 ```
 
-Run:
 
-```bash
-./build/bin/unify
-```
+### Building from Source
 
-Release (optional):
+For build instructions, see [BUILD.md](BUILD.md).
 
-```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build
-```
+## Screenshots
 
-## Localization (optional)
-
-Generate/update translation catalogs (requires gettext):
-
-```bash
-./Messages.sh
-```
+<img src="https://raw.githubusercontent.com/DenysMb/Unify/refs/heads/main/screenshots/screenshot_webview.png" alt="Unify Screenshot" />
 
 ## DRM Content Support (Widevine)
 
 To play DRM-protected content from services like Spotify, Prime Video, Netflix, and Tidal, you need to install the Widevine CDM (Content Decryption Module).
 
-**For Flatpak users:**
-
-Run the installation script:
-
-```bash
-./install-widevine.sh
-```
-
-This script:
-- Downloads the latest Widevine CDM from Firefox's official repository
-- Installs it to `~/.var/app/io.github.denysmb.unify/plugins/WidevineCdm/`
-- Configures Qt WebEngine to use the library
-
-After installation, restart Unify for changes to take effect.
-
-**To uninstall:**
-
-```bash
-./install-widevine.sh uninstall
-```
-
-**Dependencies:** wget or curl, unzip, flatpak, jq or python
-
-**Note:** Widevine is proprietary software owned by Google and cannot be distributed with the application.
+All you need to do is go to `Tips > Install Widevine`.
 
 ## Permissions & Privacy
 
@@ -103,8 +76,6 @@ These permissions are auto-granted because users have explicitly chosen to add a
 
 For more details, see [SECURITY.md](SECURITY.md).
 
-## Development Notes
+## License
 
-- C++ style follows `.clang-format`; the clang-format pre-commit hook is configured via CMake.
-- QML is organized across `src/qml/components`, dialogs in `src/qml/dialogs`, and JS utils in `src/qml/utils`.
-- Qt Test is available if you want to add tests later (CTest integration supported).
+This project is licensed under the GPL-3.0 License - see the LICENSE file for details.

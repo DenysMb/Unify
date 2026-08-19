@@ -13,14 +13,18 @@ WebEngineView {
     property string serviceId: ""
     property url initialUrl: "about:blank"
     property WebEngineProfile webProfile
+    // Shared WebChannel carrying the TLS proxy bridge
+    property var sharedWebChannel
     property bool isMuted: false
     property bool globalMute: false
+    property string querySelector: ""
 
     signal tabTitleChanged(string title)
     signal audioStateChanged(string serviceId, bool isPlaying)
     signal fullscreenRequested(var webEngineView, bool toggleOn)
     signal newTabRequested(url url)
     signal zoomUpdated(real zoomFactor)
+    signal notificationCountFromContent(string serviceId, int count)
 
     anchors.fill: parent
     visible: false
@@ -28,6 +32,7 @@ WebEngineView {
     profile: webView.webProfile
     url: webView.initialUrl
     audioMuted: webView.isMuted || webView.globalMute
+    webChannel: webView.sharedWebChannel
 
     onZoomFactorChanged: {
         webView.zoomUpdated(webView.zoomFactor);
@@ -58,10 +63,14 @@ WebEngineView {
 
     onLoadingChanged: function (loadRequest) {
         if (loadRequest.status === WebEngineView.LoadStartedStatus) {
-            webView.runJavaScript(AntiDetection.getScript());
+            var isChrome = webView.webProfile && webView.webProfile.httpUserAgent.indexOf("Chrome") !== -1;
+            webView.runJavaScript(AntiDetection.getScript(isChrome));
         }
         if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
-            webView.runJavaScript(AntiDetection.getScript());
+            // Extract notification count from content using querySelector
+            extractNotificationCount();
+            // Start the periodic timer
+            notificationTimer.restart();
         }
     }
 
@@ -81,7 +90,8 @@ WebEngineView {
             if (popupComponent.status === Component.Ready) {
                 var popup = popupComponent.createObject(null, {
                     "parentService": webView.serviceId,
-                    "webProfile": webView.webProfile
+                    "webProfile": webView.webProfile,
+                    "sharedWebChannel": webView.sharedWebChannel
                 });
                 if (popup) {
                     popup.show();
@@ -131,5 +141,45 @@ WebEngineView {
 
     Component.onCompleted: {
         webView.runJavaScript(AntiDetection.getScript());
+    }
+
+    // Extract notification count from page content using querySelector
+    function extractNotificationCount() {
+        if (!webView.querySelector || webView.querySelector === "") {
+            return;
+        }
+
+        // The querySelector should be the full expression including .textContent
+        // e.g., document.querySelector('span.counter').textContent
+        var script = "(function() { " +
+            "try { " +
+            "    var result = " + webView.querySelector + "; " +
+            "    if (result) { " +
+            "        var text = typeof result === 'string' ? result : (result.textContent || result.innerText || ''); " +
+            "        var match = text.match(/\\d+/); " +
+            "        return match ? parseInt(match[0], 10) : 0; " +
+            "    } " +
+            "    return 0; " +
+            "} catch (e) { " +
+            "    return 0; " +
+            "} })()";
+
+        webView.runJavaScript(script, function(result) {
+            if (result !== undefined && result !== null) {
+                webView.notificationCountFromContent(webView.serviceId, result);
+            }
+        });
+    }
+
+    // Timer to periodically extract notification count
+    Timer {
+        id: notificationTimer
+        interval: 5000 // 5 seconds
+        repeat: true
+        onTriggered: {
+            if (webView.visible && webView.querySelector && webView.querySelector !== "") {
+                extractNotificationCount();
+            }
+        }
     }
 }

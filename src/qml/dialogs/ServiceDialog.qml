@@ -17,7 +17,9 @@ Kirigami.Dialog {
             image: "",
             workspace: "",
             useFavicon: false,
-            isolatedProfile: false
+            isolatedProfile: false,
+            querySelector: "",
+            userAgent: ""
         })
 
     signal acceptedData(var data)
@@ -27,6 +29,7 @@ Kirigami.Dialog {
     property bool useFavicon: true
     property bool isolatedProfile: false
     property int selectedFaviconSource: 0 // 0 = Google, 1 = IconHorse
+    property string chromeUserAgent: ""
 
     // Favicon preview URLs
     property string googleFaviconUrl: ""
@@ -63,6 +66,7 @@ Kirigami.Dialog {
         serviceNameField.text = service.title || "";
         iconUrlField.text = service.image || "";
         serviceUrlField.text = service.url || "";
+        querySelectorField.text = service.querySelector || "";
 
         // Filter out special workspaces when finding the index
         var filteredWorkspaces = [];
@@ -76,6 +80,7 @@ Kirigami.Dialog {
         root.useFavicon = service.useFavicon || false;
         root.isolatedProfile = service.isolatedProfile || false;
         root.selectedFaviconSource = service.faviconSource || 0;
+        userAgentField.setUserAgentValue(service.userAgent || "");
 
         // Fetch favicon previews if URL is valid
         if (service.url) {
@@ -87,6 +92,7 @@ Kirigami.Dialog {
         serviceNameField.text = "";
         iconUrlField.text = "";
         serviceUrlField.text = "";
+        querySelectorField.text = "";
         root.googleFaviconUrl = "";
         root.iconHorseFaviconUrl = "";
         root.googleFaviconLoading = false;
@@ -105,6 +111,7 @@ Kirigami.Dialog {
         root.selectedIconName = "internet-web-browser-symbolic";
         root.useFavicon = true;
         root.isolatedProfile = false;
+        userAgentField.currentIndex = 0;
     }
 
     function fetchFaviconPreviews() {
@@ -172,7 +179,9 @@ Kirigami.Dialog {
             workspace: filteredWorkspaces[workspaceComboBox.currentIndex],
             useFavicon: root.useFavicon,
             isolatedProfile: root.isolatedProfile,
-            faviconSource: root.useFavicon ? root.selectedFaviconSource : -1
+            faviconSource: root.useFavicon ? root.selectedFaviconSource : -1,
+            querySelector: querySelectorField.text.trim(),
+            userAgent: userAgentField.model[userAgentField.currentIndex].value
         };
         acceptedData(data);
         clearFields();
@@ -431,6 +440,46 @@ Kirigami.Dialog {
             enabled: !root.isEditMode
             Controls.ToolTip.visible: hovered
             Controls.ToolTip.text: root.isEditMode ? i18n("This option cannot be changed after the service is created. Delete and recreate the service if you need to change this setting.") : i18n("When enabled, this service will have its own separate cookies, login sessions, and data. Useful for having multiple accounts of the same service.")
+        }
+
+        Controls.TextField {
+            id: querySelectorField
+            Kirigami.FormData.label: i18n("Notification Selector:")
+            placeholderText: i18n("e.g., document.querySelector('span.counter')")
+            Layout.fillWidth: true
+            Controls.ToolTip.visible: hovered
+            Controls.ToolTip.text: i18n("CSS selector to extract notification count from page content. Use document.querySelector() syntax. Example: document.querySelector('a[data-testid=\"navigation-link:almost-all-mail\"] span.navigation-counter-item').textContent")
+        }
+
+        Controls.ComboBox {
+            id: userAgentField
+            Kirigami.FormData.label: i18n("Browser User-Agent:")
+            Layout.fillWidth: true
+            textRole: "label"
+            valueRole: "value"
+            model: [
+                { label: i18n("Firefox (Default)"), value: "" },
+                { label: i18n("Chrome"), value: root.chromeUserAgent }
+            ]
+            Controls.ToolTip.visible: hovered
+            Controls.ToolTip.text: i18n("Firefox works with Google OAuth. Chrome is required for services with Cloudflare Turnstile (e.g., Linear).")
+            
+            function setUserAgentValue(ua) {
+                for (var i = 0; i < model.length; i++) {
+                    if (model[i].value === ua) {
+                        currentIndex = i;
+                        return;
+                    }
+                }
+                // Tolerant fallback: a saved Chrome UA whose version differs from the current
+                // build's Chromium version (e.g. Chrome/140 saved under a Chromium 134 Flatpak)
+                // should still select the Chrome option instead of resetting to Firefox.
+                if (ua && ua.indexOf("Chrome/") !== -1 && ua.indexOf("rv:") === -1) {
+                    currentIndex = 1;
+                    return;
+                }
+                currentIndex = 0; // Default to Firefox
+            }
         }
 
         // Separator before destructive actions (only in edit mode)

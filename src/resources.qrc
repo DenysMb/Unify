@@ -7,5 +7,7 @@
         <file>assets/unify-tray-light.svg</file>
         <file>assets/unify-tray-notification.png</file>
         <file>assets/unify-tray-notification.svg</file>
+        <file>js/qwebchannel.js</file>
+        <file>js/tls-proxy-shim.js</file>
     </qresource>
 </RCC>

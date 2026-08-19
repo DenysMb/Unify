@@ -1,10 +1,61 @@
 #include "configmanager.h"
+#include <QCoreApplication>
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusObjectPath>
+#include <QDBusReply>
+#include <QDateTime>
 #include <QDebug>
+#include <QFile>
+#include <QFileDialog>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QUuid>
 
 // Define special workspace constants
 const QString ConfigManager::FAVORITES_WORKSPACE = QStringLiteral("__favorites__");
 const QString ConfigManager::ALL_SERVICES_WORKSPACE = QStringLiteral("__all_services__");
+
+namespace
+{
+// Build the commandline the desktop session should run on login. Inside Flatpak
+// the in-sandbox application path is unreachable from the host session, so the
+// portal needs `flatpak run` instead.
+QStringList autostartCommandLine()
+{
+    if (qEnvironmentVariableIsSet("FLATPAK_ID")) {
+        return {QStringLiteral("flatpak"), QStringLiteral("run"), QStringLiteral("io.github.denysmb.unify")};
+    }
+    return {QCoreApplication::applicationFilePath()};
+}
+
+// Ask org.freedesktop.portal.Background to (un)register us for autostart. The
+// portal works inside Flatpak (where ~/.config/autostart isn't writable from
+// the sandbox) and on native installs alike, so this is the single code path.
+bool requestBackgroundPortal(bool autostart)
+{
+    QDBusMessage msg = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.portal.Desktop"),
+                                                      QStringLiteral("/org/freedesktop/portal/desktop"),
+                                                      QStringLiteral("org.freedesktop.portal.Background"),
+                                                      QStringLiteral("RequestBackground"));
+
+    QVariantMap options;
+    options.insert(QStringLiteral("autostart"), autostart);
+    options.insert(QStringLiteral("reason"), QStringLiteral("Launch Unify on system start"));
+    options.insert(QStringLiteral("commandline"), autostartCommandLine());
+
+    msg << QString() // parent_window: empty — no parent dialog handle
+        << options;
+
+    QDBusReply<QDBusObjectPath> reply = QDBusConnection::sessionBus().call(msg);
+    if (!reply.isValid()) {
+        qWarning() << "Background portal RequestBackground failed:" << reply.error().message();
+        return false;
+    }
+    return true;
+}
+} // namespace
 
 ConfigManager::ConfigManager(QObject *parent)
     : QObject(parent)
@@ -169,6 +220,69 @@ void ConfigManager::setServiceDisabled(const QString &serviceId, bool disabled)
 bool ConfigManager::isServiceDisabled(const QString &serviceId) const
 {
     return m_disabledServices.contains(serviceId) && m_disabledServices.value(serviceId).toBool();
+}
+
+QVariantMap ConfigManager::disabledWorkspaces() const
+{
+    return m_disabledWorkspaces;
+}
+
+void ConfigManager::setDisabledWorkspaces(const QVariantMap &disabledWorkspaces)
+{
+    if (m_disabledWorkspaces != disabledWorkspaces) {
+        m_disabledWorkspaces = disabledWorkspaces;
+        Q_EMIT disabledWorkspacesChanged();
+        saveSettings();
+    }
+}
+
+void ConfigManager::setWorkspaceDisabled(const QString &workspace, bool disabled)
+{
+    if (workspace.isEmpty()) {
+        return;
+    }
+    if (isSpecialWorkspace(workspace)) {
+        return;
+    }
+
+    bool changed = false;
+    if (disabled) {
+        if (!m_disabledWorkspaces.contains(workspace) || m_disabledWorkspaces.value(workspace).toBool() != true) {
+            m_disabledWorkspaces.insert(workspace, true);
+            changed = true;
+        }
+    } else {
+        if (m_disabledWorkspaces.contains(workspace)) {
+            m_disabledWorkspaces.remove(workspace);
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        Q_EMIT disabledWorkspacesChanged();
+        saveSettings();
+        qDebug() << "Workspace" << workspace << (disabled ? "disabled" : "enabled");
+    }
+}
+
+bool ConfigManager::isWorkspaceDisabled(const QString &workspace) const
+{
+    return m_disabledWorkspaces.contains(workspace) && m_disabledWorkspaces.value(workspace).toBool();
+}
+
+void ConfigManager::moveWorkspace(int fromIndex, int toIndex)
+{
+    if (fromIndex < 0 || fromIndex >= m_workspaces.size() || toIndex < 0 || toIndex >= m_workspaces.size() || fromIndex == toIndex) {
+        qDebug() << "Invalid move workspace indices:" << fromIndex << "to" << toIndex;
+        return;
+    }
+
+    m_workspaces.move(fromIndex, toIndex);
+
+    Q_EMIT workspacesChanged();
+    saveSettings();
+
+    qDebug() << "Moved workspace from index" << fromIndex << "to" << toIndex;
 }
 
 QVariantMap ConfigManager::mutedServices() const
@@ -344,6 +458,96 @@ void ConfigManager::setShowZoomInHeader(bool enabled)
     }
 }
 
+bool ConfigManager::autostartEnabled() const
+{
+    return m_autostartEnabled;
+}
+
+void ConfigManager::setAutostartEnabled(bool enabled)
+{
+    if (m_autostartEnabled == enabled) {
+        return;
+    }
+
+    if (!requestBackgroundPortal(enabled)) {
+        return;
+    }
+
+    m_autostartEnabled = enabled;
+    Q_EMIT autostartEnabledChanged();
+    saveSettings();
+}
+
+bool ConfigManager::hideHeader() const
+{
+    return m_hideHeader;
+}
+
+void ConfigManager::setHideHeader(bool enabled)
+{
+    if (m_hideHeader != enabled) {
+        m_hideHeader = enabled;
+        Q_EMIT hideHeaderChanged();
+        saveSettings();
+    }
+}
+
+QString ConfigManager::sidebarSizePreset() const
+{
+    return m_sidebarSizePreset;
+}
+
+void ConfigManager::setSidebarSizePreset(const QString &preset)
+{
+    if (m_sidebarSizePreset != preset) {
+        m_sidebarSizePreset = preset;
+        Q_EMIT sidebarSizePresetChanged();
+        saveSettings();
+    }
+}
+
+QString ConfigManager::voiceChatService() const
+{
+    return m_voiceChatService;
+}
+
+void ConfigManager::setVoiceChatService(const QString &service)
+{
+    if (m_voiceChatService != service) {
+        m_voiceChatService = service;
+        Q_EMIT voiceChatServiceChanged();
+        saveSettings();
+    }
+}
+
+bool ConfigManager::experimentalFeaturesEnabled() const
+{
+    return m_experimentalFeaturesEnabled;
+}
+
+void ConfigManager::setExperimentalFeaturesEnabled(bool enabled)
+{
+    if (m_experimentalFeaturesEnabled != enabled) {
+        m_experimentalFeaturesEnabled = enabled;
+        Q_EMIT experimentalFeaturesEnabledChanged();
+        saveSettings();
+    }
+}
+
+QStringList ConfigManager::tlsProxyHosts() const
+{
+    return m_tlsProxyHosts;
+}
+
+void ConfigManager::setTlsProxyHosts(const QStringList &hosts)
+{
+    if (m_tlsProxyHosts != hosts) {
+        m_tlsProxyHosts = hosts;
+        Q_EMIT tlsProxyHostsChanged();
+        saveSettings();
+    }
+}
+
 void ConfigManager::addService(const QVariantMap &service)
 {
     QVariantMap newService = service;
@@ -494,6 +698,12 @@ void ConfigManager::removeWorkspace(const QString &workspaceName)
             Q_EMIT workspaceIsolatedStorageChanged();
         }
 
+        // Remove disabled workspace flag if present
+        if (m_disabledWorkspaces.contains(workspaceName)) {
+            m_disabledWorkspaces.remove(workspaceName);
+            Q_EMIT disabledWorkspacesChanged();
+        }
+
         // If current workspace was removed, switch to first available or create Personal
         if (m_currentWorkspace == workspaceName) {
             if (!m_workspaces.isEmpty()) {
@@ -558,6 +768,13 @@ void ConfigManager::renameWorkspace(const QString &oldName, const QString &newNa
             Q_EMIT workspaceIsolatedStorageChanged();
         }
 
+        // Move disabled workspace flag along with the rename
+        if (m_disabledWorkspaces.contains(oldName)) {
+            const bool disabled = m_disabledWorkspaces.value(oldName).toBool();
+            m_disabledWorkspaces.remove(oldName);
+            m_disabledWorkspaces.insert(newName, disabled);
+        }
+
         Q_EMIT servicesChanged();
         Q_EMIT workspacesChanged();
         saveSettings();
@@ -592,6 +809,8 @@ void ConfigManager::saveSettings()
         }
         m_settings.setValue(QStringLiteral("isolatedStorage"), isolatedMap);
     }
+    // Persist disabled workspaces map
+    m_settings.setValue(QStringLiteral("disabled"), m_disabledWorkspaces);
     m_settings.endGroup();
 
     // Persist last used service per workspace
@@ -625,6 +844,12 @@ void ConfigManager::saveSettings()
     m_settings.setValue(QStringLiteral("systemTrayEnabled"), m_systemTrayEnabled);
     m_settings.setValue(QStringLiteral("showZoomInHeader"), m_showZoomInHeader);
     m_settings.setValue(QStringLiteral("globalMute"), m_globalMute);
+    m_settings.setValue(QStringLiteral("autostartEnabled"), m_autostartEnabled);
+    m_settings.setValue(QStringLiteral("hideHeader"), m_hideHeader);
+    m_settings.setValue(QStringLiteral("sidebarSizePreset"), m_sidebarSizePreset);
+    m_settings.setValue(QStringLiteral("voiceChatService"), m_voiceChatService);
+    m_settings.setValue(QStringLiteral("experimentalFeaturesEnabled"), m_experimentalFeaturesEnabled);
+    m_settings.setValue(QStringLiteral("tlsProxyHosts"), m_tlsProxyHosts);
     m_settings.endGroup();
 
     m_settings.sync();
@@ -658,6 +883,8 @@ void ConfigManager::loadSettings()
             m_workspaceIsolatedStorage.insert(it.key(), it.value().toBool());
         }
     }
+    // Load disabled workspaces
+    m_disabledWorkspaces = m_settings.value(QStringLiteral("disabled"), QVariantMap()).toMap();
     m_settings.endGroup();
 
     // Load last used service mapping
@@ -692,6 +919,12 @@ void ConfigManager::loadSettings()
     m_systemTrayEnabled = m_settings.value(QStringLiteral("systemTrayEnabled"), true).toBool();
     m_showZoomInHeader = m_settings.value(QStringLiteral("showZoomInHeader"), true).toBool();
     m_globalMute = m_settings.value(QStringLiteral("globalMute"), false).toBool();
+    m_autostartEnabled = m_settings.value(QStringLiteral("autostartEnabled"), false).toBool();
+    m_hideHeader = m_settings.value(QStringLiteral("hideHeader"), false).toBool();
+    m_sidebarSizePreset = m_settings.value(QStringLiteral("sidebarSizePreset"), QStringLiteral("normal")).toString();
+    m_voiceChatService = m_settings.value(QStringLiteral("voiceChatService"), QStringLiteral("perplexity")).toString();
+    m_experimentalFeaturesEnabled = m_settings.value(QStringLiteral("experimentalFeaturesEnabled"), false).toBool();
+    m_tlsProxyHosts = m_settings.value(QStringLiteral("tlsProxyHosts"), QStringList{QStringLiteral("api.standardnotes.com")}).toStringList();
     m_settings.endGroup();
 
     // Only update workspaces list if it's empty (first run)
@@ -809,4 +1042,211 @@ qreal ConfigManager::serviceZoomFactor(const QString &serviceId) const
         }
     }
     return 1.0;
+}
+
+bool ConfigManager::exportToJson(const QString &filePath) const
+{
+    QJsonObject root;
+    root[QStringLiteral("version")] = 1;
+    root[QStringLiteral("exportDate")] = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+
+    QJsonObject data;
+
+    data[QStringLiteral("services")] = QJsonValue::fromVariant(m_services);
+
+    QJsonObject workspacesObj;
+    workspacesObj[QStringLiteral("current")] = m_currentWorkspace;
+    workspacesObj[QStringLiteral("list")] = QJsonArray::fromStringList(m_workspaces);
+
+    QJsonObject iconsObj;
+    for (auto it = m_workspaceIcons.constBegin(); it != m_workspaceIcons.constEnd(); ++it) {
+        iconsObj.insert(it.key(), it.value());
+    }
+    workspacesObj[QStringLiteral("icons")] = iconsObj;
+
+    QJsonObject isolatedObj;
+    for (auto it = m_workspaceIsolatedStorage.constBegin(); it != m_workspaceIsolatedStorage.constEnd(); ++it) {
+        isolatedObj.insert(it.key(), it.value());
+    }
+    workspacesObj[QStringLiteral("isolatedStorage")] = isolatedObj;
+
+    workspacesObj[QStringLiteral("disabled")] = QJsonValue::fromVariant(m_disabledWorkspaces);
+    data[QStringLiteral("workspaces")] = workspacesObj;
+
+    data[QStringLiteral("disabledServices")] = QJsonValue::fromVariant(m_disabledServices);
+    data[QStringLiteral("mutedServices")] = QJsonValue::fromVariant(m_mutedServices);
+    data[QStringLiteral("serviceTabs")] = QJsonValue::fromVariant(m_serviceTabs);
+
+    QJsonObject displayObj;
+    displayObj[QStringLiteral("horizontalSidebar")] = m_horizontalSidebar;
+    displayObj[QStringLiteral("alwaysShowWorkspacesBar")] = m_alwaysShowWorkspacesBar;
+    displayObj[QStringLiteral("systemTrayEnabled")] = m_systemTrayEnabled;
+    displayObj[QStringLiteral("showZoomInHeader")] = m_showZoomInHeader;
+    displayObj[QStringLiteral("globalMute")] = m_globalMute;
+    displayObj[QStringLiteral("autostartEnabled")] = m_autostartEnabled;
+    displayObj[QStringLiteral("hideHeader")] = m_hideHeader;
+    displayObj[QStringLiteral("sidebarSizePreset")] = m_sidebarSizePreset;
+    displayObj[QStringLiteral("voiceChatService")] = m_voiceChatService;
+    displayObj[QStringLiteral("experimentalFeaturesEnabled")] = m_experimentalFeaturesEnabled;
+    data[QStringLiteral("display")] = displayObj;
+
+    root[QStringLiteral("data")] = data;
+
+    QJsonDocument doc(root);
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning() << "Failed to open file for export:" << filePath;
+        return false;
+    }
+
+    file.write(doc.toJson(QJsonDocument::Indented));
+    file.close();
+    qDebug() << "Configuration exported to:" << filePath;
+    return true;
+}
+
+bool ConfigManager::importFromJson(const QString &filePath)
+{
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Failed to open file for import:" << filePath;
+        return false;
+    }
+
+    QByteArray content = file.readAll();
+    file.close();
+
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(content, &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        qWarning() << "JSON parse error:" << parseError.errorString();
+        return false;
+    }
+
+    QJsonObject root = doc.object();
+    if (!root.contains(QStringLiteral("data")) || !root[QStringLiteral("data")].isObject()) {
+        qWarning() << "Invalid import file: missing 'data' object";
+        return false;
+    }
+
+    QJsonObject data = root[QStringLiteral("data")].toObject();
+
+    if (data.contains(QStringLiteral("services")) && data[QStringLiteral("services")].isArray()) {
+        m_services = data[QStringLiteral("services")].toArray().toVariantList();
+    }
+
+    if (data.contains(QStringLiteral("workspaces")) && data[QStringLiteral("workspaces")].isObject()) {
+        QJsonObject ws = data[QStringLiteral("workspaces")].toObject();
+        if (ws.contains(QStringLiteral("list")) && ws[QStringLiteral("list")].isArray()) {
+            m_workspaces.clear();
+            for (const QJsonValue &val : ws[QStringLiteral("list")].toArray()) {
+                m_workspaces.append(val.toString());
+            }
+        }
+        if (ws.contains(QStringLiteral("current")) && ws[QStringLiteral("current")].isString()) {
+            m_currentWorkspace = ws[QStringLiteral("current")].toString();
+        }
+        if (ws.contains(QStringLiteral("icons")) && ws[QStringLiteral("icons")].isObject()) {
+            m_workspaceIcons.clear();
+            QJsonObject icons = ws[QStringLiteral("icons")].toObject();
+            for (auto it = icons.constBegin(); it != icons.constEnd(); ++it) {
+                m_workspaceIcons.insert(it.key(), it.value().toString());
+            }
+        }
+        if (ws.contains(QStringLiteral("isolatedStorage")) && ws[QStringLiteral("isolatedStorage")].isObject()) {
+            m_workspaceIsolatedStorage.clear();
+            QJsonObject iso = ws[QStringLiteral("isolatedStorage")].toObject();
+            for (auto it = iso.constBegin(); it != iso.constEnd(); ++it) {
+                m_workspaceIsolatedStorage.insert(it.key(), it.value().toBool());
+            }
+        }
+        if (ws.contains(QStringLiteral("disabled")) && ws[QStringLiteral("disabled")].isObject()) {
+            m_disabledWorkspaces.clear();
+            m_disabledWorkspaces = ws[QStringLiteral("disabled")].toObject().toVariantMap();
+        }
+    }
+
+    if (data.contains(QStringLiteral("disabledServices")) && data[QStringLiteral("disabledServices")].isObject()) {
+        m_disabledServices = data[QStringLiteral("disabledServices")].toObject().toVariantMap();
+    }
+
+    if (data.contains(QStringLiteral("mutedServices")) && data[QStringLiteral("mutedServices")].isObject()) {
+        m_mutedServices = data[QStringLiteral("mutedServices")].toObject().toVariantMap();
+    }
+
+    if (data.contains(QStringLiteral("serviceTabs")) && data[QStringLiteral("serviceTabs")].isObject()) {
+        m_serviceTabs = data[QStringLiteral("serviceTabs")].toObject().toVariantMap();
+    }
+
+    if (data.contains(QStringLiteral("display")) && data[QStringLiteral("display")].isObject()) {
+        QJsonObject d = data[QStringLiteral("display")].toObject();
+        m_horizontalSidebar = d.value(QStringLiteral("horizontalSidebar")).toBool(false);
+        m_alwaysShowWorkspacesBar = d.value(QStringLiteral("alwaysShowWorkspacesBar")).toBool(false);
+        m_systemTrayEnabled = d.value(QStringLiteral("systemTrayEnabled")).toBool(true);
+        m_showZoomInHeader = d.value(QStringLiteral("showZoomInHeader")).toBool(true);
+        m_globalMute = d.value(QStringLiteral("globalMute")).toBool(false);
+        m_autostartEnabled = d.value(QStringLiteral("autostartEnabled")).toBool(false);
+        m_hideHeader = d.value(QStringLiteral("hideHeader")).toBool(false);
+        m_sidebarSizePreset = d.value(QStringLiteral("sidebarSizePreset")).toString(QStringLiteral("normal"));
+        m_voiceChatService = d.value(QStringLiteral("voiceChatService")).toString(QStringLiteral("perplexity"));
+        m_experimentalFeaturesEnabled = d.value(QStringLiteral("experimentalFeaturesEnabled")).toBool(false);
+    }
+
+    // Ensure there's at least one workspace
+    if (m_workspaces.isEmpty()) {
+        m_workspaces.append(QStringLiteral("Personal"));
+        m_currentWorkspace = QStringLiteral("Personal");
+    }
+
+    // Clear last-used service cache since IDs may have changed
+    m_lastServiceByWorkspace.clear();
+
+    updateWorkspacesList();
+    saveSettings();
+
+    Q_EMIT servicesChanged();
+    Q_EMIT workspacesChanged();
+    Q_EMIT currentWorkspaceChanged();
+    Q_EMIT workspaceIconsChanged();
+    Q_EMIT workspaceIsolatedStorageChanged();
+    Q_EMIT disabledWorkspacesChanged();
+    Q_EMIT disabledServicesChanged();
+    Q_EMIT mutedServicesChanged();
+    Q_EMIT serviceTabsChanged();
+    Q_EMIT globalMuteChanged();
+    Q_EMIT horizontalSidebarChanged();
+    Q_EMIT alwaysShowWorkspacesBarChanged();
+    Q_EMIT systemTrayEnabledChanged();
+    Q_EMIT showZoomInHeaderChanged();
+    Q_EMIT autostartEnabledChanged();
+    Q_EMIT hideHeaderChanged();
+    Q_EMIT sidebarSizePresetChanged();
+    Q_EMIT voiceChatServiceChanged();
+    Q_EMIT experimentalFeaturesEnabledChanged();
+
+    qDebug() << "Configuration imported from:" << filePath;
+    return true;
+}
+
+void ConfigManager::exportConfigViaDialog()
+{
+    const QString defaultName = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd")) + QStringLiteral(" Unify backup.json");
+    const QString filePath = QFileDialog::getSaveFileName(nullptr, tr("Export Configuration"), defaultName, tr("JSON Files (*.json)"));
+    if (filePath.isEmpty()) {
+        return;
+    }
+    if (!exportToJson(filePath)) {
+        qWarning() << "Failed to export configuration to:" << filePath;
+    }
+}
+
+void ConfigManager::importConfigViaDialog()
+{
+    const QString filePath = QFileDialog::getOpenFileName(nullptr, tr("Import Configuration"), QString(), tr("JSON Files (*.json)"));
+    if (filePath.isEmpty()) {
+        return;
+    }
+    if (!importFromJson(filePath)) {
+        qWarning() << "Failed to import configuration from:" << filePath;
+    }
 }

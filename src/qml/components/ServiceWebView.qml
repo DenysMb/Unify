@@ -17,11 +17,15 @@ Item {
     property WebEngineProfile webProfile
     property bool isServiceDisabled: false
     property var onTitleUpdated: null
+    property var notificationCountCallback: null
     property int stackIndex: 0
     property real zoomFactor: 1.0
     property bool isMuted: false
     property bool globalMute: false
     property var restoredTabs: []
+    property string querySelector: ""
+    // Shared WebChannel carrying the TLS proxy bridge
+    property var sharedWebChannel
 
     property alias contents: view
     property int currentTabIndex: 0
@@ -47,6 +51,7 @@ Item {
     signal fullscreenRequested(var webEngineView, bool toggleOn)
     signal zoomFactorUpdated(string serviceId, real zoomFactor)
     signal serviceTabsUpdated(string serviceId, var tabs)
+    signal notificationCountFromContent(string serviceId, int count)
 
     property bool profileReady: webProfile !== null
     property bool hasLoadedOnce: false
@@ -134,8 +139,10 @@ Item {
             "serviceId": view.serviceId,
             "initialUrl": url,
             "webProfile": view.webProfile,
+            "sharedWebChannel": view.sharedWebChannel,
             "isMuted": view.isMuted,
             "globalMute": view.globalMute,
+            "querySelector": view.querySelector,
             "visible": false
         });
 
@@ -168,6 +175,10 @@ Item {
             if (Math.abs(view.zoomFactor - zoomFactor) > 0.001) {
                 view.zoomFactor = zoomFactor;
             }
+        });
+
+        tabView.notificationCountFromContent.connect(function(svcId, count) {
+            view.notificationCountFromContent(svcId, count);
         });
 
         var newTabViews = Object.assign({}, tabViews);
@@ -298,6 +309,29 @@ Item {
         var currentWebView = getCurrentWebView();
         if (currentWebView && currentWebView.reload) {
             currentWebView.reload();
+        }
+    }
+
+    function stopCurrent() {
+        for (var tabId in tabViews) {
+            if (tabViews.hasOwnProperty(tabId) && tabViews[tabId] && tabViews[tabId].stop) {
+                tabViews[tabId].stop();
+            }
+        }
+    }
+
+    function loadUrl(url) {
+        var currentWebView = getCurrentWebView();
+        if (currentWebView) {
+            currentWebView.url = url;
+        }
+    }
+
+    function loadBlank() {
+        for (var tabId in tabViews) {
+            if (tabViews.hasOwnProperty(tabId) && tabViews[tabId]) {
+                tabViews[tabId].url = "about:blank";
+            }
         }
     }
 
