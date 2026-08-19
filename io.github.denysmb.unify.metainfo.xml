@@ -69,6 +69,18 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.8.1" date="2026-08-19">
+      <description>
+        <p>This release fixes logins on services protected by Cloudflare, including Standard Notes and Discord QR-code sign-in with hCaptcha:</p>
+        <ul>
+          <li>Fixed Discord QR-code login by routing hCaptcha API requests (XMLHttpRequest) through the TLS proxy</li>
+          <li>Fixed captcha providers embedded in cross-origin iframes by injecting the TLS proxy shim into subframes</li>
+          <li>Fixed Standard Notes login failing with an opaque "Failed to fetch" by surfacing the real proxy error in the console and app log</li>
+          <li>Added api.hcaptcha.com to the built-in proxied hosts so existing installs pick it up automatically</li>
+          <li>Fixed proxied requests not following redirects, matching standard fetch() behavior</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.8.0" date="2026-08-16">
       <description>
         <p>This release adds a TLS proxy to reach Cloudflare-protected APIs, a global service switcher, a voice chat quick action in the system tray, and the ability to disable workspaces:</p>
