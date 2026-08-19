@@ -643,7 +643,8 @@ Item {
                     shim.sourceCode = tlsProxyShimSource;
                     shim.injectionPoint = WebEngineScript.DocumentCreation;
                     shim.worldId = WebEngineScript.MainWorld;
-                    shim.runsOnSubFrames = false;
+                    // Subframes included: captcha iframes (hCaptcha) need the proxy
+                shim.runsOnSubFrames = true;
                     userScripts.insert(shim);
                 }
             }

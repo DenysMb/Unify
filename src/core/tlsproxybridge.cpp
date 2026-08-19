@@ -194,7 +194,7 @@ void TlsProxyBridge::fetchViaProxy(const QString &requestId, const QJsonObject &
     // Generic-fallback retries that succeed reveal hosts gated by TLS fingerprint
     const QString retryHost = request.value(QStringLiteral("isRetry")).toBool() ? QUrl(targetUrl).host() : QString();
 
-    connect(reply, &QNetworkReply::finished, this, [this, reply, requestId, retryHost]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, requestId, retryHost, targetUrl]() {
         reply->deleteLater();
         QJsonObject response;
         const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -210,6 +210,7 @@ void TlsProxyBridge::fetchViaProxy(const QString &requestId, const QJsonObject &
             response.insert(QStringLiteral("headers"), responseHeaders);
             response.insert(QStringLiteral("bodyBase64"), QString::fromUtf8(reply->readAll().toBase64()));
         } else {
+            qWarning() << "TlsProxyBridge: request to" << targetUrl << "failed:" << reply->errorString();
             response.insert(QStringLiteral("error"), reply->errorString());
         }
         Q_EMIT fetchResponse(requestId, response);

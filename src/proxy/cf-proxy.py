@@ -75,13 +75,15 @@ class ProxyHandler(BaseHTTPRequestHandler):
         }
 
         try:
+            # Follow redirects like fetch() does by default; a forwarded 3xx
+            # would surface to the page as an opaque constructed Response
             upstream = SESSION.request(
                 self.command,
                 target,
                 headers=forward_headers,
                 data=body,
                 timeout=30,
-                allow_redirects=False,
+                allow_redirects=True,
             )
         except Exception as exc:
             return self._respond(502, "upstream error: %s" % exc)

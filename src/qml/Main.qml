@@ -635,7 +635,9 @@ Kirigami.ApplicationWindow {
                 shim.sourceCode = tlsProxyShimSource;
                 shim.injectionPoint = WebEngineScript.DocumentCreation;
                 shim.worldId = WebEngineScript.MainWorld;
-                shim.runsOnSubFrames = false;
+                // Subframes included: captcha providers (hCaptcha) run inside
+                // cross-origin iframes and need the proxy as well
+                shim.runsOnSubFrames = true;
                 userScripts.insert(shim);
             }
         }

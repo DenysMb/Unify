@@ -271,7 +271,9 @@ int main(int argc, char *argv[])
         tlsProxyShim.setSourceCode(tlsProxyShimSource);
         tlsProxyShim.setInjectionPoint(QWebEngineScript::DocumentCreation);
         tlsProxyShim.setWorldId(QWebEngineScript::MainWorld);
-        tlsProxyShim.setRunsOnSubFrames(false);
+        // Subframes included: captcha providers (hCaptcha) run inside cross-origin
+        // iframes and must route their own requests through the proxy
+        tlsProxyShim.setRunsOnSubFrames(true);
         defaultProf->scripts()->insert(tlsProxyShim);
     }
 

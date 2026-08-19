@@ -924,7 +924,9 @@ void ConfigManager::loadSettings()
     m_sidebarSizePreset = m_settings.value(QStringLiteral("sidebarSizePreset"), QStringLiteral("normal")).toString();
     m_voiceChatService = m_settings.value(QStringLiteral("voiceChatService"), QStringLiteral("perplexity")).toString();
     m_experimentalFeaturesEnabled = m_settings.value(QStringLiteral("experimentalFeaturesEnabled"), false).toBool();
-    m_tlsProxyHosts = m_settings.value(QStringLiteral("tlsProxyHosts"), QStringList{QStringLiteral("api.standardnotes.com")}).toStringList();
+    m_tlsProxyHosts =
+        m_settings.value(QStringLiteral("tlsProxyHosts"), QStringList{QStringLiteral("api.standardnotes.com"), QStringLiteral("api.hcaptcha.com")})
+            .toStringList();
     m_settings.endGroup();
 
     // Only update workspaces list if it's empty (first run)
