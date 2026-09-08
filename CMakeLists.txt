@@ -38,6 +38,7 @@ find_package(Qt6 ${QT6_MIN_VERSION} REQUIRED COMPONENTS
     Gui
     Qml
     QuickControls2
+    QuickDialogs2
     Widgets
     WebEngineQuick
     WebChannel
