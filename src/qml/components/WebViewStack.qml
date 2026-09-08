@@ -28,6 +28,10 @@ Item {
     property var workspaceIsolatedStorage: ({})
     // Shared WebChannel carrying the TLS proxy bridge (provided by Main.qml)
     property var sharedWebChannel
+    // Callback to handle WebEngineProfile.downloadRequested for isolated profiles
+    // (Main.qml's persistent profile handles its own downloads directly; isolated
+    // profiles created below have no dialog of their own, so they route here)
+    property var downloadRequestedCallback: null
 
     // Signal to propagate service URL update requests
     signal updateServiceUrlRequested(string serviceId, string newUrl)
@@ -635,6 +639,14 @@ Item {
             offTheRecord: false
             httpCacheType: WebEngineProfile.DiskHttpCache
             persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
+
+            onDownloadRequested: function (download) {
+                if (root.downloadRequestedCallback) {
+                    root.downloadRequestedCallback(download);
+                } else {
+                    console.warn("No downloadRequestedCallback set for isolated profile; download discarded:", download.suggestedFileName);
+                }
+            }
 
             Component.onCompleted: {
                 if (typeof tlsProxyShimSource !== "undefined" && tlsProxyShimSource !== "") {

@@ -6,6 +6,7 @@ import QtCore
 import QtWebEngine
 import QtWebChannel
 import QtQuick.Controls as Controls
+import QtQuick.Dialogs
 // Controls are used in components; WebEngine used here for profile
 import org.kde.kirigami as Kirigami
 // Note: QML files are flattened into module root by CMake.
@@ -262,6 +263,44 @@ Kirigami.ApplicationWindow {
     // Function to find service by ID
     function findServiceById(id) {
         return Services.findById(services, id);
+    }
+
+    // Shared download handler for every WebEngineProfile (the persistent shared
+    // profile as well as any per-service/per-workspace isolated profiles created
+    // in WebViewStack.qml). Isolated profiles have no confirm dialog of their own,
+    // so they route through here too - otherwise downloadRequested goes unhandled
+    // and QtWebEngine silently discards the download.
+    function handleDownloadRequested(download) {
+        if (configManager && configManager.confirmDownloads) {
+            // Let the person choose where to save it, via the native file dialog
+            var downloadDirUrl = StandardPaths.writableLocation(StandardPaths.DownloadLocation);
+            var downloadDir = downloadDirUrl.toString().replace("file://", "");
+            var suggestedName = fileUtils.getUniqueFileName(downloadDir, download.suggestedFileName);
+
+            downloadSaveDialog.pendingDownload = download;
+            downloadSaveDialog.currentFolder = downloadDirUrl;
+            downloadSaveDialog.selectedFile = "file://" + downloadDir + "/" + suggestedName;
+            downloadSaveDialog.open();
+        } else {
+            // Auto-accept (original behavior)
+            var downloadDirUrl = StandardPaths.writableLocation(StandardPaths.DownloadLocation);
+            var downloadDir = downloadDirUrl.toString().replace("file://", "");
+
+            // Get unique filename to avoid overwriting existing files
+            var fileName = fileUtils.getUniqueFileName(downloadDir, download.suggestedFileName);
+
+            download.downloadDirectory = downloadDir;
+            download.downloadFileName = fileName;
+
+            // Monitor download completion
+            download.isFinishedChanged.connect(function () {
+                if (download.isFinished) {
+                    root.showPassiveNotification(i18n("Download completed: %1", fileName), "long");
+                }
+            });
+
+            download.accept();
+        }
     }
 
     // Function to find serviceId by URL origin
@@ -600,32 +639,7 @@ Kirigami.ApplicationWindow {
         }
 
         onDownloadRequested: function (download) {
-            if (configManager && configManager.confirmDownloads) {
-                // Show confirmation dialog
-                downloadConfirmDialog.pendingDownload = download;
-                downloadConfirmDialog.fileName = download.suggestedFileName;
-                downloadConfirmDialog.open();
-            } else {
-                // Auto-accept (original behavior)
-                var downloadDirUrl = StandardPaths.writableLocation(StandardPaths.DownloadLocation);
-                var downloadDir = downloadDirUrl.toString().replace("file://", "");
-
-                // Get unique filename to avoid overwriting existing files
-                var fileName = fileUtils.getUniqueFileName(downloadDir, download.suggestedFileName);
-
-                download.downloadDirectory = downloadDir;
-                download.downloadFileName = fileName;
-
-                // Monitor download completion
-                download.isFinishedChanged.connect(function () {
-                    if (download.isFinished) {
-                        var fullPath = downloadDir + "/" + fileName;
-                        root.showPassiveNotification(i18n("Download completed: %1", fileName), "long");
-                    }
-                });
-
-                download.accept();
-            }
+            root.handleDownloadRequested(download);
         }
 
         Component.onCompleted: {
@@ -641,53 +655,83 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    // Download confirmation dialog
-    Kirigami.Dialog {
-        id: downloadConfirmDialog
+    // Native "Save File" dialog used when configManager.confirmDownloads is on.
+    // Lets the person pick the destination folder/filename themselves (via the
+    // xdg-desktop-portal file chooser) instead of silently auto-saving to
+    // Downloads with no feedback.
+    FileDialog {
+        id: downloadSaveDialog
 
-        title: i18n("Confirm Download")
-        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
-        preferredWidth: Kirigami.Units.gridUnit * 25
-        padding: Kirigami.Units.largeSpacing
+        title: i18n("Save File")
+        fileMode: FileDialog.SaveFile
 
         property var pendingDownload: null
-        property string fileName: ""
 
         onAccepted: {
-            if (pendingDownload) {
-                // Capture download in local variable for the signal handler
-                var download = pendingDownload;
-                var downloadDirUrl = StandardPaths.writableLocation(StandardPaths.DownloadLocation);
-                var downloadDir = downloadDirUrl.toString().replace("file://", "");
-                var uniqueFileName = fileUtils.getUniqueFileName(downloadDir, fileName);
+            if (!pendingDownload)
+                return;
 
-                download.downloadDirectory = downloadDir;
-                download.downloadFileName = uniqueFileName;
+            var download = pendingDownload;
+            pendingDownload = null;
 
-                download.isFinishedChanged.connect(function () {
-                    if (download.isFinished) {
-                        root.showPassiveNotification(i18n("Download completed: %1", uniqueFileName), "long");
+            var chosenPath = decodeURIComponent(selectedFile.toString().replace("file://", ""));
+            var lastSlash = chosenPath.lastIndexOf("/");
+            var chosenDir = chosenPath.substring(0, lastSlash);
+            var chosenFileName = chosenPath.substring(lastSlash + 1);
+
+            download.downloadDirectory = chosenDir;
+            download.downloadFileName = chosenFileName;
+
+            download.isFinishedChanged.connect(function () {
+                if (download.isFinished) {
+                    if (download.state === WebEngineDownloadRequest.DownloadCompleted) {
+                        downloadResultDialog.showResult(true, chosenFileName, chosenDir, "");
+                    } else {
+                        downloadResultDialog.showResult(false, chosenFileName, chosenDir, download.interruptReasonString);
                     }
-                });
+                }
+            });
 
-                download.accept();
-                pendingDownload = null;
-            }
+            download.accept();
         }
 
         onRejected: {
-            if (pendingDownload) {
-                // Don't call accept() - the download will be discarded
-                pendingDownload = null;
-            }
+            // Don't call accept() - the download will be discarded
+            pendingDownload = null;
+        }
+    }
+
+    // Success/failure feedback shown after a download finishes - replaces the
+    // old silent auto-save with an explicit modal naming the file location,
+    // or the failure reason if the download didn't complete.
+    Kirigami.Dialog {
+        id: downloadResultDialog
+
+        title: resultSuccess ? i18n("Download Complete") : i18n("Download Failed")
+        standardButtons: Kirigami.Dialog.Ok
+        preferredWidth: Kirigami.Units.gridUnit * 25
+        padding: Kirigami.Units.largeSpacing
+
+        property bool resultSuccess: true
+        property string resultFileName: ""
+        property string resultDir: ""
+        property string resultError: ""
+
+        function showResult(success, fileName, dir, error) {
+            resultSuccess = success;
+            resultFileName = fileName;
+            resultDir = dir;
+            resultError = error;
+            open();
         }
 
         ColumnLayout {
             spacing: Kirigami.Units.largeSpacing
 
             Controls.Label {
-                text: i18n("Do you want to download this file?")
+                text: downloadResultDialog.resultSuccess ? i18n("\"%1\" downloaded successfully.", downloadResultDialog.resultFileName) : i18n("\"%1\" failed to download.", downloadResultDialog.resultFileName)
                 font.bold: true
+                wrapMode: Text.Wrap
                 Layout.fillWidth: true
             }
 
@@ -696,7 +740,16 @@ Kirigami.ApplicationWindow {
             }
 
             Controls.Label {
-                text: i18n("File: %1", downloadConfirmDialog.fileName)
+                visible: downloadResultDialog.resultSuccess
+                text: i18n("Location: %1", downloadResultDialog.resultDir)
+                wrapMode: Text.Wrap
+                Layout.fillWidth: true
+            }
+
+            Controls.Label {
+                visible: !downloadResultDialog.resultSuccess && downloadResultDialog.resultError !== ""
+                text: i18n("Reason: %1", downloadResultDialog.resultError)
+                wrapMode: Text.Wrap
                 Layout.fillWidth: true
             }
         }
@@ -1405,6 +1458,7 @@ Kirigami.ApplicationWindow {
                             globalMute: root.globalMute
                             serviceTabs: configManager ? configManager.serviceTabs : ({})
                             webProfile: persistentProfile
+                            downloadRequestedCallback: root.handleDownloadRequested
                             sharedWebChannel: unifyWebChannel
                             workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                             onTitleUpdated: root.updateBadgeFromTitle
@@ -1566,6 +1620,7 @@ Kirigami.ApplicationWindow {
                         globalMute: root.globalMute
                         serviceTabs: configManager ? configManager.serviceTabs : ({})
                         webProfile: persistentProfile
+                        downloadRequestedCallback: root.handleDownloadRequested
                         sharedWebChannel: unifyWebChannel
                         workspaceIsolatedStorage: configManager ? configManager.workspaceIsolatedStorage : ({})
                         onTitleUpdated: root.updateBadgeFromTitle
