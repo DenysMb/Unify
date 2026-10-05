@@ -79,6 +79,21 @@ Item {
         }
     }
 
+    // Toggling disable must tear down / rebuild the WebEngineViews. Hiding the
+    // view (or pointing it at about:blank) keeps the Chromium renderer process
+    // alive; memory is only released by actually destroying the views.
+    onIsServiceDisabledChanged: {
+        if (isServiceDisabled) {
+            destroyAllTabViews();
+        } else if (profileReady) {
+            if (tabs.length > 0) {
+                recreateTabViews();
+            } else {
+                initializeTabs();
+            }
+        }
+    }
+
     function generateTabId() {
         return "tab_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
     }
@@ -93,8 +108,8 @@ Item {
                 var tab = restoredTabs[i];
                 createTab(tab.url, tab.title, i === 0);
             }
-        } else if (initialUrl.toString() !== "about:blank") {
-            createTab(initialUrl, serviceTitle, true);
+        } else if (configuredUrl.toString() !== "about:blank") {
+            createTab(configuredUrl, serviceTitle, true);
         }
     }
 
@@ -186,6 +201,24 @@ Item {
         tabViews = newTabViews;
 
         return tabView;
+    }
+
+    function destroyAllTabViews() {
+        for (var tabId in tabViews) {
+            if (tabViews.hasOwnProperty(tabId) && tabViews[tabId]) {
+                tabViews[tabId].destroy();
+            }
+        }
+        tabViews = ({})
+    }
+
+    function recreateTabViews() {
+        for (var i = 0; i < tabs.length; i++) {
+            createWebViewForTab(tabs[i].id, tabs[i].url);
+        }
+        if (currentTabIndex >= 0 && currentTabIndex < tabs.length) {
+            showTab(tabs[currentTabIndex].id);
+        }
     }
 
     function updateTabTitle(tabId, title) {
